@@ -5,7 +5,6 @@ package provider
 
 import (
 	"context"
-	"net/http"
 	"os"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -15,6 +14,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/keycardai/terraform-provider-keycard/internal/client"
+	"golang.org/x/oauth2"
 )
 
 // Default endpoint to production API.
@@ -137,11 +138,16 @@ func (p *ScaffoldingProvider) Configure(ctx context.Context, req provider.Config
 		return
 	}
 
+	// Create OAuth2 token source
+	tokenSource := client.NewTokenSource(context.Background(), clientID, clientSecret, organizationID, endpoint)
+
+	// Create authenticated HTTP client
+	httpClient := oauth2.NewClient(ctx, tokenSource)
+
 	// TODO: Create actual Keycard API client with OAuth2 configuration
 	// For now, use a placeholder client
-	client := http.DefaultClient
-	resp.DataSourceData = client
-	resp.ResourceData = client
+	resp.DataSourceData = httpClient
+	resp.ResourceData = httpClient
 }
 
 func (p *ScaffoldingProvider) Resources(ctx context.Context) []func() resource.Resource {
