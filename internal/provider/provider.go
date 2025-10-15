@@ -17,6 +17,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+// Default endpoint to production API.
+const defaultEndpoint = "https://api.keycard.ai"
+
 // Ensure ScaffoldingProvider satisfies various provider interfaces.
 var _ provider.Provider = &ScaffoldingProvider{}
 var _ provider.ProviderWithFunctions = &ScaffoldingProvider{}
@@ -77,9 +80,6 @@ func (p *ScaffoldingProvider) Configure(ctx context.Context, req provider.Config
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	// Default endpoint to production API
-	const defaultEndpoint = "https://api.keycard.ai"
 
 	// Read configuration values with environment variable fallback
 	organizationID := data.OrganizationID.ValueString()
