@@ -25,6 +25,10 @@ website/node_modules
 *.test
 *.iml
 
+# Claude Code local files
+CLAUDE.md
+.claude/
+
 website/vendor
 
 # Test exclusions
