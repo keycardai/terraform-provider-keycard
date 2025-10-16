@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
 )
 
@@ -135,7 +136,7 @@ func (r *ZoneResource) Create(ctx context.Context, req resource.CreateRequest, r
 	// Handle OAuth2 settings if provided
 	if !data.OAuth2.IsNull() && !data.OAuth2.IsUnknown() {
 		var oauth2Data OAuth2Model
-		diags := data.OAuth2.As(ctx, &oauth2Data, types.ObjectAsOptions{})
+		diags := data.OAuth2.As(ctx, &oauth2Data, basetypes.ObjectAsOptions{})
 		resp.Diagnostics.Append(diags...)
 		if resp.Diagnostics.HasError() {
 			return
@@ -318,7 +319,7 @@ func (r *ZoneResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	// Handle OAuth2 settings if provided
 	if !data.OAuth2.IsNull() && !data.OAuth2.IsUnknown() {
 		var oauth2Data OAuth2Model
-		diags := data.OAuth2.As(ctx, &oauth2Data, types.ObjectAsOptions{})
+		diags := data.OAuth2.As(ctx, &oauth2Data, basetypes.ObjectAsOptions{})
 		resp.Diagnostics.Append(diags...)
 		if resp.Diagnostics.HasError() {
 			return
