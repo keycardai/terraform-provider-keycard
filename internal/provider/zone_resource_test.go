@@ -24,6 +24,9 @@ func TestAccZoneResource_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
 					resource.TestCheckResourceAttrSet("keycard_zone.test", "id"),
+					// Verify OAuth2 values are populated by the API
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.pkce_required"),
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.dcr_enabled"),
 				),
 			},
 			// ImportState testing
@@ -37,6 +40,9 @@ func TestAccZoneResource_basic(t *testing.T) {
 				Config: testAccZoneResourceConfig_basic(rName + "-updated"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName+"-updated"),
+					// Verify OAuth2 values are still present after update
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.pkce_required"),
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.dcr_enabled"),
 				),
 			},
 			// Delete testing automatically occurs in TestCase
@@ -70,35 +76,7 @@ func TestAccZoneResource_withDescription(t *testing.T) {
 			{
 				Config: testAccZoneResourceConfig_basic(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("keycard_zone.test", "description", ""),
-				),
-			},
-		},
-	})
-}
-
-func TestAccZoneResource_withOAuth2(t *testing.T) {
-	rName := acctest.RandomWithPrefix("tftest")
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		Steps: []resource.TestStep{
-			// Create with OAuth2 settings
-			{
-				Config: testAccZoneResourceConfig_withOAuth2(rName, true, true),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
-					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.pkce_required", "true"),
-					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.dcr_enabled", "true"),
-				),
-			},
-			// Update OAuth2 settings
-			{
-				Config: testAccZoneResourceConfig_withOAuth2(rName, false, false),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.pkce_required", "false"),
-					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.dcr_enabled", "false"),
+					resource.TestCheckNoResourceAttr("keycard_zone.test", "description"),
 				),
 			},
 		},
@@ -114,13 +92,14 @@ func TestAccZoneResource_complete(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create with all fields
 			{
-				Config: testAccZoneResourceConfig_complete(rName, "Complete zone", true, false),
+				Config: testAccZoneResourceConfig_withDescription(rName, "Complete zone"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
 					resource.TestCheckResourceAttr("keycard_zone.test", "description", "Complete zone"),
-					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.pkce_required", "true"),
-					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.dcr_enabled", "false"),
 					resource.TestCheckResourceAttrSet("keycard_zone.test", "id"),
+					// Verify OAuth2 values are set by the API (computed)
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.pkce_required"),
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.dcr_enabled"),
 				),
 			},
 			// ImportState testing
@@ -148,31 +127,4 @@ resource "keycard_zone" "test" {
   description = %[2]q
 }
 `, name, description)
-}
-
-func testAccZoneResourceConfig_withOAuth2(name string, pkceRequired, dcrEnabled bool) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-
-  oauth2 {
-    pkce_required = %[2]t
-    dcr_enabled   = %[3]t
-  }
-}
-`, name, pkceRequired, dcrEnabled)
-}
-
-func testAccZoneResourceConfig_complete(name, description string, pkceRequired, dcrEnabled bool) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name        = %[1]q
-  description = %[2]q
-
-  oauth2 {
-    pkce_required = %[3]t
-    dcr_enabled   = %[4]t
-  }
-}
-`, name, description, pkceRequired, dcrEnabled)
 }

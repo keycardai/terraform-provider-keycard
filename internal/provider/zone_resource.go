@@ -12,10 +12,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
 )
 
@@ -46,6 +47,13 @@ type OAuth2Model struct {
 	DcrEnabled   types.Bool `tfsdk:"dcr_enabled"`
 }
 
+func (m OAuth2Model) AttributeTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"pkce_required": types.BoolType,
+		"dcr_enabled":   types.BoolType,
+	}
+}
+
 func (r *ZoneResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_zone"
 }
@@ -72,20 +80,30 @@ func (r *ZoneResource) Schema(ctx context.Context, req resource.SchemaRequest, r
 			},
 			"oauth2": schema.SingleNestedAttribute{
 				MarkdownDescription: "OAuth2 configuration for the zone.",
-				Optional:            true,
+				// TODO: Support setting these attributes
+				Computed: true,
 				Attributes: map[string]schema.Attribute{
 					"pkce_required": schema.BoolAttribute{
 						MarkdownDescription: "Whether PKCE (Proof Key for Code Exchange) is required for authorization code flows. Defaults to true.",
-						Optional:            true,
-						Computed:            true,
-						Default:             booldefault.StaticBool(true),
+						// TODO: Support setting these attributes
+						Computed: true,
+						Default:  booldefault.StaticBool(true),
+						PlanModifiers: []planmodifier.Bool{
+							boolplanmodifier.UseStateForUnknown(),
+						},
 					},
 					"dcr_enabled": schema.BoolAttribute{
 						MarkdownDescription: "Whether Dynamic Client Registration (DCR) is enabled. Defaults to true.",
-						Optional:            true,
-						Computed:            true,
-						Default:             booldefault.StaticBool(true),
+						// TODO: Support setting these attributes
+						Computed: true,
+						Default:  booldefault.StaticBool(true),
+						PlanModifiers: []planmodifier.Bool{
+							boolplanmodifier.UseStateForUnknown(),
+						},
 					},
+				},
+				PlanModifiers: []planmodifier.Object{
+					objectplanmodifier.UseStateForUnknown(),
 				},
 			},
 		},
@@ -133,26 +151,6 @@ func (r *ZoneResource) Create(ctx context.Context, req resource.CreateRequest, r
 		createReq.Description = &desc
 	}
 
-	// Handle OAuth2 settings if provided
-	if !data.OAuth2.IsNull() && !data.OAuth2.IsUnknown() {
-		var oauth2Data OAuth2Model
-		diags := data.OAuth2.As(ctx, &oauth2Data, basetypes.ObjectAsOptions{})
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		if !oauth2Data.PkceRequired.IsNull() && !oauth2Data.PkceRequired.IsUnknown() {
-			pkce := oauth2Data.PkceRequired.ValueBool()
-			createReq.Oauth2PkceRequired = &pkce
-		}
-
-		if !oauth2Data.DcrEnabled.IsNull() && !oauth2Data.DcrEnabled.IsUnknown() {
-			dcr := oauth2Data.DcrEnabled.ValueBool()
-			createReq.Oauth2DcrEnabled = &dcr
-		}
-	}
-
 	// Create the zone
 	createResp, err := r.client.CreateZoneWithResponse(ctx, createReq)
 	if err != nil {
@@ -177,31 +175,13 @@ func (r *ZoneResource) Create(ctx context.Context, req resource.CreateRequest, r
 	zone := createResp.JSON200
 	data.ID = types.StringValue(zone.Id)
 	data.Name = types.StringValue(zone.Name)
-
-	if zone.Description != nil {
-		data.Description = types.StringPointerValue(zone.Description)
-	} else {
-		data.Description = types.StringNull()
+	data.Description = types.StringPointerValue(zone.Description)
+	oauth2Data := OAuth2Model{
+		PkceRequired: types.BoolPointerValue(zone.Oauth2PkceRequired),
+		DcrEnabled:   types.BoolPointerValue(zone.Oauth2DcrEnabled),
 	}
 
-	// Map OAuth2 fields back to nested block
-	oauth2Model := OAuth2Model{
-		PkceRequired: types.BoolNull(),
-		DcrEnabled:   types.BoolNull(),
-	}
-
-	if zone.Oauth2PkceRequired != nil {
-		oauth2Model.PkceRequired = types.BoolPointerValue(zone.Oauth2PkceRequired)
-	}
-
-	if zone.Oauth2DcrEnabled != nil {
-		oauth2Model.DcrEnabled = types.BoolPointerValue(zone.Oauth2DcrEnabled)
-	}
-
-	oauth2Obj, diags := types.ObjectValueFrom(ctx, map[string]attr.Type{
-		"pkce_required": types.BoolType,
-		"dcr_enabled":   types.BoolType,
-	}, oauth2Model)
+	oauth2Obj, diags := types.ObjectValueFrom(ctx, oauth2Data.AttributeTypes(), oauth2Data)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -252,31 +232,14 @@ func (r *ZoneResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	zone := getResp.JSON200
 	data.ID = types.StringValue(zone.Id)
 	data.Name = types.StringValue(zone.Name)
+	data.Description = types.StringPointerValue(zone.Description)
 
-	if zone.Description != nil {
-		data.Description = types.StringPointerValue(zone.Description)
-	} else {
-		data.Description = types.StringNull()
+	oauth2Data := OAuth2Model{
+		PkceRequired: types.BoolPointerValue(zone.Oauth2PkceRequired),
+		DcrEnabled:   types.BoolPointerValue(zone.Oauth2DcrEnabled),
 	}
 
-	// Map OAuth2 fields back to nested block
-	oauth2Model := OAuth2Model{
-		PkceRequired: types.BoolNull(),
-		DcrEnabled:   types.BoolNull(),
-	}
-
-	if zone.Oauth2PkceRequired != nil {
-		oauth2Model.PkceRequired = types.BoolPointerValue(zone.Oauth2PkceRequired)
-	}
-
-	if zone.Oauth2DcrEnabled != nil {
-		oauth2Model.DcrEnabled = types.BoolPointerValue(zone.Oauth2DcrEnabled)
-	}
-
-	oauth2Obj, diags := types.ObjectValueFrom(ctx, map[string]attr.Type{
-		"pkce_required": types.BoolType,
-		"dcr_enabled":   types.BoolType,
-	}, oauth2Model)
+	oauth2Obj, diags := types.ObjectValueFrom(ctx, oauth2Data.AttributeTypes(), oauth2Data)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -308,32 +271,7 @@ func (r *ZoneResource) Update(ctx context.Context, req resource.UpdateRequest, r
 
 	// Set description (including null to remove it)
 	if !data.Description.IsUnknown() {
-		if data.Description.IsNull() {
-			updateReq.Description = nil
-		} else {
-			desc := data.Description.ValueString()
-			updateReq.Description = &desc
-		}
-	}
-
-	// Handle OAuth2 settings if provided
-	if !data.OAuth2.IsNull() && !data.OAuth2.IsUnknown() {
-		var oauth2Data OAuth2Model
-		diags := data.OAuth2.As(ctx, &oauth2Data, basetypes.ObjectAsOptions{})
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		if !oauth2Data.PkceRequired.IsNull() && !oauth2Data.PkceRequired.IsUnknown() {
-			pkce := oauth2Data.PkceRequired.ValueBool()
-			updateReq.Oauth2PkceRequired = &pkce
-		}
-
-		if !oauth2Data.DcrEnabled.IsNull() && !oauth2Data.DcrEnabled.IsUnknown() {
-			dcr := oauth2Data.DcrEnabled.ValueBool()
-			updateReq.Oauth2DcrEnabled = &dcr
-		}
+		updateReq.Description = data.Description.ValueStringPointer()
 	}
 
 	// Update the zone
@@ -360,31 +298,14 @@ func (r *ZoneResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	zone := updateResp.JSON200
 	data.ID = types.StringValue(zone.Id)
 	data.Name = types.StringValue(zone.Name)
+	data.Description = types.StringPointerValue(zone.Description)
 
-	if zone.Description != nil {
-		data.Description = types.StringPointerValue(zone.Description)
-	} else {
-		data.Description = types.StringNull()
+	oauth2Data := OAuth2Model{
+		PkceRequired: types.BoolPointerValue(zone.Oauth2PkceRequired),
+		DcrEnabled:   types.BoolPointerValue(zone.Oauth2DcrEnabled),
 	}
 
-	// Map OAuth2 fields back to nested block
-	oauth2Model := OAuth2Model{
-		PkceRequired: types.BoolNull(),
-		DcrEnabled:   types.BoolNull(),
-	}
-
-	if zone.Oauth2PkceRequired != nil {
-		oauth2Model.PkceRequired = types.BoolPointerValue(zone.Oauth2PkceRequired)
-	}
-
-	if zone.Oauth2DcrEnabled != nil {
-		oauth2Model.DcrEnabled = types.BoolPointerValue(zone.Oauth2DcrEnabled)
-	}
-
-	oauth2Obj, diags := types.ObjectValueFrom(ctx, map[string]attr.Type{
-		"pkce_required": types.BoolType,
-		"dcr_enabled":   types.BoolType,
-	}, oauth2Model)
+	oauth2Obj, diags := types.ObjectValueFrom(ctx, oauth2Data.AttributeTypes(), oauth2Data)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
