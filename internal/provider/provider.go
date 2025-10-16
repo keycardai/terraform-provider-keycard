@@ -140,7 +140,10 @@ func (p *ScaffoldingProvider) Configure(ctx context.Context, req provider.Config
 	// Create authenticated HTTP client
 	httpClient := oauth2.NewClient(ctx, tokenSource)
 
-	apiClient, err := client.NewClient(endpoint, client.WithHTTPClient(httpClient))
+	// Wrap HTTP client with logging to capture request/response details
+	loggingClient := client.NewLoggingHTTPClient(httpClient)
+
+	apiClient, err := client.NewClient(endpoint, client.WithHTTPClient(loggingClient))
 	if err != nil {
 		resp.Diagnostics.AddError("error configuring HTTP client", err.Error())
 	}
