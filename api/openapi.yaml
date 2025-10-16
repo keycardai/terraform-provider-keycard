@@ -1,0 +1,334 @@
+openapi: 3.0.0
+info:
+  version: 0.0.1
+  title: Keycard API
+  description: "Keycard API for managing zones and their resources."
+servers:
+  - url: /
+paths:
+  /zones:
+    get:
+      operationId: listZones
+      summary: List zones
+      description: Returns a list of zones for the authenticated organization
+      parameters:
+        - name: slug
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Zone'
+                  page_info:
+                    $ref: '#/components/schemas/PageInfo'
+                required:
+                  - items
+                  - page_info
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Zones
+    post:
+      operationId: createZone
+      summary: Create zone
+      description: Creates a new zone for the authenticated organization. A zone is an isolated environment for IAM resources.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZoneCreate'
+      responses:
+        '200':
+          description: A zone for organizing resources within an organization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Zone'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Zones
+      x-public-api: true
+  '/zones/{id}':
+    get:
+      operationId: getZone
+      summary: Get zone
+      description: Returns details of a specific zone by ID
+      parameters:
+        - name: id
+          in: path
+          description: Zone ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A zone for organizing resources within an organization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Zone'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Zones
+    patch:
+      operationId: updateZone
+      summary: Update zone
+      description: Updates a zone's configuration (partial update)
+      parameters:
+        - name: id
+          in: path
+          description: Zone ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZoneUpdate'
+      responses:
+        '200':
+          description: A zone for organizing resources within an organization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Zone'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Zones
+    delete:
+      operationId: deleteZone
+      summary: Delete zone
+      description: Permanently deletes a zone and all its associated resources
+      parameters:
+        - name: id
+          in: path
+          description: Zone ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Default Response
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Zones
+components:
+  schemas:
+    PageInfo:
+      description: Pagination information
+      type: object
+      properties:
+        has_next_page:
+          description: Whether there are more items after the current page
+          type: boolean
+        has_previous_page:
+          description: Whether there are items before the current page
+          type: boolean
+        start_cursor:
+          description: Cursor pointing to the first item in the current page
+          type: string
+          nullable: true
+        end_cursor:
+          description: Cursor pointing to the last item in the current page
+          type: string
+          nullable: true
+      additionalProperties: false
+      required:
+        - has_next_page
+        - has_previous_page
+      title: Page Info
+    Error:
+      description: Error response
+      type: object
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+        status:
+          type: number
+      required:
+        - message
+        - code
+        - status
+      title: Error
+    Zone:
+      description: A zone for organizing resources within an organization
+      type: object
+      properties:
+        id:
+          description: Unique identifier of the zone
+          type: string
+        organization_id:
+          description: Organization that owns this zone
+          type: string
+        slug:
+          description: 'URL-safe identifier, unique within the zone'
+          type: string
+          maxLength: 63
+          minLength: 1
+          pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+        name:
+          description: Human-readable name
+          type: string
+          maxLength: 255
+          minLength: 1
+        description:
+          description: Human-readable description
+          type: string
+          maxLength: 2048
+          nullable: true
+        cname:
+          description: Custom domain name (CNAME) for the zone
+          type: string
+          format: hostname
+          maxLength: 255
+        zone_identity_provider_identifier:
+          description: 'User specified identifier, unique within the zone'
+          type: string
+          maxLength: 2048
+          minLength: 1
+        vault_provider_identifier:
+          description: 'User specified identifier, unique within the zone'
+          type: string
+          maxLength: 2048
+          minLength: 1
+        user_authentication_provider_id:
+          description: Provider ID configured for user login
+          type: string
+        oauth2_pkce_required:
+          description: Whether PKCE is required for authorization code flows
+          type: boolean
+        oauth2_dcr_enabled:
+          description: Whether Dynamic Client Registration is enabled
+          type: boolean
+        created_at:
+          description: Entity creation timestamp
+          type: string
+          format: date-time
+        updated_at:
+          description: Entity update timestamp
+          type: string
+          format: date-time
+      required:
+        - id
+        - organization_id
+        - slug
+        - name
+        - zone_identity_provider_identifier
+        - vault_provider_identifier
+        - created_at
+        - updated_at
+      title: Zone
+    ZoneCreate:
+      description: Schema for creating a new zone
+      type: object
+      properties:
+        name:
+          description: Human-readable name
+          type: string
+          maxLength: 255
+          minLength: 1
+        description:
+          description: Human-readable description
+          type: string
+          maxLength: 2048
+          nullable: true
+        cname:
+          description: Custom domain name (CNAME) for the zone
+          type: string
+          format: hostname
+          maxLength: 255
+        oauth2_pkce_required:
+          description: Whether PKCE is required for authorization code flows
+          type: boolean
+          default: true
+        oauth2_dcr_enabled:
+          description: Whether Dynamic Client Registration is enabled
+          type: boolean
+          default: true
+      required:
+        - name
+      title: Zone Create
+    ZoneUpdate:
+      description: Schema for updating an existing zone (partial update)
+      type: object
+      properties:
+        name:
+          description: Human-readable name
+          type: string
+          maxLength: 255
+          minLength: 1
+        description:
+          description: Human-readable description
+          type: string
+          maxLength: 2048
+          nullable: true
+        cname:
+          description: Custom domain name (CNAME) for the zone (set to null to remove)
+          type: string
+          format: hostname
+          maxLength: 255
+          nullable: true
+        user_authentication_provider_id:
+          description: Provider ID to configure for user login (set to null to unset)
+          type: string
+          nullable: true
+        oauth2_pkce_required:
+          description: Whether PKCE is required for authorization code flows
+          type: boolean
+        oauth2_dcr_enabled:
+          description: Whether Dynamic Client Registration is enabled
+          type: boolean
+      title: Zone Update
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Bearer Token Authentication
