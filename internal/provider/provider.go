@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package provider
 
 import (
@@ -143,7 +140,7 @@ func (p *ScaffoldingProvider) Configure(ctx context.Context, req provider.Config
 	// Wrap HTTP client with logging to capture request/response details
 	loggingClient := client.NewLoggingHTTPClient(httpClient)
 
-	apiClient, err := client.NewClient(endpoint, client.WithHTTPClient(loggingClient))
+	apiClient, err := client.NewClientWithResponses(endpoint, client.WithHTTPClient(loggingClient))
 	if err != nil {
 		resp.Diagnostics.AddError("error configuring HTTP client", err.Error())
 	}
@@ -157,7 +154,9 @@ func (p *ScaffoldingProvider) Configure(ctx context.Context, req provider.Config
 }
 
 func (p *ScaffoldingProvider) Resources(ctx context.Context) []func() resource.Resource {
-	return []func() resource.Resource{}
+	return []func() resource.Resource{
+		NewZoneResource,
+	}
 }
 
 func (p *ScaffoldingProvider) EphemeralResources(ctx context.Context) []func() ephemeral.EphemeralResource {

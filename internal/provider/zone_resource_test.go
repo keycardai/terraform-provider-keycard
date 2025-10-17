@@ -1,0 +1,248 @@
+package provider
+
+import (
+	"fmt"
+	"testing"
+
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+)
+
+func TestAccZoneResource_basic(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create and Read testing
+			{
+				Config: testAccZoneResourceConfig_basic(rName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "id"),
+					// Verify OAuth2 values are populated by the API
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.pkce_required"),
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.dcr_enabled"),
+				),
+			},
+			// ImportState testing
+			{
+				ResourceName:      "keycard_zone.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update and Read testing
+			{
+				Config: testAccZoneResourceConfig_basic(rName + "-updated"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName+"-updated"),
+					// Verify OAuth2 values are still present after update
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.pkce_required"),
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.dcr_enabled"),
+				),
+			},
+			// Delete testing automatically occurs in TestCase
+		},
+	})
+}
+
+func TestAccZoneResource_withDescription(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create with description
+			{
+				Config: testAccZoneResourceConfig_withDescription(rName, "Test description"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
+					resource.TestCheckResourceAttr("keycard_zone.test", "description", "Test description"),
+				),
+			},
+			// Update description
+			{
+				Config: testAccZoneResourceConfig_withDescription(rName, "Updated description"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_zone.test", "description", "Updated description"),
+				),
+			},
+			// Remove description
+			{
+				Config: testAccZoneResourceConfig_basic(rName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckNoResourceAttr("keycard_zone.test", "description"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccZoneResource_complete(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create with all fields
+			{
+				Config: testAccZoneResourceConfig_withDescription(rName, "Complete zone"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
+					resource.TestCheckResourceAttr("keycard_zone.test", "description", "Complete zone"),
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "id"),
+					// Verify OAuth2 values are set by the API (computed)
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.pkce_required"),
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.dcr_enabled"),
+				),
+			},
+			// ImportState testing
+			{
+				ResourceName:      "keycard_zone.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccZoneResource_oauth2Custom(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create with custom OAuth2 settings
+			{
+				Config: testAccZoneResourceConfig_withOAuth2(rName, false, false),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
+					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.pkce_required", "false"),
+					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.dcr_enabled", "false"),
+				),
+			},
+			// ImportState testing
+			{
+				ResourceName:      "keycard_zone.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccZoneResource_oauth2Updates(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create with OAuth2 disabled
+			{
+				Config: testAccZoneResourceConfig_withOAuth2(rName, false, false),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.pkce_required", "false"),
+					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.dcr_enabled", "false"),
+				),
+			},
+			// Update OAuth2 to enable PKCE only
+			{
+				Config: testAccZoneResourceConfig_withOAuth2(rName, true, false),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.pkce_required", "true"),
+					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.dcr_enabled", "false"),
+				),
+			},
+			// Update OAuth2 to enable both
+			{
+				Config: testAccZoneResourceConfig_withOAuth2(rName, true, true),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.pkce_required", "true"),
+					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.dcr_enabled", "true"),
+				),
+			},
+			// Update name and verify OAuth2 settings persist
+			{
+				Config: testAccZoneResourceConfig_withOAuth2(rName+"-updated", true, true),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName+"-updated"),
+					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.pkce_required", "true"),
+					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.dcr_enabled", "true"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccZoneResource_oauth2Defaults(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create without specifying OAuth2 block
+			{
+				Config: testAccZoneResourceConfig_basic(rName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
+					// Verify defaults are applied (both should be true)
+					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.pkce_required", "true"),
+					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.dcr_enabled", "true"),
+				),
+			},
+			// Add OAuth2 block with explicit values
+			{
+				Config: testAccZoneResourceConfig_withOAuth2(rName, false, true),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.pkce_required", "false"),
+					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.dcr_enabled", "true"),
+				),
+			},
+			// Remove OAuth2 block (should retain last set values)
+			{
+				Config: testAccZoneResourceConfig_basic(rName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					// Values should persist from previous state
+					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.pkce_required", "false"),
+					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.dcr_enabled", "true"),
+				),
+			},
+		},
+	})
+}
+
+func testAccZoneResourceConfig_basic(name string) string {
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+}
+`, name)
+}
+
+func testAccZoneResourceConfig_withDescription(name, description string) string {
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name        = %[1]q
+  description = %[2]q
+}
+`, name, description)
+}
+
+func testAccZoneResourceConfig_withOAuth2(name string, pkceRequired, dcrEnabled bool) string {
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+
+  oauth2 = {
+    pkce_required = %[2]t
+    dcr_enabled   = %[3]t
+  }
+}
+`, name, pkceRequired, dcrEnabled)
+}
