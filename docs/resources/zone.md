@@ -35,16 +35,16 @@ resource "keycard_zone" "with_description" {
 ### Optional
 
 - `description` (String) Optional description of the zone's purpose.
+- `oauth2` (Attributes) OAuth2 configuration for the zone. (see [below for nested schema](#nestedatt--oauth2))
 
 ### Read-Only
 
 - `id` (String) Unique identifier of the zone.
-- `oauth2` (Attributes) OAuth2 configuration for the zone. (see [below for nested schema](#nestedatt--oauth2))
 
 <a id="nestedatt--oauth2"></a>
 ### Nested Schema for `oauth2`
 
-Read-Only:
+Optional:
 
 - `dcr_enabled` (Boolean) Whether Dynamic Client Registration (DCR) is enabled. Defaults to true.
 - `pkce_required` (Boolean) Whether PKCE (Proof Key for Code Exchange) is required for authorization code flows. Defaults to true.

@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
 )
 
@@ -77,23 +78,23 @@ func (r *ZoneResource) Schema(ctx context.Context, req resource.SchemaRequest, r
 			},
 			"oauth2": schema.SingleNestedAttribute{
 				MarkdownDescription: "OAuth2 configuration for the zone.",
-				// TODO: Support setting these attributes
-				Computed: true,
+				Optional:            true,
+				Computed:            true,
 				Attributes: map[string]schema.Attribute{
 					"pkce_required": schema.BoolAttribute{
 						MarkdownDescription: "Whether PKCE (Proof Key for Code Exchange) is required for authorization code flows. Defaults to true.",
-						// TODO: Support setting these attributes
-						Computed: true,
-						Default:  booldefault.StaticBool(true),
+						Optional:            true,
+						Computed:            true,
+						Default:             booldefault.StaticBool(true),
 						PlanModifiers: []planmodifier.Bool{
 							boolplanmodifier.UseStateForUnknown(),
 						},
 					},
 					"dcr_enabled": schema.BoolAttribute{
 						MarkdownDescription: "Whether Dynamic Client Registration (DCR) is enabled. Defaults to true.",
-						// TODO: Support setting these attributes
-						Computed: true,
-						Default:  booldefault.StaticBool(true),
+						Optional:            true,
+						Computed:            true,
+						Default:             booldefault.StaticBool(true),
 						PlanModifiers: []planmodifier.Bool{
 							boolplanmodifier.UseStateForUnknown(),
 						},
@@ -146,6 +147,24 @@ func (r *ZoneResource) Create(ctx context.Context, req resource.CreateRequest, r
 	if !data.Description.IsNull() && !data.Description.IsUnknown() {
 		desc := data.Description.ValueString()
 		createReq.Description = &desc
+	}
+
+	// Set OAuth2 configuration if provided
+	if !data.OAuth2.IsNull() && !data.OAuth2.IsUnknown() {
+		var oauth2Data OAuth2Model
+		diags := data.OAuth2.As(ctx, &oauth2Data, basetypes.ObjectAsOptions{})
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		if !oauth2Data.PkceRequired.IsNull() && !oauth2Data.PkceRequired.IsUnknown() {
+			createReq.Oauth2PkceRequired = oauth2Data.PkceRequired.ValueBoolPointer()
+		}
+
+		if !oauth2Data.DcrEnabled.IsNull() && !oauth2Data.DcrEnabled.IsUnknown() {
+			createReq.Oauth2DcrEnabled = oauth2Data.DcrEnabled.ValueBoolPointer()
+		}
 	}
 
 	// Create the zone
@@ -269,6 +288,24 @@ func (r *ZoneResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	// Set description (including null to remove it)
 	if !data.Description.IsUnknown() {
 		updateReq.Description = data.Description.ValueStringPointer()
+	}
+
+	// Set OAuth2 configuration if provided
+	if !data.OAuth2.IsUnknown() {
+		var oauth2Data OAuth2Model
+		diags := data.OAuth2.As(ctx, &oauth2Data, basetypes.ObjectAsOptions{})
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		if !oauth2Data.PkceRequired.IsNull() && !oauth2Data.PkceRequired.IsUnknown() {
+			updateReq.Oauth2PkceRequired = oauth2Data.PkceRequired.ValueBoolPointer()
+		}
+
+		if !oauth2Data.DcrEnabled.IsNull() && !oauth2Data.DcrEnabled.IsUnknown() {
+			updateReq.Oauth2DcrEnabled = oauth2Data.DcrEnabled.ValueBoolPointer()
+		}
 	}
 
 	// Update the zone
