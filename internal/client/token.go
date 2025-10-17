@@ -17,6 +17,7 @@ func NewTokenSource(ctx context.Context, clientID, clientSecret, organizationID,
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		TokenURL:     tokenURL,
+		AuthStyle:    oauth2.AuthStyleInParams,
 	}
 
 	return config.TokenSource(ctx)
