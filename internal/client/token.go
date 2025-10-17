@@ -25,6 +25,8 @@ func NewTokenSource(clientID, clientSecret, organizationID, endpoint string) oau
 
 	// Convert to standard HTTP client
 	standardHTTPClient := retryClient.StandardClient()
+	// TODO: determine what this should actually be
+	standardHTTPClient.Timeout = 5 * time.Second
 
 	// Add the HTTP client to the context for OAuth2 to use
 	// This ensures token fetches benefit from retry logic

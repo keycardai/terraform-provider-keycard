@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"golang.org/x/oauth2"
 )
@@ -29,6 +30,10 @@ func NewAPIClient(ctx context.Context, config Config) (*ClientWithResponses, err
 	// Create OAuth2-authenticated HTTP client
 	// This client will automatically add Bearer tokens to all requests
 	oauthClient := oauth2.NewClient(ctx, tokenSource)
+
+	// TODO: determine what this should actually be once we can determine where the
+	// acceptance tests are failing.
+	oauthClient.Timeout = 5 * time.Second
 
 	// Wrap with our logging client to capture request/response details
 	loggingClient := NewLoggingHTTPClient(oauthClient)
