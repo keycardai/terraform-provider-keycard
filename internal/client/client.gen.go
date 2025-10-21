@@ -25,6 +25,28 @@ const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
 
+// Defines values for ProviderType.
+const (
+	ProviderTypeExternal         ProviderType = "external"
+	ProviderTypeKeycardDirectory ProviderType = "keycard-directory"
+	ProviderTypeKeycardVault     ProviderType = "keycard-vault"
+)
+
+// Defines values for ListProvidersParamsType0.
+const (
+	ListProvidersParamsType0External ListProvidersParamsType0 = "external"
+)
+
+// Defines values for ListProvidersParamsType1.
+const (
+	KeycardVault ListProvidersParamsType1 = "keycard-vault"
+)
+
+// Defines values for ListProvidersParamsType2.
+const (
+	KeycardDirectory ListProvidersParamsType2 = "keycard-directory"
+)
+
 // Error Error response
 type Error struct {
 	Code    string  `json:"code"`
@@ -45,6 +67,128 @@ type PageInfo struct {
 
 	// StartCursor Cursor pointing to the first item in the current page
 	StartCursor *string `json:"start_cursor"`
+}
+
+// Provider A Provider is a system that supplies access to Resources and allows actors (Users or Applications) to authenticate.
+type Provider struct {
+	// ClientId OAuth 2.0 client identifier
+	ClientId *string `json:"client_id"`
+
+	// ClientSecretSet Indicates whether a client secret is configured
+	ClientSecretSet *bool `json:"client_secret_set,omitempty"`
+
+	// CreatedAt Entity creation timestamp
+	CreatedAt time.Time `json:"created_at"`
+
+	// Description Human-readable description
+	Description *string `json:"description"`
+
+	// Id Unique identifier of the provider
+	Id string `json:"id"`
+
+	// Identifier User specified identifier, unique within the zone
+	Identifier string `json:"identifier"`
+
+	// Name Human-readable name
+	Name string `json:"name"`
+
+	// OrganizationId Organization that owns this provider
+	OrganizationId string `json:"organization_id"`
+
+	// Protocols Protocol-specific configuration
+	Protocols *struct {
+		// Oauth2 OAuth 2.0 / OpenID Connect protocol configuration
+		Oauth2 *struct {
+			AuthorizationEndpoint         *string   `json:"authorization_endpoint"`
+			CodeChallengeMethodsSupported *[]string `json:"code_challenge_methods_supported"`
+			JwksUri                       *string   `json:"jwks_uri"`
+			RegistrationEndpoint          *string   `json:"registration_endpoint"`
+			ScopesSupported               *[]string `json:"scopes_supported"`
+			TokenEndpoint                 *string   `json:"token_endpoint"`
+			UserinfoEndpoint              *string   `json:"userinfo_endpoint"`
+		} `json:"oauth2"`
+	} `json:"protocols"`
+
+	// Slug URL-safe identifier, unique within the zone
+	Slug string        `json:"slug"`
+	Type *ProviderType `json:"type,omitempty"`
+
+	// UpdatedAt Entity update timestamp
+	UpdatedAt time.Time `json:"updated_at"`
+
+	// ZoneId Zone this provider belongs to
+	ZoneId string `json:"zone_id"`
+}
+
+// ProviderType defines model for Provider.Type.
+type ProviderType string
+
+// ProviderCreate Schema for creating a new provider
+type ProviderCreate struct {
+	// ClientId OAuth 2.0 client identifier
+	ClientId *string `json:"client_id,omitempty"`
+
+	// ClientSecret OAuth 2.0 client secret (will be encrypted and stored securely)
+	ClientSecret *string `json:"client_secret,omitempty"`
+
+	// Description Human-readable description
+	Description *string `json:"description"`
+
+	// Identifier User specified identifier, unique within the zone
+	Identifier string `json:"identifier"`
+
+	// Name Human-readable name
+	Name string `json:"name"`
+
+	// Protocols Protocol-specific configuration
+	Protocols *struct {
+		// Oauth2 OAuth 2.0 / OpenID Connect protocol configuration
+		Oauth2 *struct {
+			AuthorizationEndpoint         *string   `json:"authorization_endpoint,omitempty"`
+			CodeChallengeMethodsSupported *[]string `json:"code_challenge_methods_supported,omitempty"`
+			JwksUri                       *string   `json:"jwks_uri,omitempty"`
+			RegistrationEndpoint          *string   `json:"registration_endpoint,omitempty"`
+			ScopesSupported               *[]string `json:"scopes_supported,omitempty"`
+			TokenEndpoint                 *string   `json:"token_endpoint,omitempty"`
+			UserinfoEndpoint              *string   `json:"userinfo_endpoint,omitempty"`
+		} `json:"oauth2,omitempty"`
+	} `json:"protocols,omitempty"`
+}
+
+// ProviderUpdate Schema for updating an existing provider
+type ProviderUpdate struct {
+	// ClientId OAuth 2.0 client identifier. Set to null to remove.
+	ClientId *string `json:"client_id"`
+
+	// ClientSecret OAuth 2.0 client secret (will be encrypted and stored securely). Set to null to remove.
+	ClientSecret *string `json:"client_secret"`
+
+	// Description Human-readable description
+	Description *string `json:"description"`
+
+	// Identifier User specified identifier, unique within the zone
+	Identifier *string `json:"identifier,omitempty"`
+
+	// Name Human-readable name
+	Name *string `json:"name,omitempty"`
+
+	// Protocols Protocol-specific configuration. Set to null to remove all protocols.
+	Protocols *struct {
+		// Oauth2 OAuth 2.0 protocol configuration. Set to null to remove all OAuth2 config.
+		Oauth2 *struct {
+			AuthorizationEndpoint         *string   `json:"authorization_endpoint"`
+			CodeChallengeMethodsSupported *[]string `json:"code_challenge_methods_supported"`
+			JwksUri                       *string   `json:"jwks_uri"`
+			RegistrationEndpoint          *string   `json:"registration_endpoint"`
+			ScopesSupported               *[]string `json:"scopes_supported"`
+			TokenEndpoint                 *string   `json:"token_endpoint"`
+		} `json:"oauth2"`
+
+		// Openid OpenID Connect protocol configuration. Set to null to remove all OpenID config.
+		Openid *struct {
+			UserinfoEndpoint *string `json:"userinfo_endpoint"`
+		} `json:"openid"`
+	} `json:"protocols"`
 }
 
 // Zone A zone for organizing resources within an organization
@@ -160,11 +304,37 @@ type ListZonesParams struct {
 	Limit  *int    `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListProvidersParams defines parameters for ListProviders.
+type ListProvidersParams struct {
+	Slug       *string `form:"slug,omitempty" json:"slug,omitempty"`
+	Identifier *string `form:"identifier,omitempty" json:"identifier,omitempty"`
+	Type       *struct {
+		union json.RawMessage
+	} `form:"type,omitempty" json:"type,omitempty"`
+	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Limit  *int    `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListProvidersParamsType0 defines parameters for ListProviders.
+type ListProvidersParamsType0 string
+
+// ListProvidersParamsType1 defines parameters for ListProviders.
+type ListProvidersParamsType1 string
+
+// ListProvidersParamsType2 defines parameters for ListProviders.
+type ListProvidersParamsType2 string
+
 // CreateZoneJSONRequestBody defines body for CreateZone for application/json ContentType.
 type CreateZoneJSONRequestBody = ZoneCreate
 
 // UpdateZoneJSONRequestBody defines body for UpdateZone for application/json ContentType.
 type UpdateZoneJSONRequestBody = ZoneUpdate
+
+// CreateProviderJSONRequestBody defines body for CreateProvider for application/json ContentType.
+type CreateProviderJSONRequestBody = ProviderCreate
+
+// UpdateProviderJSONRequestBody defines body for UpdateProvider for application/json ContentType.
+type UpdateProviderJSONRequestBody = ProviderUpdate
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -257,6 +427,25 @@ type ClientInterface interface {
 	UpdateZoneWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	UpdateZone(ctx context.Context, id string, body UpdateZoneJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListProviders request
+	ListProviders(ctx context.Context, zoneId string, params *ListProvidersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateProviderWithBody request with any body
+	CreateProviderWithBody(ctx context.Context, zoneId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateProvider(ctx context.Context, zoneId string, body CreateProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteProvider request
+	DeleteProvider(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetProvider request
+	GetProvider(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateProviderWithBody request with any body
+	UpdateProviderWithBody(ctx context.Context, zoneId string, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateProvider(ctx context.Context, zoneId string, id string, body UpdateProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) ListZones(ctx context.Context, params *ListZonesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -333,6 +522,90 @@ func (c *Client) UpdateZoneWithBody(ctx context.Context, id string, contentType 
 
 func (c *Client) UpdateZone(ctx context.Context, id string, body UpdateZoneJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateZoneRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListProviders(ctx context.Context, zoneId string, params *ListProvidersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListProvidersRequest(c.Server, zoneId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateProviderWithBody(ctx context.Context, zoneId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateProviderRequestWithBody(c.Server, zoneId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateProvider(ctx context.Context, zoneId string, body CreateProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateProviderRequest(c.Server, zoneId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteProvider(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteProviderRequest(c.Server, zoneId, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetProvider(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetProviderRequest(c.Server, zoneId, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateProviderWithBody(ctx context.Context, zoneId string, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateProviderRequestWithBody(c.Server, zoneId, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateProvider(ctx context.Context, zoneId string, id string, body UpdateProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateProviderRequest(c.Server, zoneId, id, body)
 	if err != nil {
 		return nil, err
 	}
@@ -579,6 +852,309 @@ func NewUpdateZoneRequestWithBody(server string, id string, contentType string, 
 	return req, nil
 }
 
+// NewListProvidersRequest generates requests for ListProviders
+func NewListProvidersRequest(server string, zoneId string, params *ListProvidersParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/providers", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Slug != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "slug", runtime.ParamLocationQuery, *params.Slug); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Identifier != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "identifier", runtime.ParamLocationQuery, *params.Identifier); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Type != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "type", runtime.ParamLocationQuery, *params.Type); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cursor", runtime.ParamLocationQuery, *params.Cursor); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateProviderRequest calls the generic CreateProvider builder with application/json body
+func NewCreateProviderRequest(server string, zoneId string, body CreateProviderJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateProviderRequestWithBody(server, zoneId, "application/json", bodyReader)
+}
+
+// NewCreateProviderRequestWithBody generates requests for CreateProvider with any type of body
+func NewCreateProviderRequestWithBody(server string, zoneId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/providers", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteProviderRequest generates requests for DeleteProvider
+func NewDeleteProviderRequest(server string, zoneId string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/providers/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetProviderRequest generates requests for GetProvider
+func NewGetProviderRequest(server string, zoneId string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/providers/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateProviderRequest calls the generic UpdateProvider builder with application/json body
+func NewUpdateProviderRequest(server string, zoneId string, id string, body UpdateProviderJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateProviderRequestWithBody(server, zoneId, id, "application/json", bodyReader)
+}
+
+// NewUpdateProviderRequestWithBody generates requests for UpdateProvider with any type of body
+func NewUpdateProviderRequestWithBody(server string, zoneId string, id string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/providers/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -640,6 +1216,25 @@ type ClientWithResponsesInterface interface {
 	UpdateZoneWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateZoneResponse, error)
 
 	UpdateZoneWithResponse(ctx context.Context, id string, body UpdateZoneJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateZoneResponse, error)
+
+	// ListProvidersWithResponse request
+	ListProvidersWithResponse(ctx context.Context, zoneId string, params *ListProvidersParams, reqEditors ...RequestEditorFn) (*ListProvidersResponse, error)
+
+	// CreateProviderWithBodyWithResponse request with any body
+	CreateProviderWithBodyWithResponse(ctx context.Context, zoneId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateProviderResponse, error)
+
+	CreateProviderWithResponse(ctx context.Context, zoneId string, body CreateProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateProviderResponse, error)
+
+	// DeleteProviderWithResponse request
+	DeleteProviderWithResponse(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*DeleteProviderResponse, error)
+
+	// GetProviderWithResponse request
+	GetProviderWithResponse(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*GetProviderResponse, error)
+
+	// UpdateProviderWithBodyWithResponse request with any body
+	UpdateProviderWithBodyWithResponse(ctx context.Context, zoneId string, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateProviderResponse, error)
+
+	UpdateProviderWithResponse(ctx context.Context, zoneId string, id string, body UpdateProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateProviderResponse, error)
 }
 
 type ListZonesResponse struct {
@@ -761,6 +1356,125 @@ func (r UpdateZoneResponse) StatusCode() int {
 	return 0
 }
 
+type ListProvidersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Items []Provider `json:"items"`
+
+		// PageInfo Pagination information
+		PageInfo PageInfo `json:"page_info"`
+	}
+	JSONDefault *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r ListProvidersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListProvidersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateProviderResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Provider
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateProviderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateProviderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteProviderResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteProviderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteProviderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetProviderResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Provider
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GetProviderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetProviderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateProviderResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Provider
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateProviderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateProviderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // ListZonesWithResponse request returning *ListZonesResponse
 func (c *ClientWithResponses) ListZonesWithResponse(ctx context.Context, params *ListZonesParams, reqEditors ...RequestEditorFn) (*ListZonesResponse, error) {
 	rsp, err := c.ListZones(ctx, params, reqEditors...)
@@ -820,6 +1534,67 @@ func (c *ClientWithResponses) UpdateZoneWithResponse(ctx context.Context, id str
 		return nil, err
 	}
 	return ParseUpdateZoneResponse(rsp)
+}
+
+// ListProvidersWithResponse request returning *ListProvidersResponse
+func (c *ClientWithResponses) ListProvidersWithResponse(ctx context.Context, zoneId string, params *ListProvidersParams, reqEditors ...RequestEditorFn) (*ListProvidersResponse, error) {
+	rsp, err := c.ListProviders(ctx, zoneId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListProvidersResponse(rsp)
+}
+
+// CreateProviderWithBodyWithResponse request with arbitrary body returning *CreateProviderResponse
+func (c *ClientWithResponses) CreateProviderWithBodyWithResponse(ctx context.Context, zoneId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateProviderResponse, error) {
+	rsp, err := c.CreateProviderWithBody(ctx, zoneId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateProviderResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateProviderWithResponse(ctx context.Context, zoneId string, body CreateProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateProviderResponse, error) {
+	rsp, err := c.CreateProvider(ctx, zoneId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateProviderResponse(rsp)
+}
+
+// DeleteProviderWithResponse request returning *DeleteProviderResponse
+func (c *ClientWithResponses) DeleteProviderWithResponse(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*DeleteProviderResponse, error) {
+	rsp, err := c.DeleteProvider(ctx, zoneId, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteProviderResponse(rsp)
+}
+
+// GetProviderWithResponse request returning *GetProviderResponse
+func (c *ClientWithResponses) GetProviderWithResponse(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*GetProviderResponse, error) {
+	rsp, err := c.GetProvider(ctx, zoneId, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetProviderResponse(rsp)
+}
+
+// UpdateProviderWithBodyWithResponse request with arbitrary body returning *UpdateProviderResponse
+func (c *ClientWithResponses) UpdateProviderWithBodyWithResponse(ctx context.Context, zoneId string, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateProviderResponse, error) {
+	rsp, err := c.UpdateProviderWithBody(ctx, zoneId, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateProviderResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateProviderWithResponse(ctx context.Context, zoneId string, id string, body UpdateProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateProviderResponse, error) {
+	rsp, err := c.UpdateProvider(ctx, zoneId, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateProviderResponse(rsp)
 }
 
 // ParseListZonesResponse parses an HTTP response from a ListZonesWithResponse call
@@ -985,40 +1760,215 @@ func ParseUpdateZoneResponse(rsp *http.Response) (*UpdateZoneResponse, error) {
 	return response, nil
 }
 
+// ParseListProvidersResponse parses an HTTP response from a ListProvidersWithResponse call
+func ParseListProvidersResponse(rsp *http.Response) (*ListProvidersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListProvidersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Items []Provider `json:"items"`
+
+			// PageInfo Pagination information
+			PageInfo PageInfo `json:"page_info"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateProviderResponse parses an HTTP response from a CreateProviderWithResponse call
+func ParseCreateProviderResponse(rsp *http.Response) (*CreateProviderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateProviderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Provider
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteProviderResponse parses an HTTP response from a DeleteProviderWithResponse call
+func ParseDeleteProviderResponse(rsp *http.Response) (*DeleteProviderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteProviderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetProviderResponse parses an HTTP response from a GetProviderWithResponse call
+func ParseGetProviderResponse(rsp *http.Response) (*GetProviderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetProviderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Provider
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateProviderResponse parses an HTTP response from a UpdateProviderWithResponse call
+func ParseUpdateProviderResponse(rsp *http.Response) (*UpdateProviderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateProviderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Provider
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"wuuGPxXmfMYnfH21/m8AAAD//7aznN3TIQAA",
+	"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",
+	"Mx7go7FFAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
