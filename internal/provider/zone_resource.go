@@ -193,8 +193,8 @@ func (r *ZoneResource) Create(ctx context.Context, req resource.CreateRequest, r
 	data.Name = types.StringValue(zone.Name)
 	data.Description = types.StringPointerValue(zone.Description)
 	oauth2Data := OAuth2Model{
-		PkceRequired: types.BoolPointerValue(zone.Oauth2PkceRequired),
-		DcrEnabled:   types.BoolPointerValue(zone.Oauth2DcrEnabled),
+		PkceRequired: types.BoolValue(zone.Oauth2PkceRequired),
+		DcrEnabled:   types.BoolValue(zone.Oauth2DcrEnabled),
 	}
 
 	oauth2Obj, diags := types.ObjectValueFrom(ctx, oauth2Data.AttributeTypes(), oauth2Data)
@@ -251,8 +251,8 @@ func (r *ZoneResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	data.Description = types.StringPointerValue(zone.Description)
 
 	oauth2Data := OAuth2Model{
-		PkceRequired: types.BoolPointerValue(zone.Oauth2PkceRequired),
-		DcrEnabled:   types.BoolPointerValue(zone.Oauth2DcrEnabled),
+		PkceRequired: types.BoolValue(zone.Oauth2PkceRequired),
+		DcrEnabled:   types.BoolValue(zone.Oauth2DcrEnabled),
 	}
 
 	oauth2Obj, diags := types.ObjectValueFrom(ctx, oauth2Data.AttributeTypes(), oauth2Data)
@@ -335,8 +335,8 @@ func (r *ZoneResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	data.Description = types.StringPointerValue(zone.Description)
 
 	oauth2Data := OAuth2Model{
-		PkceRequired: types.BoolPointerValue(zone.Oauth2PkceRequired),
-		DcrEnabled:   types.BoolPointerValue(zone.Oauth2DcrEnabled),
+		PkceRequired: types.BoolValue(zone.Oauth2PkceRequired),
+		DcrEnabled:   types.BoolValue(zone.Oauth2DcrEnabled),
 	}
 
 	oauth2Obj, diags := types.ObjectValueFrom(ctx, oauth2Data.AttributeTypes(), oauth2Data)
