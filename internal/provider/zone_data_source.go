@@ -55,6 +55,14 @@ func (d *ZoneDataSource) Schema(ctx context.Context, req datasource.SchemaReques
 						MarkdownDescription: "Whether Dynamic Client Registration (DCR) is enabled.",
 						Computed:            true,
 					},
+					"issuer_uri": schema.StringAttribute{
+						MarkdownDescription: "OAuth 2.0 issuer URI for this zone.",
+						Computed:            true,
+					},
+					"redirect_uri": schema.StringAttribute{
+						MarkdownDescription: "OAuth 2.0 redirect URI for this zone.",
+						Computed:            true,
+					},
 				},
 			},
 		},
@@ -128,6 +136,8 @@ func (d *ZoneDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 	oauth2Data := OAuth2Model{
 		PkceRequired: types.BoolValue(zone.Oauth2PkceRequired),
 		DcrEnabled:   types.BoolValue(zone.Oauth2DcrEnabled),
+		IssuerUri:    types.StringValue(zone.Protocols.Oauth2.Issuer),
+		RedirectUri:  types.StringValue(zone.Protocols.Oauth2.RedirectUri),
 	}
 
 	oauth2Obj, diags := types.ObjectValueFrom(ctx, oauth2Data.AttributeTypes(), oauth2Data)

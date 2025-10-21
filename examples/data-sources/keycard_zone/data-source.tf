@@ -16,6 +16,8 @@ output "zone_oauth2_settings" {
   value = {
     pkce_required = data.keycard_zone.example.oauth2.pkce_required
     dcr_enabled   = data.keycard_zone.example.oauth2.dcr_enabled
+    issuer_uri    = data.keycard_zone.example.oauth2.issuer_uri
+    redirect_uri  = data.keycard_zone.example.oauth2.redirect_uri
   }
 }
 

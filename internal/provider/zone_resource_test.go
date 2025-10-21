@@ -24,6 +24,9 @@ func TestAccZoneResource_basic(t *testing.T) {
 					// Verify OAuth2 values are populated by the API
 					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.pkce_required"),
 					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.dcr_enabled"),
+					// Verify OAuth2 protocol URIs are populated by the API
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.issuer_uri"),
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.redirect_uri"),
 				),
 			},
 			// ImportState testing
@@ -40,6 +43,9 @@ func TestAccZoneResource_basic(t *testing.T) {
 					// Verify OAuth2 values are still present after update
 					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.pkce_required"),
 					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.dcr_enabled"),
+					// Verify OAuth2 protocol URIs remain stable after update
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.issuer_uri"),
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.redirect_uri"),
 				),
 			},
 			// Delete testing automatically occurs in TestCase
@@ -97,6 +103,9 @@ func TestAccZoneResource_complete(t *testing.T) {
 					// Verify OAuth2 values are set by the API (computed)
 					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.pkce_required"),
 					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.dcr_enabled"),
+					// Verify OAuth2 protocol URIs are set by the API (computed)
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.issuer_uri"),
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.redirect_uri"),
 				),
 			},
 			// ImportState testing
@@ -123,6 +132,9 @@ func TestAccZoneResource_oauth2Custom(t *testing.T) {
 					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
 					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.pkce_required", "false"),
 					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.dcr_enabled", "false"),
+					// Verify OAuth2 protocol URIs are populated regardless of settings
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.issuer_uri"),
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.redirect_uri"),
 				),
 			},
 			// ImportState testing
@@ -173,6 +185,9 @@ func TestAccZoneResource_oauth2Updates(t *testing.T) {
 					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName+"-updated"),
 					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.pkce_required", "true"),
 					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.dcr_enabled", "true"),
+					// Verify OAuth2 protocol URIs persist through updates
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.issuer_uri"),
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.redirect_uri"),
 				),
 			},
 		},
