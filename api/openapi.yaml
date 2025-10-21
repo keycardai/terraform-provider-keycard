@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   version: 0.0.1
   title: Keycard API
-  description: "Keycard API for managing zones and their resources."
+  description: Keycard API for managing zones and their resources.
 servers:
   - url: /
 paths:
@@ -17,6 +17,19 @@ paths:
           required: false
           schema:
             type: string
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+            minimum: 1
       responses:
         '200':
           description: Default Response
@@ -70,7 +83,6 @@ paths:
         - bearerAuth: []
       tags:
         - Zones
-      x-public-api: true
   '/zones/{id}':
     get:
       operationId: getZone
@@ -228,17 +240,7 @@ components:
           type: string
           format: hostname
           maxLength: 255
-        zone_identity_provider_identifier:
-          description: 'User specified identifier, unique within the zone'
-          type: string
-          maxLength: 2048
-          minLength: 1
-        vault_provider_identifier:
-          description: 'User specified identifier, unique within the zone'
-          type: string
-          maxLength: 2048
-          minLength: 1
-        user_authentication_provider_id:
+        user_identity_provider_id:
           description: Provider ID configured for user login
           type: string
         oauth2_pkce_required:
@@ -247,6 +249,65 @@ components:
         oauth2_dcr_enabled:
           description: Whether Dynamic Client Registration is enabled
           type: boolean
+        protocols:
+          type: object
+          properties:
+            oauth2:
+              type: object
+              properties:
+                issuer:
+                  description: OAuth 2.0 issuer identifier
+                  type: string
+                  format: uri
+                authorization_server_metadata:
+                  description: OAuth 2.0 Authorization Server Metadata endpoint (.well-known/oauth-authorization-server)
+                  type: string
+                  format: uri
+                authorization_endpoint:
+                  description: OAuth 2.0 authorization endpoint
+                  type: string
+                  format: uri
+                token_endpoint:
+                  description: OAuth 2.0 token endpoint
+                  type: string
+                  format: uri
+                redirect_uri:
+                  description: OAuth 2.0 redirect URI for this zone
+                  type: string
+                  format: uri
+                registration_endpoint:
+                  description: OAuth 2.0 Dynamic Client Registration endpoint
+                  type: string
+                  format: uri
+                jwks_uri:
+                  description: JSON Web Key Set endpoint
+                  type: string
+                  format: uri
+              required:
+                - issuer
+                - authorization_server_metadata
+                - authorization_endpoint
+                - token_endpoint
+                - redirect_uri
+                - registration_endpoint
+                - jwks_uri
+            openid:
+              type: object
+              properties:
+                provider_configuration:
+                  description: OpenID Connect Provider Configuration endpoint (.well-known/openid-configuration)
+                  type: string
+                  format: uri
+                userinfo_endpoint:
+                  description: OpenID Connect UserInfo endpoint
+                  type: string
+                  format: uri
+              required:
+                - provider_configuration
+                - userinfo_endpoint
+          required:
+            - oauth2
+            - openid
         created_at:
           description: Entity creation timestamp
           type: string
@@ -260,8 +321,9 @@ components:
         - organization_id
         - slug
         - name
-        - zone_identity_provider_identifier
-        - vault_provider_identifier
+        - oauth2_pkce_required
+        - oauth2_dcr_enabled
+        - protocols
         - created_at
         - updated_at
       title: Zone
@@ -315,7 +377,7 @@ components:
           format: hostname
           maxLength: 255
           nullable: true
-        user_authentication_provider_id:
+        user_identity_provider_id:
           description: Provider ID to configure for user login (set to null to unset)
           type: string
           nullable: true
