@@ -12,7 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
-	"golang.org/x/oauth2"
 )
 
 // Default endpoint to production API.
@@ -131,21 +130,20 @@ func (p *ScaffoldingProvider) Configure(ctx context.Context, req provider.Config
 		)
 	}
 
-	// Create OAuth2 token source
-	tokenSource := client.NewTokenSource(context.Background(), clientID, clientSecret, organizationID, endpoint)
-
-	// Create authenticated HTTP client
-	httpClient := oauth2.NewClient(ctx, tokenSource)
-
-	// Wrap HTTP client with logging to capture request/response details
-	loggingClient := client.NewLoggingHTTPClient(httpClient)
-
-	apiClient, err := client.NewClientWithResponses(endpoint, client.WithHTTPClient(loggingClient))
+	// Create fully configured API client with OAuth2, retries, and logging
+	apiClient, err := client.NewAPIClient(ctx, client.Config{
+		ClientID:       clientID,
+		ClientSecret:   clientSecret,
+		OrganizationID: organizationID,
+		Endpoint:       endpoint,
+	})
 	if err != nil {
-		resp.Diagnostics.AddError("error configuring HTTP client", err.Error())
-	}
-
-	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Unable to Create Keycard API Client",
+			"An unexpected error occurred when creating the Keycard API client. "+
+				"If the error is not clear, please contact the provider developers.\n\n"+
+				"Keycard Client Error: "+err.Error(),
+		)
 		return
 	}
 
@@ -164,7 +162,9 @@ func (p *ScaffoldingProvider) EphemeralResources(ctx context.Context) []func() e
 }
 
 func (p *ScaffoldingProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
-	return []func() datasource.DataSource{}
+	return []func() datasource.DataSource{
+		NewZoneDataSource,
+	}
 }
 
 func (p *ScaffoldingProvider) Functions(ctx context.Context) []func() function.Function {
