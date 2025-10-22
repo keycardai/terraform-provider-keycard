@@ -34,7 +34,7 @@ func TestAccProviderResource_basic(t *testing.T) {
 				ImportStateVerify: true,
 				ImportStateIdFunc: func(state *terraform.State) (string, error) {
 					rs := state.RootModule().Resources["keycard_provider.test"]
-					return fmt.Sprintf("%s/%s", rs.Primary.Attributes["zone_id"], rs.Primary.ID), nil
+					return fmt.Sprintf("zones/%s/providers/%s", rs.Primary.Attributes["zone_id"], rs.Primary.ID), nil
 				},
 				// client_secret is not returned by API, so it won't match on import
 				ImportStateVerifyIgnore: []string{"client_secret"},
@@ -113,7 +113,7 @@ func TestAccProviderResource_oauth2Config(t *testing.T) {
 				ImportStateVerify: true,
 				ImportStateIdFunc: func(state *terraform.State) (string, error) {
 					rs := state.RootModule().Resources["keycard_provider.test"]
-					return fmt.Sprintf("%s/%s", rs.Primary.Attributes["zone_id"], rs.Primary.ID), nil
+					return fmt.Sprintf("zones/%s/providers/%s", rs.Primary.Attributes["zone_id"], rs.Primary.ID), nil
 				},
 				ImportStateVerifyIgnore: []string{"client_secret"},
 			},

@@ -438,18 +438,18 @@ func (r *ProviderResource) Delete(ctx context.Context, req resource.DeleteReques
 }
 
 func (r *ProviderResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Parse import ID as zone_id/provider_id
+	// Parse import ID as zones/{zone-id}/providers/{provider-id}
 	parts := strings.Split(req.ID, "/")
-	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+	if len(parts) != 4 || parts[0] != "zones" || parts[2] != "providers" || parts[1] == "" || parts[3] == "" {
 		resp.Diagnostics.AddError(
 			"Invalid Import ID",
-			fmt.Sprintf("Expected import ID in format 'zone_id/provider_id', got: %s", req.ID),
+			fmt.Sprintf("Expected import ID in format 'zones/{zone-id}/providers/{provider-id}', got: %s", req.ID),
 		)
 		return
 	}
 
-	zoneID := parts[0]
-	providerID := parts[1]
+	zoneID := parts[1]
+	providerID := parts[3]
 
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("zone_id"), zoneID)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), providerID)...)
