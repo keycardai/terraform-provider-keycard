@@ -165,6 +165,7 @@ func (p *ScaffoldingProvider) EphemeralResources(ctx context.Context) []func() e
 func (p *ScaffoldingProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewZoneDataSource,
+		NewProviderDataSource,
 	}
 }
 
