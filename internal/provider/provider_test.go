@@ -22,6 +22,7 @@ func testAccPreCheck(t *testing.T) {
 		"KEYCARD_ORGANIZATION_ID",
 		"KEYCARD_CLIENT_ID",
 		"KEYCARD_CLIENT_SECRET",
+		"KEYCARD_ENDPOINT",
 	}
 
 	for _, envVar := range requiredEnvVars {

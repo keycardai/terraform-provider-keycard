@@ -134,8 +134,8 @@ func (d *ZoneDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 	data.Description = types.StringPointerValue(zone.Description)
 
 	oauth2Data := OAuth2Model{
-		PkceRequired: types.BoolValue(zone.Oauth2PkceRequired),
-		DcrEnabled:   types.BoolValue(zone.Oauth2DcrEnabled),
+		PkceRequired: types.BoolValue(zone.Protocols.Oauth2.PkceRequired),
+		DcrEnabled:   types.BoolValue(zone.Protocols.Oauth2.DcrEnabled),
 		IssuerUri:    types.StringValue(zone.Protocols.Oauth2.Issuer),
 		RedirectUri:  types.StringValue(zone.Protocols.Oauth2.RedirectUri),
 	}

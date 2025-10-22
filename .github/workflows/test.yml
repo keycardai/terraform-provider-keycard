@@ -81,7 +81,7 @@ jobs:
           KEYCARD_CLIENT_ID: ${{ secrets.KEYCARD_CLIENT_ID }}
           KEYCARD_CLIENT_SECRET: ${{ secrets.KEYCARD_CLIENT_SECRET }}
           KEYCARD_ENDPOINT: ${{ secrets.KEYCARD_ENDPOINT }}
-        run: go test -v -cover -timeout 120s ./internal/provider/
+        run: go test -v -cover -timeout 120s -parallel=1 ./internal/provider/
         timeout-minutes: 10
       - name: Upload Terraform test logs
         uses: actions/upload-artifact@v4

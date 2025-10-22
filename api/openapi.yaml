@@ -169,6 +169,211 @@ paths:
         - bearerAuth: []
       tags:
         - Zones
+  '/zones/{zoneId}/providers':
+    get:
+      operationId: listProviders
+      summary: List providers
+      description: Returns a list of providers in the specified zone
+      parameters:
+        - name: slug
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: identifier
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: type
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                enum:
+                  - external
+              - type: string
+                enum:
+                  - keycard-vault
+              - type: string
+                enum:
+                  - keycard-directory
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+            minimum: 1
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Provider'
+                  page_info:
+                    $ref: '#/components/schemas/PageInfo'
+                required:
+                  - items
+                  - page_info
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Providers
+    post:
+      operationId: createProvider
+      summary: Create provider
+      description: Creates a new Provider - a system that supplies access to Resources and allows actors to authenticate
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderCreate'
+      responses:
+        '200':
+          description: A Provider is a system that supplies access to Resources and allows actors (Users or Applications) to authenticate.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Provider'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Providers
+  '/zones/{zoneId}/providers/{id}':
+    get:
+      operationId: getProvider
+      summary: Get provider
+      description: Returns details of a specific Provider by ID
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A Provider is a system that supplies access to Resources and allows actors (Users or Applications) to authenticate.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Provider'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Providers
+    patch:
+      operationId: updateProvider
+      summary: Update provider
+      description: Updates a Provider's configuration and metadata
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderUpdate'
+      responses:
+        '200':
+          description: A Provider is a system that supplies access to Resources and allows actors (Users or Applications) to authenticate.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Provider'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Providers
+    delete:
+      operationId: deleteProvider
+      summary: Delete provider
+      description: Permanently deletes a provider
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Default Response
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Providers
 components:
   schemas:
     PageInfo:
@@ -194,6 +399,248 @@ components:
         - has_next_page
         - has_previous_page
       title: Page Info
+    ZoneOAuth2Protocol:
+      description: OAuth 2.0 protocol configuration for a zone
+      type: object
+      properties:
+        issuer:
+          description: OAuth 2.0 issuer identifier
+          type: string
+          format: uri
+        authorization_server_metadata:
+          description: OAuth 2.0 Authorization Server Metadata endpoint (.well-known/oauth-authorization-server)
+          type: string
+          format: uri
+        authorization_endpoint:
+          description: OAuth 2.0 authorization endpoint
+          type: string
+          format: uri
+        token_endpoint:
+          description: OAuth 2.0 token endpoint
+          type: string
+          format: uri
+        redirect_uri:
+          description: OAuth 2.0 redirect URI for this zone
+          type: string
+          format: uri
+        registration_endpoint:
+          description: OAuth 2.0 Dynamic Client Registration endpoint
+          type: string
+          format: uri
+        jwks_uri:
+          description: JSON Web Key Set endpoint
+          type: string
+          format: uri
+        pkce_required:
+          description: Whether PKCE is required for authorization code flows
+          type: boolean
+        dcr_enabled:
+          description: Whether Dynamic Client Registration is enabled
+          type: boolean
+      required:
+        - issuer
+        - authorization_server_metadata
+        - authorization_endpoint
+        - token_endpoint
+        - redirect_uri
+        - registration_endpoint
+        - jwks_uri
+        - pkce_required
+        - dcr_enabled
+      title: Zone OAuth 2.0 Protocol
+    ZoneOpenIDProtocol:
+      description: OpenID Connect protocol configuration for a zone
+      type: object
+      properties:
+        provider_configuration:
+          description: OpenID Connect Provider Configuration endpoint (.well-known/openid-configuration)
+          type: string
+          format: uri
+        userinfo_endpoint:
+          description: OpenID Connect UserInfo endpoint
+          type: string
+          format: uri
+      required:
+        - provider_configuration
+        - userinfo_endpoint
+      title: Zone OpenID Connect Protocol
+    ZoneOAuth2ProtocolCreate:
+      description: OAuth 2.0 protocol configuration for zone creation
+      type: object
+      properties:
+        pkce_required:
+          description: Whether PKCE is required for authorization code flows
+          type: boolean
+          default: true
+        dcr_enabled:
+          description: Whether Dynamic Client Registration is enabled
+          type: boolean
+          default: true
+      title: Zone OAuth 2.0 Protocol Create
+    ZoneProtocolCreate:
+      description: Protocol configuration for zone creation
+      type: object
+      properties:
+        oauth2:
+          $ref: '#/components/schemas/ZoneOAuth2ProtocolCreate'
+      title: Zone Protocol Create
+    ZoneOAuth2ProtocolUpdate:
+      description: OAuth 2.0 protocol configuration update for a zone (partial update)
+      type: object
+      properties:
+        pkce_required:
+          description: Whether PKCE is required for authorization code flows
+          type: boolean
+          nullable: true
+        dcr_enabled:
+          description: Whether Dynamic Client Registration is enabled
+          type: boolean
+          nullable: true
+      title: Zone OAuth 2.0 Protocol Update
+    ZoneProtocolUpdate:
+      description: Protocol configuration update for a zone (partial update)
+      type: object
+      properties:
+        oauth2:
+          $ref: '#/components/schemas/ZoneOAuth2ProtocolUpdate'
+      nullable: true
+      title: Zone Protocol Update
+    ProviderOAuth2Protocol:
+      description: OAuth 2.0 protocol configuration
+      type: object
+      properties:
+        authorization_endpoint:
+          type: string
+          format: uri
+          nullable: true
+        token_endpoint:
+          type: string
+          format: uri
+          nullable: true
+        registration_endpoint:
+          type: string
+          format: uri
+          nullable: true
+        jwks_uri:
+          type: string
+          format: uri
+          nullable: true
+        code_challenge_methods_supported:
+          type: array
+          items:
+            type: string
+          nullable: true
+        scopes_supported:
+          type: array
+          items:
+            type: string
+          nullable: true
+      nullable: true
+      title: Provider OAuth 2.0 Protocol
+    ProviderOpenIDProtocol:
+      description: OpenID Connect protocol configuration
+      type: object
+      properties:
+        userinfo_endpoint:
+          type: string
+          format: uri
+          nullable: true
+      nullable: true
+      title: Provider OpenID Connect Protocol
+    ProviderOAuth2ProtocolCreate:
+      description: OAuth 2.0 protocol configuration for provider creation
+      type: object
+      properties:
+        authorization_endpoint:
+          type: string
+          format: uri
+        token_endpoint:
+          type: string
+          format: uri
+        registration_endpoint:
+          type: string
+          format: uri
+        jwks_uri:
+          type: string
+          format: uri
+        code_challenge_methods_supported:
+          type: array
+          items:
+            type: string
+        scopes_supported:
+          type: array
+          items:
+            type: string
+      title: Provider OAuth 2.0 Protocol Create
+    ProviderOpenIDProtocolCreate:
+      description: OpenID Connect protocol configuration for provider creation
+      type: object
+      properties:
+        userinfo_endpoint:
+          type: string
+          format: uri
+      title: Provider OpenID Connect Protocol Create
+    ProviderProtocolCreate:
+      description: Protocol-specific configuration for provider creation
+      type: object
+      properties:
+        oauth2:
+          $ref: '#/components/schemas/ProviderOAuth2ProtocolCreate'
+        openid:
+          $ref: '#/components/schemas/ProviderOpenIDProtocolCreate'
+      title: Provider Protocol Create
+    ProviderOAuth2ProtocolUpdate:
+      description: OAuth 2.0 protocol configuration. Set to null to remove all OAuth2 config.
+      type: object
+      properties:
+        authorization_endpoint:
+          type: string
+          format: uri
+          nullable: true
+        token_endpoint:
+          type: string
+          format: uri
+          nullable: true
+        registration_endpoint:
+          type: string
+          format: uri
+          nullable: true
+        jwks_uri:
+          type: string
+          format: uri
+          nullable: true
+        code_challenge_methods_supported:
+          type: array
+          items:
+            type: string
+          nullable: true
+        scopes_supported:
+          type: array
+          items:
+            type: string
+          nullable: true
+      nullable: true
+      title: Provider OAuth 2.0 Protocol Update
+    ProviderOpenIDProtocolUpdate:
+      description: OpenID Connect protocol configuration. Set to null to remove all OpenID config.
+      type: object
+      properties:
+        userinfo_endpoint:
+          type: string
+          format: uri
+          nullable: true
+      nullable: true
+      title: Provider OpenID Connect Protocol Update
+    ProviderProtocolUpdate:
+      description: Protocol-specific configuration. Set to null to remove all protocols.
+      type: object
+      properties:
+        oauth2:
+          $ref: '#/components/schemas/ProviderOAuth2ProtocolUpdate'
+        openid:
+          $ref: '#/components/schemas/ProviderOpenIDProtocolUpdate'
+      nullable: true
+      title: Provider Protocol Update
     Error:
       description: Error response
       type: object
@@ -209,6 +656,141 @@ components:
         - code
         - status
       title: Error
+    Provider:
+      description: A Provider is a system that supplies access to Resources and allows actors (Users or Applications) to authenticate.
+      type: object
+      properties:
+        id:
+          description: Unique identifier of the provider
+          type: string
+        organization_id:
+          description: Organization that owns this provider
+          type: string
+        zone_id:
+          description: Zone this provider belongs to
+          type: string
+        slug:
+          description: 'URL-safe identifier, unique within the zone'
+          type: string
+          maxLength: 63
+          minLength: 1
+          pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+        name:
+          description: Human-readable name
+          type: string
+          maxLength: 255
+          minLength: 1
+        description:
+          description: Human-readable description
+          type: string
+          maxLength: 2048
+          nullable: true
+        identifier:
+          description: 'User specified identifier, unique within the zone'
+          type: string
+          maxLength: 2048
+          minLength: 1
+        type:
+          type: string
+          enum:
+            - external
+            - keycard-vault
+            - keycard-directory
+        client_id:
+          description: OAuth 2.0 client identifier
+          type: string
+          nullable: true
+        client_secret_set:
+          description: Indicates whether a client secret is configured
+          type: boolean
+        protocols:
+          description: Protocol-specific configuration
+          type: object
+          nullable: true
+          properties:
+            oauth2:
+              $ref: '#/components/schemas/ProviderOAuth2Protocol'
+            openid:
+              $ref: '#/components/schemas/ProviderOpenIDProtocol'
+        created_at:
+          description: Entity creation timestamp
+          type: string
+          format: date-time
+        updated_at:
+          description: Entity update timestamp
+          type: string
+          format: date-time
+      required:
+        - id
+        - organization_id
+        - zone_id
+        - slug
+        - name
+        - identifier
+        - created_at
+        - updated_at
+      title: Provider
+    ProviderCreate:
+      description: Schema for creating a new provider
+      type: object
+      properties:
+        name:
+          description: Human-readable name
+          type: string
+          maxLength: 255
+          minLength: 1
+        description:
+          description: Human-readable description
+          type: string
+          maxLength: 2048
+          nullable: true
+        identifier:
+          description: 'User specified identifier, unique within the zone'
+          type: string
+          maxLength: 2048
+          minLength: 1
+        client_id:
+          description: OAuth 2.0 client identifier
+          type: string
+        client_secret:
+          description: OAuth 2.0 client secret (will be encrypted and stored securely)
+          type: string
+        protocols:
+          $ref: '#/components/schemas/ProviderProtocolCreate'
+      required:
+        - name
+        - identifier
+      title: Provider Create
+    ProviderUpdate:
+      description: Schema for updating an existing provider
+      type: object
+      properties:
+        name:
+          description: Human-readable name
+          type: string
+          maxLength: 255
+          minLength: 1
+        description:
+          description: Human-readable description
+          type: string
+          maxLength: 2048
+          nullable: true
+        identifier:
+          description: 'User specified identifier, unique within the zone'
+          type: string
+          maxLength: 2048
+          minLength: 1
+        client_id:
+          description: OAuth 2.0 client identifier. Set to null to remove.
+          type: string
+          nullable: true
+        client_secret:
+          description: OAuth 2.0 client secret (will be encrypted and stored securely). Set to null to remove.
+          type: string
+          nullable: true
+        protocols:
+          $ref: '#/components/schemas/ProviderProtocolUpdate'
+      title: Provider Update
     Zone:
       description: A zone for organizing resources within an organization
       type: object
@@ -243,68 +825,14 @@ components:
         user_identity_provider_id:
           description: Provider ID configured for user login
           type: string
-        oauth2_pkce_required:
-          description: Whether PKCE is required for authorization code flows
-          type: boolean
-        oauth2_dcr_enabled:
-          description: Whether Dynamic Client Registration is enabled
-          type: boolean
         protocols:
+          description: Protocol configuration for a zone
           type: object
           properties:
             oauth2:
-              type: object
-              properties:
-                issuer:
-                  description: OAuth 2.0 issuer identifier
-                  type: string
-                  format: uri
-                authorization_server_metadata:
-                  description: OAuth 2.0 Authorization Server Metadata endpoint (.well-known/oauth-authorization-server)
-                  type: string
-                  format: uri
-                authorization_endpoint:
-                  description: OAuth 2.0 authorization endpoint
-                  type: string
-                  format: uri
-                token_endpoint:
-                  description: OAuth 2.0 token endpoint
-                  type: string
-                  format: uri
-                redirect_uri:
-                  description: OAuth 2.0 redirect URI for this zone
-                  type: string
-                  format: uri
-                registration_endpoint:
-                  description: OAuth 2.0 Dynamic Client Registration endpoint
-                  type: string
-                  format: uri
-                jwks_uri:
-                  description: JSON Web Key Set endpoint
-                  type: string
-                  format: uri
-              required:
-                - issuer
-                - authorization_server_metadata
-                - authorization_endpoint
-                - token_endpoint
-                - redirect_uri
-                - registration_endpoint
-                - jwks_uri
+              $ref: '#/components/schemas/ZoneOAuth2Protocol'
             openid:
-              type: object
-              properties:
-                provider_configuration:
-                  description: OpenID Connect Provider Configuration endpoint (.well-known/openid-configuration)
-                  type: string
-                  format: uri
-                userinfo_endpoint:
-                  description: OpenID Connect UserInfo endpoint
-                  type: string
-                  format: uri
-              required:
-                - provider_configuration
-                - userinfo_endpoint
+              $ref: '#/components/schemas/ZoneOpenIDProtocol'
           required:
             - oauth2
             - openid
@@ -321,8 +849,6 @@ components:
         - organization_id
         - slug
         - name
-        - oauth2_pkce_required
-        - oauth2_dcr_enabled
         - protocols
         - created_at
         - updated_at
@@ -346,14 +872,8 @@ components:
           type: string
           format: hostname
           maxLength: 255
-        oauth2_pkce_required:
-          description: Whether PKCE is required for authorization code flows
-          type: boolean
-          default: true
-        oauth2_dcr_enabled:
-          description: Whether Dynamic Client Registration is enabled
-          type: boolean
-          default: true
+        protocols:
+          $ref: '#/components/schemas/ZoneProtocolCreate'
       required:
         - name
       title: Zone Create
@@ -381,12 +901,8 @@ components:
           description: Provider ID to configure for user login (set to null to unset)
           type: string
           nullable: true
-        oauth2_pkce_required:
-          description: Whether PKCE is required for authorization code flows
-          type: boolean
-        oauth2_dcr_enabled:
-          description: Whether Dynamic Client Registration is enabled
-          type: boolean
+        protocols:
+          $ref: '#/components/schemas/ZoneProtocolUpdate'
       title: Zone Update
   securitySchemes:
     bearerAuth:
