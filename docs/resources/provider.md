@@ -28,16 +28,16 @@ resource "keycard_provider" "okta" {
 
 ### Required
 
-- `identifier` (String) User-specified identifier, unique within the zone.
+- `identifier` (String) User-specified identifier, must be unique within the zone.
 - `name` (String) Human-readable name for the provider.
 - `zone_id` (String) The zone this provider belongs to. Changing this will replace the provider.
 
 ### Optional
 
 - `client_id` (String) OAuth 2.0 client identifier.
-- `client_secret` (String, Sensitive) OAuth 2.0 client secret (will be encrypted and stored securely).
+- `client_secret` (String, Sensitive) OAuth 2.0 client secret.
 - `description` (String) Optional description of the provider's purpose.
-- `oauth2` (Attributes) OAuth2 protocol configuration. (see [below for nested schema](#nestedatt--oauth2))
+- `oauth2` (Attributes) OAuth 2.0 protocol configuration. (see [below for nested schema](#nestedatt--oauth2))
 
 ### Read-Only
 
@@ -48,5 +48,5 @@ resource "keycard_provider" "okta" {
 
 Optional:
 
-- `authorization_endpoint` (String) Authorization endpoint URL.
-- `token_endpoint` (String) Token endpoint URL.
+- `authorization_endpoint` (String) OAuth 2.0 Authorization endpoint URL.
+- `token_endpoint` (String) OAuth 2.0 Token endpoint URL.

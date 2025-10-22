@@ -87,7 +87,7 @@ func (r *ProviderResource) Schema(ctx context.Context, req resource.SchemaReques
 				Optional:            true,
 			},
 			"identifier": schema.StringAttribute{
-				MarkdownDescription: "User-specified identifier, unique within the zone.",
+				MarkdownDescription: "User-specified identifier, must be unique within the zone.",
 				Required:            true,
 			},
 			"client_id": schema.StringAttribute{
@@ -95,20 +95,20 @@ func (r *ProviderResource) Schema(ctx context.Context, req resource.SchemaReques
 				Optional:            true,
 			},
 			"client_secret": schema.StringAttribute{
-				MarkdownDescription: "OAuth 2.0 client secret (will be encrypted and stored securely).",
+				MarkdownDescription: "OAuth 2.0 client secret.",
 				Optional:            true,
 				Sensitive:           true,
 			},
 			"oauth2": schema.SingleNestedAttribute{
-				MarkdownDescription: "OAuth2 protocol configuration.",
+				MarkdownDescription: "OAuth 2.0 protocol configuration.",
 				Optional:            true,
 				Attributes: map[string]schema.Attribute{
 					"authorization_endpoint": schema.StringAttribute{
-						MarkdownDescription: "Authorization endpoint URL.",
+						MarkdownDescription: "OAuth 2.0 Authorization endpoint URL.",
 						Optional:            true,
 					},
 					"token_endpoint": schema.StringAttribute{
-						MarkdownDescription: "Token endpoint URL.",
+						MarkdownDescription: "OAuth 2.0 Token endpoint URL.",
 						Optional:            true,
 					},
 				},
