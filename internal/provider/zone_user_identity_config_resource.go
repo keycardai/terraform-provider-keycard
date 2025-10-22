@@ -40,8 +40,8 @@ func (r *ZoneUserIdentityConfigResource) Metadata(ctx context.Context, req resou
 func (r *ZoneUserIdentityConfigResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "Configures the user identity provider for a Keycard zone. This resource manages which provider is used for user authentication in the zone.\n\n" +
-			"~> **Note** Only one `keycard_zone_user_identity_config` resource should exist per zone. If multiple resources target the same zone, " +
-			"the last one applied will take effect, and others will be automatically removed from state on the next refresh.",
+			"~> **Note** Only one `keycard_zone_user_identity_config` resource should exist per zone. " +
+			"Declaring multiple `keycard_zone_user_identity_config` resources for the same zone will cause a perpetual difference in configuration.",
 
 		Attributes: map[string]schema.Attribute{
 			"zone_id": schema.StringAttribute{
