@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -239,45 +240,9 @@ func (r *ProviderResource) Create(ctx context.Context, req resource.CreateReques
 
 	// Update the model with the response data
 	provider := createResp.JSON200
-	data.ID = types.StringValue(provider.Id)
-	data.Name = types.StringValue(provider.Name)
-	data.Description = types.StringPointerValue(provider.Description)
-	data.Identifier = types.StringValue(provider.Identifier)
-
-	// Map root-level client_id
-	if provider.ClientId != nil {
-		data.ClientID = types.StringPointerValue(provider.ClientId)
-	} else {
-		data.ClientID = types.StringNull()
-	}
-
-	// Preserve client_secret from plan (it's write-only in API)
-	// data.ClientSecret already has the value from plan
-
-	// Map protocols.oauth2 fields if present
-	if provider.Protocols != nil && provider.Protocols.Oauth2 != nil {
-		oauth2Model := OAuth2ProviderModel{}
-
-		if provider.Protocols.Oauth2.AuthorizationEndpoint != nil {
-			oauth2Model.AuthorizationEndpoint = types.StringPointerValue(provider.Protocols.Oauth2.AuthorizationEndpoint)
-		} else {
-			oauth2Model.AuthorizationEndpoint = types.StringNull()
-		}
-
-		if provider.Protocols.Oauth2.TokenEndpoint != nil {
-			oauth2Model.TokenEndpoint = types.StringPointerValue(provider.Protocols.Oauth2.TokenEndpoint)
-		} else {
-			oauth2Model.TokenEndpoint = types.StringNull()
-		}
-
-		oauth2Obj, diags := types.ObjectValueFrom(ctx, oauth2Model.AttributeTypes(), oauth2Model)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		data.OAuth2 = oauth2Obj
-	} else {
-		data.OAuth2 = types.ObjectNull(OAuth2ProviderModel{}.AttributeTypes())
+	resp.Diagnostics.Append(r.updateModelFromProviderResponse(ctx, provider, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	// Save data into Terraform state
@@ -322,45 +287,9 @@ func (r *ProviderResource) Read(ctx context.Context, req resource.ReadRequest, r
 
 	// Update the model with the response data
 	provider := getResp.JSON200
-	data.ID = types.StringValue(provider.Id)
-	data.Name = types.StringValue(provider.Name)
-	data.Description = types.StringPointerValue(provider.Description)
-	data.Identifier = types.StringValue(provider.Identifier)
-
-	// Map root-level client_id
-	if provider.ClientId != nil {
-		data.ClientID = types.StringPointerValue(provider.ClientId)
-	} else {
-		data.ClientID = types.StringNull()
-	}
-
-	// Preserve client_secret from current state (it's write-only in API)
-	// data.ClientSecret already has the value from current state
-
-	// Map protocols.oauth2 fields if present
-	if provider.Protocols != nil && provider.Protocols.Oauth2 != nil {
-		oauth2Model := OAuth2ProviderModel{}
-
-		if provider.Protocols.Oauth2.AuthorizationEndpoint != nil {
-			oauth2Model.AuthorizationEndpoint = types.StringPointerValue(provider.Protocols.Oauth2.AuthorizationEndpoint)
-		} else {
-			oauth2Model.AuthorizationEndpoint = types.StringNull()
-		}
-
-		if provider.Protocols.Oauth2.TokenEndpoint != nil {
-			oauth2Model.TokenEndpoint = types.StringPointerValue(provider.Protocols.Oauth2.TokenEndpoint)
-		} else {
-			oauth2Model.TokenEndpoint = types.StringNull()
-		}
-
-		oauth2Obj, diags := types.ObjectValueFrom(ctx, oauth2Model.AttributeTypes(), oauth2Model)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		data.OAuth2 = oauth2Obj
-	} else {
-		data.OAuth2 = types.ObjectNull(OAuth2ProviderModel{}.AttributeTypes())
+	resp.Diagnostics.Append(r.updateModelFromProviderResponse(ctx, provider, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	// Save updated data into Terraform state
@@ -473,45 +402,9 @@ func (r *ProviderResource) Update(ctx context.Context, req resource.UpdateReques
 
 	// Update the model with the response data
 	provider := updateResp.JSON200
-	data.ID = types.StringValue(provider.Id)
-	data.Name = types.StringValue(provider.Name)
-	data.Description = types.StringPointerValue(provider.Description)
-	data.Identifier = types.StringValue(provider.Identifier)
-
-	// Map root-level client_id
-	if provider.ClientId != nil {
-		data.ClientID = types.StringPointerValue(provider.ClientId)
-	} else {
-		data.ClientID = types.StringNull()
-	}
-
-	// Preserve client_secret from plan (it's write-only in API)
-	// data.ClientSecret already has the value from plan
-
-	// Map protocols.oauth2 fields if present
-	if provider.Protocols != nil && provider.Protocols.Oauth2 != nil {
-		oauth2Model := OAuth2ProviderModel{}
-
-		if provider.Protocols.Oauth2.AuthorizationEndpoint != nil {
-			oauth2Model.AuthorizationEndpoint = types.StringPointerValue(provider.Protocols.Oauth2.AuthorizationEndpoint)
-		} else {
-			oauth2Model.AuthorizationEndpoint = types.StringNull()
-		}
-
-		if provider.Protocols.Oauth2.TokenEndpoint != nil {
-			oauth2Model.TokenEndpoint = types.StringPointerValue(provider.Protocols.Oauth2.TokenEndpoint)
-		} else {
-			oauth2Model.TokenEndpoint = types.StringNull()
-		}
-
-		oauth2Obj, diags := types.ObjectValueFrom(ctx, oauth2Model.AttributeTypes(), oauth2Model)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		data.OAuth2 = oauth2Obj
-	} else {
-		data.OAuth2 = types.ObjectNull(OAuth2ProviderModel{}.AttributeTypes())
+	resp.Diagnostics.Append(r.updateModelFromProviderResponse(ctx, provider, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	// Save updated data into Terraform state
@@ -560,4 +453,39 @@ func (r *ProviderResource) ImportState(ctx context.Context, req resource.ImportS
 
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("zone_id"), zoneID)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), providerID)...)
+}
+
+// updateModelFromProviderResponse updates the model with data from a provider API response.
+// It handles mapping of all fields except client_secret, which should be preserved from plan/state.
+func (r *ProviderResource) updateModelFromProviderResponse(ctx context.Context, provider *client.Provider, data *ProviderResourceModel) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	// Map basic fields
+	data.ID = types.StringValue(provider.Id)
+	data.Name = types.StringValue(provider.Name)
+	data.Description = types.StringPointerValue(provider.Description)
+	data.Identifier = types.StringValue(provider.Identifier)
+	data.ClientID = types.StringPointerValue(provider.ClientId)
+
+	// Note: client_secret is not updated here as it's write-only in the API
+	// It should already be set from plan/state in the calling method
+
+	// Map protocols.oauth2 fields if present
+	if provider.Protocols != nil && provider.Protocols.Oauth2 != nil {
+		oauth2Model := OAuth2ProviderModel{
+			AuthorizationEndpoint: types.StringPointerValue(provider.Protocols.Oauth2.AuthorizationEndpoint),
+			TokenEndpoint:         types.StringPointerValue(provider.Protocols.Oauth2.TokenEndpoint),
+		}
+
+		oauth2Obj, oauth2Diags := types.ObjectValueFrom(ctx, oauth2Model.AttributeTypes(), oauth2Model)
+		diags.Append(oauth2Diags...)
+		if diags.HasError() {
+			return diags
+		}
+		data.OAuth2 = oauth2Obj
+	} else {
+		data.OAuth2 = types.ObjectNull(OAuth2ProviderModel{}.AttributeTypes())
+	}
+
+	return diags
 }
