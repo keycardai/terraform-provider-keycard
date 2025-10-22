@@ -176,12 +176,16 @@ func (r *ZoneResource) Create(ctx context.Context, req resource.CreateRequest, r
 			return
 		}
 
+		createReq.Protocols = &client.ZoneProtocolCreate{
+			Oauth2: &client.ZoneOAuth2ProtocolCreate{},
+		}
+
 		if !oauth2Data.PkceRequired.IsNull() && !oauth2Data.PkceRequired.IsUnknown() {
-			createReq.Oauth2PkceRequired = oauth2Data.PkceRequired.ValueBoolPointer()
+			createReq.Protocols.Oauth2.PkceRequired = oauth2Data.PkceRequired.ValueBoolPointer()
 		}
 
 		if !oauth2Data.DcrEnabled.IsNull() && !oauth2Data.DcrEnabled.IsUnknown() {
-			createReq.Oauth2DcrEnabled = oauth2Data.DcrEnabled.ValueBoolPointer()
+			createReq.Protocols.Oauth2.DcrEnabled = oauth2Data.DcrEnabled.ValueBoolPointer()
 		}
 	}
 
@@ -211,8 +215,8 @@ func (r *ZoneResource) Create(ctx context.Context, req resource.CreateRequest, r
 	data.Name = types.StringValue(zone.Name)
 	data.Description = types.StringPointerValue(zone.Description)
 	oauth2Data := OAuth2Model{
-		PkceRequired: types.BoolValue(zone.Oauth2PkceRequired),
-		DcrEnabled:   types.BoolValue(zone.Oauth2DcrEnabled),
+		PkceRequired: types.BoolValue(zone.Protocols.Oauth2.PkceRequired),
+		DcrEnabled:   types.BoolValue(zone.Protocols.Oauth2.DcrEnabled),
 		IssuerUri:    types.StringValue(zone.Protocols.Oauth2.Issuer),
 		RedirectUri:  types.StringValue(zone.Protocols.Oauth2.RedirectUri),
 	}
@@ -271,8 +275,8 @@ func (r *ZoneResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	data.Description = types.StringPointerValue(zone.Description)
 
 	oauth2Data := OAuth2Model{
-		PkceRequired: types.BoolValue(zone.Oauth2PkceRequired),
-		DcrEnabled:   types.BoolValue(zone.Oauth2DcrEnabled),
+		PkceRequired: types.BoolValue(zone.Protocols.Oauth2.PkceRequired),
+		DcrEnabled:   types.BoolValue(zone.Protocols.Oauth2.DcrEnabled),
 		IssuerUri:    types.StringValue(zone.Protocols.Oauth2.Issuer),
 		RedirectUri:  types.StringValue(zone.Protocols.Oauth2.RedirectUri),
 	}
@@ -321,12 +325,16 @@ func (r *ZoneResource) Update(ctx context.Context, req resource.UpdateRequest, r
 			return
 		}
 
+		updateReq.Protocols = &client.ZoneProtocolUpdate{
+			Oauth2: &client.ZoneOAuth2ProtocolUpdate{},
+		}
+
 		if !oauth2Data.PkceRequired.IsNull() && !oauth2Data.PkceRequired.IsUnknown() {
-			updateReq.Oauth2PkceRequired = oauth2Data.PkceRequired.ValueBoolPointer()
+			updateReq.Protocols.Oauth2.PkceRequired = oauth2Data.PkceRequired.ValueBoolPointer()
 		}
 
 		if !oauth2Data.DcrEnabled.IsNull() && !oauth2Data.DcrEnabled.IsUnknown() {
-			updateReq.Oauth2DcrEnabled = oauth2Data.DcrEnabled.ValueBoolPointer()
+			updateReq.Protocols.Oauth2.DcrEnabled = oauth2Data.DcrEnabled.ValueBoolPointer()
 		}
 	}
 
@@ -357,8 +365,8 @@ func (r *ZoneResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	data.Description = types.StringPointerValue(zone.Description)
 
 	oauth2Data := OAuth2Model{
-		PkceRequired: types.BoolValue(zone.Oauth2PkceRequired),
-		DcrEnabled:   types.BoolValue(zone.Oauth2DcrEnabled),
+		PkceRequired: types.BoolValue(zone.Protocols.Oauth2.PkceRequired),
+		DcrEnabled:   types.BoolValue(zone.Protocols.Oauth2.DcrEnabled),
 		IssuerUri:    types.StringValue(zone.Protocols.Oauth2.Issuer),
 		RedirectUri:  types.StringValue(zone.Protocols.Oauth2.RedirectUri),
 	}

@@ -184,36 +184,15 @@ func (r *ProviderResource) Create(ctx context.Context, req resource.CreateReques
 		if (!oauth2Data.AuthorizationEndpoint.IsNull() && !oauth2Data.AuthorizationEndpoint.IsUnknown()) ||
 			(!oauth2Data.TokenEndpoint.IsNull() && !oauth2Data.TokenEndpoint.IsUnknown()) {
 
-			createReq.Protocols = &struct {
-				Oauth2 *struct {
-					AuthorizationEndpoint         *string   `json:"authorization_endpoint,omitempty"`
-					CodeChallengeMethodsSupported *[]string `json:"code_challenge_methods_supported,omitempty"`
-					JwksUri                       *string   `json:"jwks_uri,omitempty"`
-					RegistrationEndpoint          *string   `json:"registration_endpoint,omitempty"`
-					ScopesSupported               *[]string `json:"scopes_supported,omitempty"`
-					TokenEndpoint                 *string   `json:"token_endpoint,omitempty"`
-					UserinfoEndpoint              *string   `json:"userinfo_endpoint,omitempty"`
-				} `json:"oauth2,omitempty"`
-			}{
-				Oauth2: &struct {
-					AuthorizationEndpoint         *string   `json:"authorization_endpoint,omitempty"`
-					CodeChallengeMethodsSupported *[]string `json:"code_challenge_methods_supported,omitempty"`
-					JwksUri                       *string   `json:"jwks_uri,omitempty"`
-					RegistrationEndpoint          *string   `json:"registration_endpoint,omitempty"`
-					ScopesSupported               *[]string `json:"scopes_supported,omitempty"`
-					TokenEndpoint                 *string   `json:"token_endpoint,omitempty"`
-					UserinfoEndpoint              *string   `json:"userinfo_endpoint,omitempty"`
-				}{},
+			createReq.Protocols = &client.ProviderProtocolCreate{
+				Oauth2: &client.ProviderOAuth2ProtocolCreate{},
 			}
-
 			if !oauth2Data.AuthorizationEndpoint.IsNull() && !oauth2Data.AuthorizationEndpoint.IsUnknown() {
-				endpoint := oauth2Data.AuthorizationEndpoint.ValueString()
-				createReq.Protocols.Oauth2.AuthorizationEndpoint = &endpoint
+				createReq.Protocols.Oauth2.AuthorizationEndpoint = oauth2Data.AuthorizationEndpoint.ValueStringPointer()
 			}
 
 			if !oauth2Data.TokenEndpoint.IsNull() && !oauth2Data.TokenEndpoint.IsUnknown() {
-				endpoint := oauth2Data.TokenEndpoint.ValueString()
-				createReq.Protocols.Oauth2.TokenEndpoint = &endpoint
+				createReq.Protocols.Oauth2.TokenEndpoint = oauth2Data.TokenEndpoint.ValueStringPointer()
 			}
 		}
 	}
@@ -347,29 +326,9 @@ func (r *ProviderResource) Update(ctx context.Context, req resource.UpdateReques
 
 		// Only set protocols if at least one endpoint is provided
 		if !oauth2Data.AuthorizationEndpoint.IsUnknown() || !oauth2Data.TokenEndpoint.IsUnknown() {
-			updateReq.Protocols = &struct {
-				Oauth2 *struct {
-					AuthorizationEndpoint         *string   `json:"authorization_endpoint"`
-					CodeChallengeMethodsSupported *[]string `json:"code_challenge_methods_supported"`
-					JwksUri                       *string   `json:"jwks_uri"`
-					RegistrationEndpoint          *string   `json:"registration_endpoint"`
-					ScopesSupported               *[]string `json:"scopes_supported"`
-					TokenEndpoint                 *string   `json:"token_endpoint"`
-				} `json:"oauth2"`
-				Openid *struct {
-					UserinfoEndpoint *string `json:"userinfo_endpoint"`
-				} `json:"openid"`
-			}{
-				Oauth2: &struct {
-					AuthorizationEndpoint         *string   `json:"authorization_endpoint"`
-					CodeChallengeMethodsSupported *[]string `json:"code_challenge_methods_supported"`
-					JwksUri                       *string   `json:"jwks_uri"`
-					RegistrationEndpoint          *string   `json:"registration_endpoint"`
-					ScopesSupported               *[]string `json:"scopes_supported"`
-					TokenEndpoint                 *string   `json:"token_endpoint"`
-				}{},
+			updateReq.Protocols = &client.ProviderProtocolUpdate{
+				Oauth2: &client.ProviderOAuth2ProtocolUpdate{},
 			}
-
 			if !oauth2Data.AuthorizationEndpoint.IsUnknown() {
 				updateReq.Protocols.Oauth2.AuthorizationEndpoint = oauth2Data.AuthorizationEndpoint.ValueStringPointer()
 			}

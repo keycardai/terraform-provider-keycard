@@ -97,16 +97,11 @@ type Provider struct {
 
 	// Protocols Protocol-specific configuration
 	Protocols *struct {
-		// Oauth2 OAuth 2.0 / OpenID Connect protocol configuration
-		Oauth2 *struct {
-			AuthorizationEndpoint         *string   `json:"authorization_endpoint"`
-			CodeChallengeMethodsSupported *[]string `json:"code_challenge_methods_supported"`
-			JwksUri                       *string   `json:"jwks_uri"`
-			RegistrationEndpoint          *string   `json:"registration_endpoint"`
-			ScopesSupported               *[]string `json:"scopes_supported"`
-			TokenEndpoint                 *string   `json:"token_endpoint"`
-			UserinfoEndpoint              *string   `json:"userinfo_endpoint"`
-		} `json:"oauth2"`
+		// Oauth2 OAuth 2.0 protocol configuration
+		Oauth2 *ProviderOAuth2Protocol `json:"oauth2"`
+
+		// Openid OpenID Connect protocol configuration
+		Openid *ProviderOpenIDProtocol `json:"openid"`
 	} `json:"protocols"`
 
 	// Slug URL-safe identifier, unique within the zone
@@ -140,19 +135,71 @@ type ProviderCreate struct {
 	// Name Human-readable name
 	Name string `json:"name"`
 
-	// Protocols Protocol-specific configuration
-	Protocols *struct {
-		// Oauth2 OAuth 2.0 / OpenID Connect protocol configuration
-		Oauth2 *struct {
-			AuthorizationEndpoint         *string   `json:"authorization_endpoint,omitempty"`
-			CodeChallengeMethodsSupported *[]string `json:"code_challenge_methods_supported,omitempty"`
-			JwksUri                       *string   `json:"jwks_uri,omitempty"`
-			RegistrationEndpoint          *string   `json:"registration_endpoint,omitempty"`
-			ScopesSupported               *[]string `json:"scopes_supported,omitempty"`
-			TokenEndpoint                 *string   `json:"token_endpoint,omitempty"`
-			UserinfoEndpoint              *string   `json:"userinfo_endpoint,omitempty"`
-		} `json:"oauth2,omitempty"`
-	} `json:"protocols,omitempty"`
+	// Protocols Protocol-specific configuration for provider creation
+	Protocols *ProviderProtocolCreate `json:"protocols,omitempty"`
+}
+
+// ProviderOAuth2Protocol OAuth 2.0 protocol configuration
+type ProviderOAuth2Protocol struct {
+	AuthorizationEndpoint         *string   `json:"authorization_endpoint"`
+	CodeChallengeMethodsSupported *[]string `json:"code_challenge_methods_supported"`
+	JwksUri                       *string   `json:"jwks_uri"`
+	RegistrationEndpoint          *string   `json:"registration_endpoint"`
+	ScopesSupported               *[]string `json:"scopes_supported"`
+	TokenEndpoint                 *string   `json:"token_endpoint"`
+}
+
+// ProviderOAuth2ProtocolCreate OAuth 2.0 protocol configuration for provider creation
+type ProviderOAuth2ProtocolCreate struct {
+	AuthorizationEndpoint         *string   `json:"authorization_endpoint,omitempty"`
+	CodeChallengeMethodsSupported *[]string `json:"code_challenge_methods_supported,omitempty"`
+	JwksUri                       *string   `json:"jwks_uri,omitempty"`
+	RegistrationEndpoint          *string   `json:"registration_endpoint,omitempty"`
+	ScopesSupported               *[]string `json:"scopes_supported,omitempty"`
+	TokenEndpoint                 *string   `json:"token_endpoint,omitempty"`
+}
+
+// ProviderOAuth2ProtocolUpdate OAuth 2.0 protocol configuration. Set to null to remove all OAuth2 config.
+type ProviderOAuth2ProtocolUpdate struct {
+	AuthorizationEndpoint         *string   `json:"authorization_endpoint"`
+	CodeChallengeMethodsSupported *[]string `json:"code_challenge_methods_supported"`
+	JwksUri                       *string   `json:"jwks_uri"`
+	RegistrationEndpoint          *string   `json:"registration_endpoint"`
+	ScopesSupported               *[]string `json:"scopes_supported"`
+	TokenEndpoint                 *string   `json:"token_endpoint"`
+}
+
+// ProviderOpenIDProtocol OpenID Connect protocol configuration
+type ProviderOpenIDProtocol struct {
+	UserinfoEndpoint *string `json:"userinfo_endpoint"`
+}
+
+// ProviderOpenIDProtocolCreate OpenID Connect protocol configuration for provider creation
+type ProviderOpenIDProtocolCreate struct {
+	UserinfoEndpoint *string `json:"userinfo_endpoint,omitempty"`
+}
+
+// ProviderOpenIDProtocolUpdate OpenID Connect protocol configuration. Set to null to remove all OpenID config.
+type ProviderOpenIDProtocolUpdate struct {
+	UserinfoEndpoint *string `json:"userinfo_endpoint"`
+}
+
+// ProviderProtocolCreate Protocol-specific configuration for provider creation
+type ProviderProtocolCreate struct {
+	// Oauth2 OAuth 2.0 protocol configuration for provider creation
+	Oauth2 *ProviderOAuth2ProtocolCreate `json:"oauth2,omitempty"`
+
+	// Openid OpenID Connect protocol configuration for provider creation
+	Openid *ProviderOpenIDProtocolCreate `json:"openid,omitempty"`
+}
+
+// ProviderProtocolUpdate Protocol-specific configuration. Set to null to remove all protocols.
+type ProviderProtocolUpdate struct {
+	// Oauth2 OAuth 2.0 protocol configuration. Set to null to remove all OAuth2 config.
+	Oauth2 *ProviderOAuth2ProtocolUpdate `json:"oauth2"`
+
+	// Openid OpenID Connect protocol configuration. Set to null to remove all OpenID config.
+	Openid *ProviderOpenIDProtocolUpdate `json:"openid"`
 }
 
 // ProviderUpdate Schema for updating an existing provider
@@ -173,22 +220,7 @@ type ProviderUpdate struct {
 	Name *string `json:"name,omitempty"`
 
 	// Protocols Protocol-specific configuration. Set to null to remove all protocols.
-	Protocols *struct {
-		// Oauth2 OAuth 2.0 protocol configuration. Set to null to remove all OAuth2 config.
-		Oauth2 *struct {
-			AuthorizationEndpoint         *string   `json:"authorization_endpoint"`
-			CodeChallengeMethodsSupported *[]string `json:"code_challenge_methods_supported"`
-			JwksUri                       *string   `json:"jwks_uri"`
-			RegistrationEndpoint          *string   `json:"registration_endpoint"`
-			ScopesSupported               *[]string `json:"scopes_supported"`
-			TokenEndpoint                 *string   `json:"token_endpoint"`
-		} `json:"oauth2"`
-
-		// Openid OpenID Connect protocol configuration. Set to null to remove all OpenID config.
-		Openid *struct {
-			UserinfoEndpoint *string `json:"userinfo_endpoint"`
-		} `json:"openid"`
-	} `json:"protocols"`
+	Protocols *ProviderProtocolUpdate `json:"protocols"`
 }
 
 // Zone A zone for organizing resources within an organization
@@ -208,44 +240,16 @@ type Zone struct {
 	// Name Human-readable name
 	Name string `json:"name"`
 
-	// Oauth2DcrEnabled Whether Dynamic Client Registration is enabled
-	Oauth2DcrEnabled bool `json:"oauth2_dcr_enabled"`
-
-	// Oauth2PkceRequired Whether PKCE is required for authorization code flows
-	Oauth2PkceRequired bool `json:"oauth2_pkce_required"`
-
 	// OrganizationId Organization that owns this zone
 	OrganizationId string `json:"organization_id"`
-	Protocols      struct {
-		Oauth2 struct {
-			// AuthorizationEndpoint OAuth 2.0 authorization endpoint
-			AuthorizationEndpoint string `json:"authorization_endpoint"`
 
-			// AuthorizationServerMetadata OAuth 2.0 Authorization Server Metadata endpoint (.well-known/oauth-authorization-server)
-			AuthorizationServerMetadata string `json:"authorization_server_metadata"`
+	// Protocols Protocol configuration for a zone
+	Protocols struct {
+		// Oauth2 OAuth 2.0 protocol configuration for a zone
+		Oauth2 ZoneOAuth2Protocol `json:"oauth2"`
 
-			// Issuer OAuth 2.0 issuer identifier
-			Issuer string `json:"issuer"`
-
-			// JwksUri JSON Web Key Set endpoint
-			JwksUri string `json:"jwks_uri"`
-
-			// RedirectUri OAuth 2.0 redirect URI for this zone
-			RedirectUri string `json:"redirect_uri"`
-
-			// RegistrationEndpoint OAuth 2.0 Dynamic Client Registration endpoint
-			RegistrationEndpoint string `json:"registration_endpoint"`
-
-			// TokenEndpoint OAuth 2.0 token endpoint
-			TokenEndpoint string `json:"token_endpoint"`
-		} `json:"oauth2"`
-		Openid struct {
-			// ProviderConfiguration OpenID Connect Provider Configuration endpoint (.well-known/openid-configuration)
-			ProviderConfiguration string `json:"provider_configuration"`
-
-			// UserinfoEndpoint OpenID Connect UserInfo endpoint
-			UserinfoEndpoint string `json:"userinfo_endpoint"`
-		} `json:"openid"`
+		// Openid OpenID Connect protocol configuration for a zone
+		Openid ZoneOpenIDProtocol `json:"openid"`
 	} `json:"protocols"`
 
 	// Slug URL-safe identifier, unique within the zone
@@ -269,11 +273,77 @@ type ZoneCreate struct {
 	// Name Human-readable name
 	Name string `json:"name"`
 
-	// Oauth2DcrEnabled Whether Dynamic Client Registration is enabled
-	Oauth2DcrEnabled *bool `json:"oauth2_dcr_enabled,omitempty"`
+	// Protocols Protocol configuration for zone creation
+	Protocols *ZoneProtocolCreate `json:"protocols,omitempty"`
+}
 
-	// Oauth2PkceRequired Whether PKCE is required for authorization code flows
-	Oauth2PkceRequired *bool `json:"oauth2_pkce_required,omitempty"`
+// ZoneOAuth2Protocol OAuth 2.0 protocol configuration for a zone
+type ZoneOAuth2Protocol struct {
+	// AuthorizationEndpoint OAuth 2.0 authorization endpoint
+	AuthorizationEndpoint string `json:"authorization_endpoint"`
+
+	// AuthorizationServerMetadata OAuth 2.0 Authorization Server Metadata endpoint (.well-known/oauth-authorization-server)
+	AuthorizationServerMetadata string `json:"authorization_server_metadata"`
+
+	// DcrEnabled Whether Dynamic Client Registration is enabled
+	DcrEnabled bool `json:"dcr_enabled"`
+
+	// Issuer OAuth 2.0 issuer identifier
+	Issuer string `json:"issuer"`
+
+	// JwksUri JSON Web Key Set endpoint
+	JwksUri string `json:"jwks_uri"`
+
+	// PkceRequired Whether PKCE is required for authorization code flows
+	PkceRequired bool `json:"pkce_required"`
+
+	// RedirectUri OAuth 2.0 redirect URI for this zone
+	RedirectUri string `json:"redirect_uri"`
+
+	// RegistrationEndpoint OAuth 2.0 Dynamic Client Registration endpoint
+	RegistrationEndpoint string `json:"registration_endpoint"`
+
+	// TokenEndpoint OAuth 2.0 token endpoint
+	TokenEndpoint string `json:"token_endpoint"`
+}
+
+// ZoneOAuth2ProtocolCreate OAuth 2.0 protocol configuration for zone creation
+type ZoneOAuth2ProtocolCreate struct {
+	// DcrEnabled Whether Dynamic Client Registration is enabled
+	DcrEnabled *bool `json:"dcr_enabled,omitempty"`
+
+	// PkceRequired Whether PKCE is required for authorization code flows
+	PkceRequired *bool `json:"pkce_required,omitempty"`
+}
+
+// ZoneOAuth2ProtocolUpdate OAuth 2.0 protocol configuration update for a zone (partial update)
+type ZoneOAuth2ProtocolUpdate struct {
+	// DcrEnabled Whether Dynamic Client Registration is enabled
+	DcrEnabled *bool `json:"dcr_enabled"`
+
+	// PkceRequired Whether PKCE is required for authorization code flows
+	PkceRequired *bool `json:"pkce_required"`
+}
+
+// ZoneOpenIDProtocol OpenID Connect protocol configuration for a zone
+type ZoneOpenIDProtocol struct {
+	// ProviderConfiguration OpenID Connect Provider Configuration endpoint (.well-known/openid-configuration)
+	ProviderConfiguration string `json:"provider_configuration"`
+
+	// UserinfoEndpoint OpenID Connect UserInfo endpoint
+	UserinfoEndpoint string `json:"userinfo_endpoint"`
+}
+
+// ZoneProtocolCreate Protocol configuration for zone creation
+type ZoneProtocolCreate struct {
+	// Oauth2 OAuth 2.0 protocol configuration for zone creation
+	Oauth2 *ZoneOAuth2ProtocolCreate `json:"oauth2,omitempty"`
+}
+
+// ZoneProtocolUpdate Protocol configuration update for a zone (partial update)
+type ZoneProtocolUpdate struct {
+	// Oauth2 OAuth 2.0 protocol configuration update for a zone (partial update)
+	Oauth2 *ZoneOAuth2ProtocolUpdate `json:"oauth2,omitempty"`
 }
 
 // ZoneUpdate Schema for updating an existing zone (partial update)
@@ -287,11 +357,8 @@ type ZoneUpdate struct {
 	// Name Human-readable name
 	Name *string `json:"name,omitempty"`
 
-	// Oauth2DcrEnabled Whether Dynamic Client Registration is enabled
-	Oauth2DcrEnabled *bool `json:"oauth2_dcr_enabled,omitempty"`
-
-	// Oauth2PkceRequired Whether PKCE is required for authorization code flows
-	Oauth2PkceRequired *bool `json:"oauth2_pkce_required,omitempty"`
+	// Protocols Protocol configuration update for a zone (partial update)
+	Protocols *ZoneProtocolUpdate `json:"protocols"`
 
 	// UserIdentityProviderId Provider ID to configure for user login (set to null to unset)
 	UserIdentityProviderId *string `json:"user_identity_provider_id"`
@@ -1926,49 +1993,53 @@ func ParseUpdateProviderResponse(rsp *http.Response) (*UpdateProviderResponse, e
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"Mx7go7FFAAA=",
+	"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",
+	"/0vzWRi2TwAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
