@@ -19,3 +19,14 @@ resource "keycard_zone" "with_oauth2" {
     dcr_enabled   = true  # Enable Dynamic Client Registration
   }
 }
+
+# The zone resource provides computed OAuth2 protocol URIs
+output "oauth2_issuer" {
+  description = "OAuth 2.0 issuer URI for the zone"
+  value       = keycard_zone.with_oauth2.oauth2.issuer_uri
+}
+
+output "oauth2_redirect_uri" {
+  description = "OAuth 2.0 redirect URI for the zone"
+  value       = keycard_zone.with_oauth2.oauth2.redirect_uri
+}

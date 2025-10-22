@@ -65,13 +65,44 @@ type Zone struct {
 	Name string `json:"name"`
 
 	// Oauth2DcrEnabled Whether Dynamic Client Registration is enabled
-	Oauth2DcrEnabled *bool `json:"oauth2_dcr_enabled,omitempty"`
+	Oauth2DcrEnabled bool `json:"oauth2_dcr_enabled"`
 
 	// Oauth2PkceRequired Whether PKCE is required for authorization code flows
-	Oauth2PkceRequired *bool `json:"oauth2_pkce_required,omitempty"`
+	Oauth2PkceRequired bool `json:"oauth2_pkce_required"`
 
 	// OrganizationId Organization that owns this zone
 	OrganizationId string `json:"organization_id"`
+	Protocols      struct {
+		Oauth2 struct {
+			// AuthorizationEndpoint OAuth 2.0 authorization endpoint
+			AuthorizationEndpoint string `json:"authorization_endpoint"`
+
+			// AuthorizationServerMetadata OAuth 2.0 Authorization Server Metadata endpoint (.well-known/oauth-authorization-server)
+			AuthorizationServerMetadata string `json:"authorization_server_metadata"`
+
+			// Issuer OAuth 2.0 issuer identifier
+			Issuer string `json:"issuer"`
+
+			// JwksUri JSON Web Key Set endpoint
+			JwksUri string `json:"jwks_uri"`
+
+			// RedirectUri OAuth 2.0 redirect URI for this zone
+			RedirectUri string `json:"redirect_uri"`
+
+			// RegistrationEndpoint OAuth 2.0 Dynamic Client Registration endpoint
+			RegistrationEndpoint string `json:"registration_endpoint"`
+
+			// TokenEndpoint OAuth 2.0 token endpoint
+			TokenEndpoint string `json:"token_endpoint"`
+		} `json:"oauth2"`
+		Openid struct {
+			// ProviderConfiguration OpenID Connect Provider Configuration endpoint (.well-known/openid-configuration)
+			ProviderConfiguration string `json:"provider_configuration"`
+
+			// UserinfoEndpoint OpenID Connect UserInfo endpoint
+			UserinfoEndpoint string `json:"userinfo_endpoint"`
+		} `json:"openid"`
+	} `json:"protocols"`
 
 	// Slug URL-safe identifier, unique within the zone
 	Slug string `json:"slug"`
@@ -79,14 +110,8 @@ type Zone struct {
 	// UpdatedAt Entity update timestamp
 	UpdatedAt time.Time `json:"updated_at"`
 
-	// UserAuthenticationProviderId Provider ID configured for user login
-	UserAuthenticationProviderId *string `json:"user_authentication_provider_id,omitempty"`
-
-	// VaultProviderIdentifier User specified identifier, unique within the zone
-	VaultProviderIdentifier string `json:"vault_provider_identifier"`
-
-	// ZoneIdentityProviderIdentifier User specified identifier, unique within the zone
-	ZoneIdentityProviderIdentifier string `json:"zone_identity_provider_identifier"`
+	// UserIdentityProviderId Provider ID configured for user login
+	UserIdentityProviderId *string `json:"user_identity_provider_id,omitempty"`
 }
 
 // ZoneCreate Schema for creating a new zone
@@ -124,13 +149,15 @@ type ZoneUpdate struct {
 	// Oauth2PkceRequired Whether PKCE is required for authorization code flows
 	Oauth2PkceRequired *bool `json:"oauth2_pkce_required,omitempty"`
 
-	// UserAuthenticationProviderId Provider ID to configure for user login (set to null to unset)
-	UserAuthenticationProviderId *string `json:"user_authentication_provider_id"`
+	// UserIdentityProviderId Provider ID to configure for user login (set to null to unset)
+	UserIdentityProviderId *string `json:"user_identity_provider_id"`
 }
 
 // ListZonesParams defines parameters for ListZones.
 type ListZonesParams struct {
-	Slug *string `form:"slug,omitempty" json:"slug,omitempty"`
+	Slug   *string `form:"slug,omitempty" json:"slug,omitempty"`
+	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Limit  *int    `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // CreateZoneJSONRequestBody defines body for CreateZone for application/json ContentType.
@@ -341,6 +368,38 @@ func NewListZonesRequest(server string, params *ListZonesParams) (*http.Request,
 		if params.Slug != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "slug", runtime.ParamLocationQuery, *params.Slug); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cursor", runtime.ParamLocationQuery, *params.Cursor); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -929,33 +988,37 @@ func ParseUpdateZoneResponse(rsp *http.Response) (*UpdateZoneResponse, error) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"KBwdAAA=",
+	"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",
+	"wuuGPxXmfMYnfH21/m8AAAD//7aznN3TIQAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

@@ -33,6 +33,9 @@ func TestAccZoneDataSource_basic(t *testing.T) {
 					// Verify OAuth2 values are fetched
 					resource.TestCheckResourceAttrSet("data.keycard_zone.test", "oauth2.pkce_required"),
 					resource.TestCheckResourceAttrSet("data.keycard_zone.test", "oauth2.dcr_enabled"),
+					// Verify OAuth2 protocol URIs are fetched
+					resource.TestCheckResourceAttrSet("data.keycard_zone.test", "oauth2.issuer_uri"),
+					resource.TestCheckResourceAttrSet("data.keycard_zone.test", "oauth2.redirect_uri"),
 				),
 			},
 		},
@@ -91,6 +94,15 @@ func TestAccZoneDataSource_oauth2(t *testing.T) {
 					),
 					resource.TestCheckResourceAttr("data.keycard_zone.test", "oauth2.pkce_required", "false"),
 					resource.TestCheckResourceAttr("data.keycard_zone.test", "oauth2.dcr_enabled", "true"),
+					// Verify OAuth2 protocol URIs match between resource and data source
+					resource.TestCheckResourceAttrPair(
+						"data.keycard_zone.test", "oauth2.issuer_uri",
+						"keycard_zone.test", "oauth2.issuer_uri",
+					),
+					resource.TestCheckResourceAttrPair(
+						"data.keycard_zone.test", "oauth2.redirect_uri",
+						"keycard_zone.test", "oauth2.redirect_uri",
+					),
 				),
 			},
 		},

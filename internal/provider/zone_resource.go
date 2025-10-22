@@ -41,14 +41,18 @@ type ZoneResourceModel struct {
 
 // OAuth2Model describes the nested oauth2 block data model.
 type OAuth2Model struct {
-	PkceRequired types.Bool `tfsdk:"pkce_required"`
-	DcrEnabled   types.Bool `tfsdk:"dcr_enabled"`
+	PkceRequired types.Bool   `tfsdk:"pkce_required"`
+	DcrEnabled   types.Bool   `tfsdk:"dcr_enabled"`
+	IssuerUri    types.String `tfsdk:"issuer_uri"`
+	RedirectUri  types.String `tfsdk:"redirect_uri"`
 }
 
 func (m OAuth2Model) AttributeTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"pkce_required": types.BoolType,
 		"dcr_enabled":   types.BoolType,
+		"issuer_uri":    types.StringType,
+		"redirect_uri":  types.StringType,
 	}
 }
 
@@ -97,6 +101,20 @@ func (r *ZoneResource) Schema(ctx context.Context, req resource.SchemaRequest, r
 						Default:             booldefault.StaticBool(true),
 						PlanModifiers: []planmodifier.Bool{
 							boolplanmodifier.UseStateForUnknown(),
+						},
+					},
+					"issuer_uri": schema.StringAttribute{
+						MarkdownDescription: "OAuth 2.0 issuer URI for this zone.",
+						Computed:            true,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
+					},
+					"redirect_uri": schema.StringAttribute{
+						MarkdownDescription: "OAuth 2.0 redirect URI for this zone.",
+						Computed:            true,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
 						},
 					},
 				},
@@ -193,8 +211,10 @@ func (r *ZoneResource) Create(ctx context.Context, req resource.CreateRequest, r
 	data.Name = types.StringValue(zone.Name)
 	data.Description = types.StringPointerValue(zone.Description)
 	oauth2Data := OAuth2Model{
-		PkceRequired: types.BoolPointerValue(zone.Oauth2PkceRequired),
-		DcrEnabled:   types.BoolPointerValue(zone.Oauth2DcrEnabled),
+		PkceRequired: types.BoolValue(zone.Oauth2PkceRequired),
+		DcrEnabled:   types.BoolValue(zone.Oauth2DcrEnabled),
+		IssuerUri:    types.StringValue(zone.Protocols.Oauth2.Issuer),
+		RedirectUri:  types.StringValue(zone.Protocols.Oauth2.RedirectUri),
 	}
 
 	oauth2Obj, diags := types.ObjectValueFrom(ctx, oauth2Data.AttributeTypes(), oauth2Data)
@@ -251,8 +271,10 @@ func (r *ZoneResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	data.Description = types.StringPointerValue(zone.Description)
 
 	oauth2Data := OAuth2Model{
-		PkceRequired: types.BoolPointerValue(zone.Oauth2PkceRequired),
-		DcrEnabled:   types.BoolPointerValue(zone.Oauth2DcrEnabled),
+		PkceRequired: types.BoolValue(zone.Oauth2PkceRequired),
+		DcrEnabled:   types.BoolValue(zone.Oauth2DcrEnabled),
+		IssuerUri:    types.StringValue(zone.Protocols.Oauth2.Issuer),
+		RedirectUri:  types.StringValue(zone.Protocols.Oauth2.RedirectUri),
 	}
 
 	oauth2Obj, diags := types.ObjectValueFrom(ctx, oauth2Data.AttributeTypes(), oauth2Data)
@@ -335,8 +357,10 @@ func (r *ZoneResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	data.Description = types.StringPointerValue(zone.Description)
 
 	oauth2Data := OAuth2Model{
-		PkceRequired: types.BoolPointerValue(zone.Oauth2PkceRequired),
-		DcrEnabled:   types.BoolPointerValue(zone.Oauth2DcrEnabled),
+		PkceRequired: types.BoolValue(zone.Oauth2PkceRequired),
+		DcrEnabled:   types.BoolValue(zone.Oauth2DcrEnabled),
+		IssuerUri:    types.StringValue(zone.Protocols.Oauth2.Issuer),
+		RedirectUri:  types.StringValue(zone.Protocols.Oauth2.RedirectUri),
 	}
 
 	oauth2Obj, diags := types.ObjectValueFrom(ctx, oauth2Data.AttributeTypes(), oauth2Data)
