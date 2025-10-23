@@ -6,7 +6,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
 )
 
@@ -128,24 +127,10 @@ func (d *ZoneDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 	}
 
 	// Update the model with the response data
-	zone := getResp.JSON200
-	data.ID = types.StringValue(zone.Id)
-	data.Name = types.StringValue(zone.Name)
-	data.Description = types.StringPointerValue(zone.Description)
-
-	oauth2Data := OAuth2Model{
-		PkceRequired: types.BoolValue(zone.Protocols.Oauth2.PkceRequired),
-		DcrEnabled:   types.BoolValue(zone.Protocols.Oauth2.DcrEnabled),
-		IssuerUri:    types.StringValue(zone.Protocols.Oauth2.Issuer),
-		RedirectUri:  types.StringValue(zone.Protocols.Oauth2.RedirectUri),
-	}
-
-	oauth2Obj, diags := types.ObjectValueFrom(ctx, oauth2Data.AttributeTypes(), oauth2Data)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(updateZoneModelFromAPIResponse(ctx, getResp.JSON200, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	data.OAuth2 = oauth2Obj
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

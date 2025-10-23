@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/oapi-codegen/nullable"
 	"github.com/oapi-codegen/runtime"
 )
 
@@ -57,7 +58,7 @@ type Error struct {
 // PageInfo Pagination information
 type PageInfo struct {
 	// EndCursor Cursor pointing to the last item in the current page
-	EndCursor *string `json:"end_cursor"`
+	EndCursor nullable.Nullable[string] `json:"end_cursor,omitempty"`
 
 	// HasNextPage Whether there are more items after the current page
 	HasNextPage bool `json:"has_next_page"`
@@ -66,13 +67,13 @@ type PageInfo struct {
 	HasPreviousPage bool `json:"has_previous_page"`
 
 	// StartCursor Cursor pointing to the first item in the current page
-	StartCursor *string `json:"start_cursor"`
+	StartCursor nullable.Nullable[string] `json:"start_cursor,omitempty"`
 }
 
 // Provider A Provider is a system that supplies access to Resources and allows actors (Users or Applications) to authenticate.
 type Provider struct {
 	// ClientId OAuth 2.0 client identifier
-	ClientId *string `json:"client_id"`
+	ClientId nullable.Nullable[string] `json:"client_id,omitempty"`
 
 	// ClientSecretSet Indicates whether a client secret is configured
 	ClientSecretSet *bool `json:"client_secret_set,omitempty"`
@@ -81,7 +82,7 @@ type Provider struct {
 	CreatedAt time.Time `json:"created_at"`
 
 	// Description Human-readable description
-	Description *string `json:"description"`
+	Description nullable.Nullable[string] `json:"description,omitempty"`
 
 	// Id Unique identifier of the provider
 	Id string `json:"id"`
@@ -96,13 +97,13 @@ type Provider struct {
 	OrganizationId string `json:"organization_id"`
 
 	// Protocols Protocol-specific configuration
-	Protocols *struct {
+	Protocols nullable.Nullable[struct {
 		// Oauth2 OAuth 2.0 protocol configuration
-		Oauth2 *ProviderOAuth2Protocol `json:"oauth2"`
+		Oauth2 nullable.Nullable[ProviderOAuth2Protocol] `json:"oauth2,omitempty"`
 
 		// Openid OpenID Connect protocol configuration
-		Openid *ProviderOpenIDProtocol `json:"openid"`
-	} `json:"protocols"`
+		Openid nullable.Nullable[ProviderOpenIDProtocol] `json:"openid,omitempty"`
+	}] `json:"protocols,omitempty"`
 
 	// Slug URL-safe identifier, unique within the zone
 	Slug string        `json:"slug"`
@@ -127,7 +128,7 @@ type ProviderCreate struct {
 	ClientSecret *string `json:"client_secret,omitempty"`
 
 	// Description Human-readable description
-	Description *string `json:"description"`
+	Description nullable.Nullable[string] `json:"description,omitempty"`
 
 	// Identifier User specified identifier, unique within the zone
 	Identifier string `json:"identifier"`
@@ -141,12 +142,12 @@ type ProviderCreate struct {
 
 // ProviderOAuth2Protocol OAuth 2.0 protocol configuration
 type ProviderOAuth2Protocol struct {
-	AuthorizationEndpoint         *string   `json:"authorization_endpoint"`
-	CodeChallengeMethodsSupported *[]string `json:"code_challenge_methods_supported"`
-	JwksUri                       *string   `json:"jwks_uri"`
-	RegistrationEndpoint          *string   `json:"registration_endpoint"`
-	ScopesSupported               *[]string `json:"scopes_supported"`
-	TokenEndpoint                 *string   `json:"token_endpoint"`
+	AuthorizationEndpoint         nullable.Nullable[string]   `json:"authorization_endpoint,omitempty"`
+	CodeChallengeMethodsSupported nullable.Nullable[[]string] `json:"code_challenge_methods_supported,omitempty"`
+	JwksUri                       nullable.Nullable[string]   `json:"jwks_uri,omitempty"`
+	RegistrationEndpoint          nullable.Nullable[string]   `json:"registration_endpoint,omitempty"`
+	ScopesSupported               nullable.Nullable[[]string] `json:"scopes_supported,omitempty"`
+	TokenEndpoint                 nullable.Nullable[string]   `json:"token_endpoint,omitempty"`
 }
 
 // ProviderOAuth2ProtocolCreate OAuth 2.0 protocol configuration for provider creation
@@ -161,17 +162,17 @@ type ProviderOAuth2ProtocolCreate struct {
 
 // ProviderOAuth2ProtocolUpdate OAuth 2.0 protocol configuration. Set to null to remove all OAuth2 config.
 type ProviderOAuth2ProtocolUpdate struct {
-	AuthorizationEndpoint         *string   `json:"authorization_endpoint"`
-	CodeChallengeMethodsSupported *[]string `json:"code_challenge_methods_supported"`
-	JwksUri                       *string   `json:"jwks_uri"`
-	RegistrationEndpoint          *string   `json:"registration_endpoint"`
-	ScopesSupported               *[]string `json:"scopes_supported"`
-	TokenEndpoint                 *string   `json:"token_endpoint"`
+	AuthorizationEndpoint         nullable.Nullable[string]   `json:"authorization_endpoint,omitempty"`
+	CodeChallengeMethodsSupported nullable.Nullable[[]string] `json:"code_challenge_methods_supported,omitempty"`
+	JwksUri                       nullable.Nullable[string]   `json:"jwks_uri,omitempty"`
+	RegistrationEndpoint          nullable.Nullable[string]   `json:"registration_endpoint,omitempty"`
+	ScopesSupported               nullable.Nullable[[]string] `json:"scopes_supported,omitempty"`
+	TokenEndpoint                 nullable.Nullable[string]   `json:"token_endpoint,omitempty"`
 }
 
 // ProviderOpenIDProtocol OpenID Connect protocol configuration
 type ProviderOpenIDProtocol struct {
-	UserinfoEndpoint *string `json:"userinfo_endpoint"`
+	UserinfoEndpoint nullable.Nullable[string] `json:"userinfo_endpoint,omitempty"`
 }
 
 // ProviderOpenIDProtocolCreate OpenID Connect protocol configuration for provider creation
@@ -181,7 +182,7 @@ type ProviderOpenIDProtocolCreate struct {
 
 // ProviderOpenIDProtocolUpdate OpenID Connect protocol configuration. Set to null to remove all OpenID config.
 type ProviderOpenIDProtocolUpdate struct {
-	UserinfoEndpoint *string `json:"userinfo_endpoint"`
+	UserinfoEndpoint nullable.Nullable[string] `json:"userinfo_endpoint,omitempty"`
 }
 
 // ProviderProtocolCreate Protocol-specific configuration for provider creation
@@ -196,22 +197,22 @@ type ProviderProtocolCreate struct {
 // ProviderProtocolUpdate Protocol-specific configuration. Set to null to remove all protocols.
 type ProviderProtocolUpdate struct {
 	// Oauth2 OAuth 2.0 protocol configuration. Set to null to remove all OAuth2 config.
-	Oauth2 *ProviderOAuth2ProtocolUpdate `json:"oauth2"`
+	Oauth2 nullable.Nullable[ProviderOAuth2ProtocolUpdate] `json:"oauth2,omitempty"`
 
 	// Openid OpenID Connect protocol configuration. Set to null to remove all OpenID config.
-	Openid *ProviderOpenIDProtocolUpdate `json:"openid"`
+	Openid nullable.Nullable[ProviderOpenIDProtocolUpdate] `json:"openid,omitempty"`
 }
 
 // ProviderUpdate Schema for updating an existing provider
 type ProviderUpdate struct {
 	// ClientId OAuth 2.0 client identifier. Set to null to remove.
-	ClientId *string `json:"client_id"`
+	ClientId nullable.Nullable[string] `json:"client_id,omitempty"`
 
 	// ClientSecret OAuth 2.0 client secret (will be encrypted and stored securely). Set to null to remove.
-	ClientSecret *string `json:"client_secret"`
+	ClientSecret nullable.Nullable[string] `json:"client_secret,omitempty"`
 
 	// Description Human-readable description
-	Description *string `json:"description"`
+	Description nullable.Nullable[string] `json:"description,omitempty"`
 
 	// Identifier User specified identifier, unique within the zone
 	Identifier *string `json:"identifier,omitempty"`
@@ -220,7 +221,7 @@ type ProviderUpdate struct {
 	Name *string `json:"name,omitempty"`
 
 	// Protocols Protocol-specific configuration. Set to null to remove all protocols.
-	Protocols *ProviderProtocolUpdate `json:"protocols"`
+	Protocols nullable.Nullable[ProviderProtocolUpdate] `json:"protocols,omitempty"`
 }
 
 // Zone A zone for organizing resources within an organization
@@ -232,7 +233,7 @@ type Zone struct {
 	CreatedAt time.Time `json:"created_at"`
 
 	// Description Human-readable description
-	Description *string `json:"description"`
+	Description nullable.Nullable[string] `json:"description,omitempty"`
 
 	// Id Unique identifier of the zone
 	Id string `json:"id"`
@@ -268,7 +269,7 @@ type ZoneCreate struct {
 	Cname *string `json:"cname,omitempty"`
 
 	// Description Human-readable description
-	Description *string `json:"description"`
+	Description nullable.Nullable[string] `json:"description,omitempty"`
 
 	// Name Human-readable name
 	Name string `json:"name"`
@@ -319,10 +320,10 @@ type ZoneOAuth2ProtocolCreate struct {
 // ZoneOAuth2ProtocolUpdate OAuth 2.0 protocol configuration update for a zone (partial update)
 type ZoneOAuth2ProtocolUpdate struct {
 	// DcrEnabled Whether Dynamic Client Registration is enabled
-	DcrEnabled *bool `json:"dcr_enabled"`
+	DcrEnabled nullable.Nullable[bool] `json:"dcr_enabled,omitempty"`
 
 	// PkceRequired Whether PKCE is required for authorization code flows
-	PkceRequired *bool `json:"pkce_required"`
+	PkceRequired nullable.Nullable[bool] `json:"pkce_required,omitempty"`
 }
 
 // ZoneOpenIDProtocol OpenID Connect protocol configuration for a zone
@@ -349,19 +350,19 @@ type ZoneProtocolUpdate struct {
 // ZoneUpdate Schema for updating an existing zone (partial update)
 type ZoneUpdate struct {
 	// Cname Custom domain name (CNAME) for the zone (set to null to remove)
-	Cname *string `json:"cname"`
+	Cname nullable.Nullable[string] `json:"cname,omitempty"`
 
 	// Description Human-readable description
-	Description *string `json:"description"`
+	Description nullable.Nullable[string] `json:"description,omitempty"`
 
 	// Name Human-readable name
 	Name *string `json:"name,omitempty"`
 
 	// Protocols Protocol configuration update for a zone (partial update)
-	Protocols *ZoneProtocolUpdate `json:"protocols"`
+	Protocols nullable.Nullable[ZoneProtocolUpdate] `json:"protocols,omitempty"`
 
 	// UserIdentityProviderId Provider ID to configure for user login (set to null to unset)
-	UserIdentityProviderId *string `json:"user_identity_provider_id"`
+	UserIdentityProviderId nullable.Nullable[string] `json:"user_identity_provider_id,omitempty"`
 }
 
 // ListZonesParams defines parameters for ListZones.

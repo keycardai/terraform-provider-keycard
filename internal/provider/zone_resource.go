@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -16,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
+	"github.com/oapi-codegen/nullable"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -146,6 +148,30 @@ func (r *ZoneResource) Configure(ctx context.Context, req resource.ConfigureRequ
 	r.client = client
 }
 
+// updateZoneModelFromAPIResponse maps a Zone API response to the ZoneResourceModel.
+// This is a shared helper function used by Create, Read, and Update operations.
+// It returns any diagnostics encountered during the mapping.
+func updateZoneModelFromAPIResponse(ctx context.Context, zone *client.Zone, data *ZoneResourceModel) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	data.ID = types.StringValue(zone.Id)
+	data.Name = types.StringValue(zone.Name)
+	data.Description = NullableStringValue(zone.Description)
+
+	oauth2Data := OAuth2Model{
+		PkceRequired: types.BoolValue(zone.Protocols.Oauth2.PkceRequired),
+		DcrEnabled:   types.BoolValue(zone.Protocols.Oauth2.DcrEnabled),
+		IssuerUri:    types.StringValue(zone.Protocols.Oauth2.Issuer),
+		RedirectUri:  types.StringValue(zone.Protocols.Oauth2.RedirectUri),
+	}
+
+	oauth2Obj, objDiags := types.ObjectValueFrom(ctx, oauth2Data.AttributeTypes(), oauth2Data)
+	diags.Append(objDiags...)
+	data.OAuth2 = oauth2Obj
+
+	return diags
+}
+
 func (r *ZoneResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data ZoneResourceModel
 
@@ -164,7 +190,7 @@ func (r *ZoneResource) Create(ctx context.Context, req resource.CreateRequest, r
 	// Set description if provided
 	if !data.Description.IsNull() && !data.Description.IsUnknown() {
 		desc := data.Description.ValueString()
-		createReq.Description = &desc
+		createReq.Description = nullable.NewNullableWithValue(desc)
 	}
 
 	// Set OAuth2 configuration if provided
@@ -210,23 +236,10 @@ func (r *ZoneResource) Create(ctx context.Context, req resource.CreateRequest, r
 	}
 
 	// Update the model with the response data
-	zone := createResp.JSON200
-	data.ID = types.StringValue(zone.Id)
-	data.Name = types.StringValue(zone.Name)
-	data.Description = types.StringPointerValue(zone.Description)
-	oauth2Data := OAuth2Model{
-		PkceRequired: types.BoolValue(zone.Protocols.Oauth2.PkceRequired),
-		DcrEnabled:   types.BoolValue(zone.Protocols.Oauth2.DcrEnabled),
-		IssuerUri:    types.StringValue(zone.Protocols.Oauth2.Issuer),
-		RedirectUri:  types.StringValue(zone.Protocols.Oauth2.RedirectUri),
-	}
-
-	oauth2Obj, diags := types.ObjectValueFrom(ctx, oauth2Data.AttributeTypes(), oauth2Data)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(updateZoneModelFromAPIResponse(ctx, createResp.JSON200, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	data.OAuth2 = oauth2Obj
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -269,24 +282,10 @@ func (r *ZoneResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	}
 
 	// Update the model with the response data
-	zone := getResp.JSON200
-	data.ID = types.StringValue(zone.Id)
-	data.Name = types.StringValue(zone.Name)
-	data.Description = types.StringPointerValue(zone.Description)
-
-	oauth2Data := OAuth2Model{
-		PkceRequired: types.BoolValue(zone.Protocols.Oauth2.PkceRequired),
-		DcrEnabled:   types.BoolValue(zone.Protocols.Oauth2.DcrEnabled),
-		IssuerUri:    types.StringValue(zone.Protocols.Oauth2.Issuer),
-		RedirectUri:  types.StringValue(zone.Protocols.Oauth2.RedirectUri),
-	}
-
-	oauth2Obj, diags := types.ObjectValueFrom(ctx, oauth2Data.AttributeTypes(), oauth2Data)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(updateZoneModelFromAPIResponse(ctx, getResp.JSON200, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	data.OAuth2 = oauth2Obj
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -313,7 +312,7 @@ func (r *ZoneResource) Update(ctx context.Context, req resource.UpdateRequest, r
 
 	// Set description (including null to remove it)
 	if !data.Description.IsUnknown() {
-		updateReq.Description = data.Description.ValueStringPointer()
+		updateReq.Description = StringValueNullable(data.Description)
 	}
 
 	// Set OAuth2 configuration if provided
@@ -325,17 +324,19 @@ func (r *ZoneResource) Update(ctx context.Context, req resource.UpdateRequest, r
 			return
 		}
 
-		updateReq.Protocols = &client.ZoneProtocolUpdate{
+		protocolUpdate := client.ZoneProtocolUpdate{
 			Oauth2: &client.ZoneOAuth2ProtocolUpdate{},
 		}
 
 		if !oauth2Data.PkceRequired.IsNull() && !oauth2Data.PkceRequired.IsUnknown() {
-			updateReq.Protocols.Oauth2.PkceRequired = oauth2Data.PkceRequired.ValueBoolPointer()
+			protocolUpdate.Oauth2.PkceRequired = BoolValueNullable(oauth2Data.PkceRequired)
 		}
 
 		if !oauth2Data.DcrEnabled.IsNull() && !oauth2Data.DcrEnabled.IsUnknown() {
-			updateReq.Protocols.Oauth2.DcrEnabled = oauth2Data.DcrEnabled.ValueBoolPointer()
+			protocolUpdate.Oauth2.DcrEnabled = BoolValueNullable(oauth2Data.DcrEnabled)
 		}
+
+		updateReq.Protocols = nullable.NewNullableWithValue(protocolUpdate)
 	}
 
 	// Update the zone
@@ -359,24 +360,10 @@ func (r *ZoneResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	}
 
 	// Update the model with the response data
-	zone := updateResp.JSON200
-	data.ID = types.StringValue(zone.Id)
-	data.Name = types.StringValue(zone.Name)
-	data.Description = types.StringPointerValue(zone.Description)
-
-	oauth2Data := OAuth2Model{
-		PkceRequired: types.BoolValue(zone.Protocols.Oauth2.PkceRequired),
-		DcrEnabled:   types.BoolValue(zone.Protocols.Oauth2.DcrEnabled),
-		IssuerUri:    types.StringValue(zone.Protocols.Oauth2.Issuer),
-		RedirectUri:  types.StringValue(zone.Protocols.Oauth2.RedirectUri),
-	}
-
-	oauth2Obj, diags := types.ObjectValueFrom(ctx, oauth2Data.AttributeTypes(), oauth2Data)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(updateZoneModelFromAPIResponse(ctx, updateResp.JSON200, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	data.OAuth2 = oauth2Obj
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

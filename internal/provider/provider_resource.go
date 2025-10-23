@@ -9,11 +9,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
+	"github.com/oapi-codegen/nullable"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -101,15 +103,27 @@ func (r *ProviderResource) Schema(ctx context.Context, req resource.SchemaReques
 			"oauth2": schema.SingleNestedAttribute{
 				MarkdownDescription: "OAuth 2.0 protocol configuration.",
 				Optional:            true,
+				Computed:            true,
 				Attributes: map[string]schema.Attribute{
 					"authorization_endpoint": schema.StringAttribute{
 						MarkdownDescription: "OAuth 2.0 Authorization endpoint URL.",
 						Optional:            true,
+						Computed:            true,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
 					},
 					"token_endpoint": schema.StringAttribute{
 						MarkdownDescription: "OAuth 2.0 Token endpoint URL.",
 						Optional:            true,
+						Computed:            true,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
 					},
+				},
+				PlanModifiers: []planmodifier.Object{
+					objectplanmodifier.UseStateForUnknown(),
 				},
 			},
 		},
@@ -154,8 +168,7 @@ func (r *ProviderResource) Create(ctx context.Context, req resource.CreateReques
 
 	// Set description if provided
 	if !data.Description.IsNull() && !data.Description.IsUnknown() {
-		desc := data.Description.ValueString()
-		createReq.Description = &desc
+		createReq.Description = StringValueNullable(data.Description)
 	}
 
 	// Set client_id if provided
@@ -295,7 +308,7 @@ func (r *ProviderResource) Update(ctx context.Context, req resource.UpdateReques
 
 	// Set description (including null to remove it)
 	if !data.Description.IsUnknown() {
-		updateReq.Description = data.Description.ValueStringPointer()
+		updateReq.Description = StringValueNullable(data.Description)
 	}
 
 	// Set identifier at root level
@@ -306,34 +319,42 @@ func (r *ProviderResource) Update(ctx context.Context, req resource.UpdateReques
 
 	// Set client_id at root level
 	if !data.ClientID.IsUnknown() {
-		updateReq.ClientId = data.ClientID.ValueStringPointer()
+		updateReq.ClientId = StringValueNullable(data.ClientID)
 	}
 
 	// Set client_secret at root level
 	if !data.ClientSecret.IsUnknown() {
-		updateReq.ClientSecret = data.ClientSecret.ValueStringPointer()
+		updateReq.ClientSecret = StringValueNullable(data.ClientSecret)
 	}
 
-	// Set protocols.oauth2 fields if oauth2 block is provided
-	if !data.OAuth2.IsNull() && !data.OAuth2.IsUnknown() {
-		var oauth2Data OAuth2ProviderModel
-		diags := data.OAuth2.As(ctx, &oauth2Data, basetypes.ObjectAsOptions{})
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		// Only set protocols if at least one endpoint is provided
-		if !oauth2Data.AuthorizationEndpoint.IsUnknown() || !oauth2Data.TokenEndpoint.IsUnknown() {
-			updateReq.Protocols = &client.ProviderProtocolUpdate{
-				Oauth2: &client.ProviderOAuth2ProtocolUpdate{},
-			}
-			if !oauth2Data.AuthorizationEndpoint.IsUnknown() {
-				updateReq.Protocols.Oauth2.AuthorizationEndpoint = oauth2Data.AuthorizationEndpoint.ValueStringPointer()
+	// Set protocols.oauth2 fields
+	// Handle both null (to clear) and non-null (to set) values
+	if !data.OAuth2.IsUnknown() {
+		if data.OAuth2.IsNull() {
+			// Explicitly clear protocols to allow server defaults
+			updateReq.Protocols = nullable.NewNullNullable[client.ProviderProtocolUpdate]()
+		} else {
+			var oauth2Data OAuth2ProviderModel
+			diags := data.OAuth2.As(ctx, &oauth2Data, basetypes.ObjectAsOptions{})
+			resp.Diagnostics.Append(diags...)
+			if resp.Diagnostics.HasError() {
+				return
 			}
 
-			if !oauth2Data.TokenEndpoint.IsUnknown() {
-				updateReq.Protocols.Oauth2.TokenEndpoint = oauth2Data.TokenEndpoint.ValueStringPointer()
+			// Only set protocols if at least one endpoint is provided
+			if !oauth2Data.AuthorizationEndpoint.IsUnknown() || !oauth2Data.TokenEndpoint.IsUnknown() {
+				oauth2Update := client.ProviderOAuth2ProtocolUpdate{}
+				if !oauth2Data.AuthorizationEndpoint.IsNull() && !oauth2Data.AuthorizationEndpoint.IsUnknown() {
+					oauth2Update.AuthorizationEndpoint = StringValueNullable(oauth2Data.AuthorizationEndpoint)
+				}
+
+				if !oauth2Data.TokenEndpoint.IsNull() && !oauth2Data.TokenEndpoint.IsUnknown() {
+					oauth2Update.TokenEndpoint = StringValueNullable(oauth2Data.TokenEndpoint)
+				}
+				protocolUpdate := client.ProviderProtocolUpdate{
+					Oauth2: nullable.NewNullableWithValue(oauth2Update),
+				}
+				updateReq.Protocols = nullable.NewNullableWithValue(protocolUpdate)
 			}
 		}
 	}
