@@ -228,7 +228,7 @@ func TestAccApplicationResource_zoneChange(t *testing.T) {
 	})
 }
 
-// Helper function to generate import state ID in format zones/{zone-id}/applications/{application-id}
+// Helper function to generate import state ID in format zones/{zone-id}/applications/{application-id}.
 func testAccApplicationImportStateIdFunc(resourceName string) resource.ImportStateIdFunc {
 	return func(s *terraform.State) (string, error) {
 		rs, ok := s.RootModule().Resources[resourceName]
