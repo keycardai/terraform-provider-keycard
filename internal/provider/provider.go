@@ -156,6 +156,7 @@ func (p *ScaffoldingProvider) Resources(ctx context.Context) []func() resource.R
 		NewZoneResource,
 		NewProviderResource,
 		NewZoneUserIdentityConfigResource,
+		NewApplicationResource,
 	}
 }
 
