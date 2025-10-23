@@ -143,6 +143,7 @@ func TestAccProviderResource_oauth2Updates(t *testing.T) {
 					resource.TestCheckResourceAttr("keycard_provider.test", "identifier", identifier),
 					resource.TestCheckResourceAttr("keycard_provider.test", "client_id", "test-client-id"),
 					resource.TestCheckResourceAttr("keycard_provider.test", "oauth2.authorization_endpoint", identifier+"/authorize"),
+					resource.TestCheckResourceAttr("keycard_provider.test", "oauth2.token_endpoint", identifier+"/token"),
 				),
 			},
 			// Update back to basic (remove optional fields)
@@ -152,6 +153,7 @@ func TestAccProviderResource_oauth2Updates(t *testing.T) {
 					resource.TestCheckResourceAttr("keycard_provider.test", "identifier", identifier),
 					resource.TestCheckNoResourceAttr("keycard_provider.test", "client_id"),
 					resource.TestCheckNoResourceAttr("keycard_provider.test", "oauth2.authorization_endpoint"),
+					resource.TestCheckNoResourceAttr("keycard_provider.test", "oauth2.token_endpoint"),
 				),
 			},
 		},
