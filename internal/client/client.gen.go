@@ -48,11 +48,138 @@ const (
 	KeycardDirectory ListProvidersParamsType2 = "keycard-directory"
 )
 
+// Application An Application is a software system with an associated identity that can access Resources. It may act on its own behalf (machine-to-machine) or on behalf of a user (delegated access).
+type Application struct {
+	// CreatedAt Entity creation timestamp
+	CreatedAt time.Time `json:"created_at"`
+
+	// DependenciesCount Number of resource dependencies
+	DependenciesCount int `json:"dependencies_count"`
+
+	// Description Human-readable description
+	Description nullable.Nullable[string] `json:"description,omitempty"`
+
+	// Id Unique identifier of the application
+	Id string `json:"id"`
+
+	// Identifier User specified identifier, unique within the zone
+	Identifier string `json:"identifier"`
+
+	// Metadata Entity metadata
+	Metadata *Metadata `json:"metadata,omitempty"`
+
+	// Name Human-readable name
+	Name string `json:"name"`
+
+	// OrganizationId Organization that owns this application
+	OrganizationId string `json:"organization_id"`
+
+	// Protocols Protocol-specific configuration
+	Protocols nullable.Nullable[struct {
+		// Oauth2 OAuth 2.0 protocol configuration
+		Oauth2 nullable.Nullable[ApplicationOAuth2Protocol] `json:"oauth2,omitempty"`
+	}] `json:"protocols,omitempty"`
+
+	// Slug URL-safe identifier, unique within the zone
+	Slug string `json:"slug"`
+
+	// UpdatedAt Entity update timestamp
+	UpdatedAt time.Time `json:"updated_at"`
+
+	// ZoneId Zone this application belongs to
+	ZoneId string `json:"zone_id"`
+}
+
+// ApplicationCreate Schema for creating a new application
+type ApplicationCreate struct {
+	// Dependencies Dependencies of the application
+	Dependencies *[]struct {
+		// Id Resource identifier
+		Id   string  `json:"id"`
+		Type *string `json:"type,omitempty"`
+	} `json:"dependencies,omitempty"`
+
+	// Description Human-readable description
+	Description nullable.Nullable[string] `json:"description,omitempty"`
+
+	// Identifier User specified identifier, unique within the zone
+	Identifier string `json:"identifier"`
+
+	// Metadata Entity metadata
+	Metadata *Metadata `json:"metadata,omitempty"`
+
+	// Name Human-readable name
+	Name string `json:"name"`
+
+	// Protocols Protocol-specific configuration for application creation
+	Protocols *ApplicationProtocolCreate `json:"protocols,omitempty"`
+}
+
+// ApplicationOAuth2Protocol OAuth 2.0 protocol configuration
+type ApplicationOAuth2Protocol struct {
+	// RedirectUris OAuth 2.0 redirect URIs for this application
+	RedirectUris nullable.Nullable[[]string] `json:"redirect_uris,omitempty"`
+}
+
+// ApplicationOAuth2ProtocolCreate OAuth 2.0 protocol configuration for application creation
+type ApplicationOAuth2ProtocolCreate struct {
+	// RedirectUris OAuth 2.0 redirect URIs for this application
+	RedirectUris *[]string `json:"redirect_uris,omitempty"`
+}
+
+// ApplicationOAuth2ProtocolUpdate OAuth 2.0 protocol configuration for application update
+type ApplicationOAuth2ProtocolUpdate struct {
+	// RedirectUris OAuth 2.0 redirect URIs for this application (set to null or [] to unset)
+	RedirectUris nullable.Nullable[[]string] `json:"redirect_uris,omitempty"`
+}
+
+// ApplicationProtocolCreate Protocol-specific configuration for application creation
+type ApplicationProtocolCreate struct {
+	// Oauth2 OAuth 2.0 protocol configuration for application creation
+	Oauth2 *ApplicationOAuth2ProtocolCreate `json:"oauth2,omitempty"`
+}
+
+// ApplicationProtocolUpdate Protocol-specific configuration for application update
+type ApplicationProtocolUpdate struct {
+	// Oauth2 OAuth 2.0 protocol configuration for application update
+	Oauth2 nullable.Nullable[ApplicationOAuth2ProtocolUpdate] `json:"oauth2,omitempty"`
+}
+
+// ApplicationUpdate Schema for updating an existing application
+type ApplicationUpdate struct {
+	// Description Human-readable description
+	Description nullable.Nullable[string] `json:"description,omitempty"`
+
+	// Identifier User specified identifier, unique within the zone
+	Identifier *string `json:"identifier,omitempty"`
+
+	// Metadata Entity metadata (set to null or {} to remove metadata)
+	Metadata nullable.Nullable[MetadataUpdate] `json:"metadata,omitempty"`
+
+	// Name Human-readable name
+	Name *string `json:"name,omitempty"`
+
+	// Protocols Protocol-specific configuration for application update
+	Protocols nullable.Nullable[ApplicationProtocolUpdate] `json:"protocols,omitempty"`
+}
+
 // Error Error response
 type Error struct {
 	Code    string  `json:"code"`
 	Message string  `json:"message"`
 	Status  float32 `json:"status"`
+}
+
+// Metadata Entity metadata
+type Metadata struct {
+	// DocsUrl Documentation URL
+	DocsUrl *string `json:"docs_url,omitempty"`
+}
+
+// MetadataUpdate Entity metadata (set to null or {} to remove metadata)
+type MetadataUpdate struct {
+	// DocsUrl Documentation URL (set to null to unset)
+	DocsUrl nullable.Nullable[string] `json:"docs_url,omitempty"`
 }
 
 // PageInfo Pagination information
@@ -372,6 +499,14 @@ type ListZonesParams struct {
 	Limit  *int    `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListApplicationsParams defines parameters for ListApplications.
+type ListApplicationsParams struct {
+	Slug       *string `form:"slug,omitempty" json:"slug,omitempty"`
+	Identifier *string `form:"identifier,omitempty" json:"identifier,omitempty"`
+	Cursor     *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Limit      *int    `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListProvidersParams defines parameters for ListProviders.
 type ListProvidersParams struct {
 	Slug       *string `form:"slug,omitempty" json:"slug,omitempty"`
@@ -397,6 +532,12 @@ type CreateZoneJSONRequestBody = ZoneCreate
 
 // UpdateZoneJSONRequestBody defines body for UpdateZone for application/json ContentType.
 type UpdateZoneJSONRequestBody = ZoneUpdate
+
+// CreateApplicationJSONRequestBody defines body for CreateApplication for application/json ContentType.
+type CreateApplicationJSONRequestBody = ApplicationCreate
+
+// UpdateApplicationJSONRequestBody defines body for UpdateApplication for application/json ContentType.
+type UpdateApplicationJSONRequestBody = ApplicationUpdate
 
 // CreateProviderJSONRequestBody defines body for CreateProvider for application/json ContentType.
 type CreateProviderJSONRequestBody = ProviderCreate
@@ -496,6 +637,25 @@ type ClientInterface interface {
 
 	UpdateZone(ctx context.Context, id string, body UpdateZoneJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListApplications request
+	ListApplications(ctx context.Context, zoneId string, params *ListApplicationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateApplicationWithBody request with any body
+	CreateApplicationWithBody(ctx context.Context, zoneId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateApplication(ctx context.Context, zoneId string, body CreateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteApplication request
+	DeleteApplication(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetApplication request
+	GetApplication(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateApplicationWithBody request with any body
+	UpdateApplicationWithBody(ctx context.Context, zoneId string, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateApplication(ctx context.Context, zoneId string, id string, body UpdateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListProviders request
 	ListProviders(ctx context.Context, zoneId string, params *ListProvidersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -590,6 +750,90 @@ func (c *Client) UpdateZoneWithBody(ctx context.Context, id string, contentType 
 
 func (c *Client) UpdateZone(ctx context.Context, id string, body UpdateZoneJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateZoneRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListApplications(ctx context.Context, zoneId string, params *ListApplicationsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListApplicationsRequest(c.Server, zoneId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateApplicationWithBody(ctx context.Context, zoneId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateApplicationRequestWithBody(c.Server, zoneId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateApplication(ctx context.Context, zoneId string, body CreateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateApplicationRequest(c.Server, zoneId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteApplication(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteApplicationRequest(c.Server, zoneId, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetApplication(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApplicationRequest(c.Server, zoneId, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateApplicationWithBody(ctx context.Context, zoneId string, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateApplicationRequestWithBody(c.Server, zoneId, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateApplication(ctx context.Context, zoneId string, id string, body UpdateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateApplicationRequest(c.Server, zoneId, id, body)
 	if err != nil {
 		return nil, err
 	}
@@ -901,6 +1145,293 @@ func NewUpdateZoneRequestWithBody(server string, id string, contentType string, 
 	}
 
 	operationPath := fmt.Sprintf("/zones/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListApplicationsRequest generates requests for ListApplications
+func NewListApplicationsRequest(server string, zoneId string, params *ListApplicationsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/applications", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Slug != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "slug", runtime.ParamLocationQuery, *params.Slug); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Identifier != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "identifier", runtime.ParamLocationQuery, *params.Identifier); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cursor", runtime.ParamLocationQuery, *params.Cursor); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateApplicationRequest calls the generic CreateApplication builder with application/json body
+func NewCreateApplicationRequest(server string, zoneId string, body CreateApplicationJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateApplicationRequestWithBody(server, zoneId, "application/json", bodyReader)
+}
+
+// NewCreateApplicationRequestWithBody generates requests for CreateApplication with any type of body
+func NewCreateApplicationRequestWithBody(server string, zoneId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/applications", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteApplicationRequest generates requests for DeleteApplication
+func NewDeleteApplicationRequest(server string, zoneId string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/applications/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetApplicationRequest generates requests for GetApplication
+func NewGetApplicationRequest(server string, zoneId string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/applications/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateApplicationRequest calls the generic UpdateApplication builder with application/json body
+func NewUpdateApplicationRequest(server string, zoneId string, id string, body UpdateApplicationJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateApplicationRequestWithBody(server, zoneId, id, "application/json", bodyReader)
+}
+
+// NewUpdateApplicationRequestWithBody generates requests for UpdateApplication with any type of body
+func NewUpdateApplicationRequestWithBody(server string, zoneId string, id string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/applications/%s", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -1285,6 +1816,25 @@ type ClientWithResponsesInterface interface {
 
 	UpdateZoneWithResponse(ctx context.Context, id string, body UpdateZoneJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateZoneResponse, error)
 
+	// ListApplicationsWithResponse request
+	ListApplicationsWithResponse(ctx context.Context, zoneId string, params *ListApplicationsParams, reqEditors ...RequestEditorFn) (*ListApplicationsResponse, error)
+
+	// CreateApplicationWithBodyWithResponse request with any body
+	CreateApplicationWithBodyWithResponse(ctx context.Context, zoneId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateApplicationResponse, error)
+
+	CreateApplicationWithResponse(ctx context.Context, zoneId string, body CreateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateApplicationResponse, error)
+
+	// DeleteApplicationWithResponse request
+	DeleteApplicationWithResponse(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*DeleteApplicationResponse, error)
+
+	// GetApplicationWithResponse request
+	GetApplicationWithResponse(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*GetApplicationResponse, error)
+
+	// UpdateApplicationWithBodyWithResponse request with any body
+	UpdateApplicationWithBodyWithResponse(ctx context.Context, zoneId string, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateApplicationResponse, error)
+
+	UpdateApplicationWithResponse(ctx context.Context, zoneId string, id string, body UpdateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateApplicationResponse, error)
+
 	// ListProvidersWithResponse request
 	ListProvidersWithResponse(ctx context.Context, zoneId string, params *ListProvidersParams, reqEditors ...RequestEditorFn) (*ListProvidersResponse, error)
 
@@ -1418,6 +1968,125 @@ func (r UpdateZoneResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdateZoneResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListApplicationsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Items []Application `json:"items"`
+
+		// PageInfo Pagination information
+		PageInfo PageInfo `json:"page_info"`
+	}
+	JSONDefault *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r ListApplicationsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListApplicationsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateApplicationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Application
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateApplicationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateApplicationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteApplicationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteApplicationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteApplicationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetApplicationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Application
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GetApplicationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetApplicationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateApplicationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Application
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateApplicationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateApplicationResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1602,6 +2271,67 @@ func (c *ClientWithResponses) UpdateZoneWithResponse(ctx context.Context, id str
 		return nil, err
 	}
 	return ParseUpdateZoneResponse(rsp)
+}
+
+// ListApplicationsWithResponse request returning *ListApplicationsResponse
+func (c *ClientWithResponses) ListApplicationsWithResponse(ctx context.Context, zoneId string, params *ListApplicationsParams, reqEditors ...RequestEditorFn) (*ListApplicationsResponse, error) {
+	rsp, err := c.ListApplications(ctx, zoneId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListApplicationsResponse(rsp)
+}
+
+// CreateApplicationWithBodyWithResponse request with arbitrary body returning *CreateApplicationResponse
+func (c *ClientWithResponses) CreateApplicationWithBodyWithResponse(ctx context.Context, zoneId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateApplicationResponse, error) {
+	rsp, err := c.CreateApplicationWithBody(ctx, zoneId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateApplicationResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateApplicationWithResponse(ctx context.Context, zoneId string, body CreateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateApplicationResponse, error) {
+	rsp, err := c.CreateApplication(ctx, zoneId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateApplicationResponse(rsp)
+}
+
+// DeleteApplicationWithResponse request returning *DeleteApplicationResponse
+func (c *ClientWithResponses) DeleteApplicationWithResponse(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*DeleteApplicationResponse, error) {
+	rsp, err := c.DeleteApplication(ctx, zoneId, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteApplicationResponse(rsp)
+}
+
+// GetApplicationWithResponse request returning *GetApplicationResponse
+func (c *ClientWithResponses) GetApplicationWithResponse(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*GetApplicationResponse, error) {
+	rsp, err := c.GetApplication(ctx, zoneId, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetApplicationResponse(rsp)
+}
+
+// UpdateApplicationWithBodyWithResponse request with arbitrary body returning *UpdateApplicationResponse
+func (c *ClientWithResponses) UpdateApplicationWithBodyWithResponse(ctx context.Context, zoneId string, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateApplicationResponse, error) {
+	rsp, err := c.UpdateApplicationWithBody(ctx, zoneId, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateApplicationResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateApplicationWithResponse(ctx context.Context, zoneId string, id string, body UpdateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateApplicationResponse, error) {
+	rsp, err := c.UpdateApplication(ctx, zoneId, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateApplicationResponse(rsp)
 }
 
 // ListProvidersWithResponse request returning *ListProvidersResponse
@@ -1828,6 +2558,169 @@ func ParseUpdateZoneResponse(rsp *http.Response) (*UpdateZoneResponse, error) {
 	return response, nil
 }
 
+// ParseListApplicationsResponse parses an HTTP response from a ListApplicationsWithResponse call
+func ParseListApplicationsResponse(rsp *http.Response) (*ListApplicationsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListApplicationsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Items []Application `json:"items"`
+
+			// PageInfo Pagination information
+			PageInfo PageInfo `json:"page_info"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateApplicationResponse parses an HTTP response from a CreateApplicationWithResponse call
+func ParseCreateApplicationResponse(rsp *http.Response) (*CreateApplicationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateApplicationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Application
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteApplicationResponse parses an HTTP response from a DeleteApplicationWithResponse call
+func ParseDeleteApplicationResponse(rsp *http.Response) (*DeleteApplicationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteApplicationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetApplicationResponse parses an HTTP response from a GetApplicationWithResponse call
+func ParseGetApplicationResponse(rsp *http.Response) (*GetApplicationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetApplicationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Application
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateApplicationResponse parses an HTTP response from a UpdateApplicationWithResponse call
+func ParseUpdateApplicationResponse(rsp *http.Response) (*UpdateApplicationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateApplicationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Application
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListProvidersResponse parses an HTTP response from a ListProvidersWithResponse call
 func ParseListProvidersResponse(rsp *http.Response) (*ListProvidersResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -1994,53 +2887,63 @@ func ParseUpdateProviderResponse(rsp *http.Response) (*UpdateProviderResponse, e
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xcbW/bOPL/KgT/C/yTO9txs7uHO785ZNPeXvqwDdIWBVrkDEYa22wlUiWpuG7h734g",
-	"qWdRD5adtrnNq9gWySFnfvMbzlDMV+zxMOIMmJJ49hVLbwUhMR+fCMGF/uCD9ASNFOUMz+zPSICMOJOA",
-	"RzgSPAKhKJheHvdB/1WbCPAMSyUoW+LtCIcgJVm6n0lFVCwLj1gc3oDA2+0IC/gUUwE+nr3PxhhZMVnH",
-	"6xFWVAWQTg+P0oH4zQfwlJZxSZZwwRZcSyG+T/VySHBZmPyCBBJGleVekiVlRH9BlC24CM3n2rKB+XMv",
-	"FtKlsXPzO4o4ZYqyJVIcqRWggEiFqIIQUWZ+8GIhgCkU2SWyOAjIjV6UEjGM6lpbETln8FnNo0SvZbFv",
-	"V6BWIPTQAhARgEIuwEiUiCyUfVSVmki54TwAwlIxkYBbymPZW5SVcgMLLbKXGKmIULvqcEHFXkqs4Kus",
-	"UdfSC0jTgEIGUS60CX5LfXCs5AylzxCViCC5kXr6akUUknEUBRQkIp4HUupVXoHksfD0b8xHJAj4Wj9W",
-	"XEh09EaCkIgLdKb7eQaa8lh3I7FaAVP6N5jUnTSgwNSc+vXpvTyL1QqdTqbINkLU1+MsKIg+mExGluAJ",
-	"0H9UXcIF8820JFonsCGpLNtN68XjbEGXsbaLCyyeAKLAnxPH+E+YomqDTBPttoqGIBUJIzzC1oHxDPtE",
-	"wVg/wY5FlMarDv/vOCRsLID4WhGo+HCEQ/L5ObClWuHZ6fSXv/dQmMsGbxj9FENB84gvDLijFFXOgTI7",
-	"1QeUIJCMwNPP/cLAIxRbWWuqVokHfeEMXEsJKUt/eOSQz0gIndoyjcpj//pr59BcLAmjX4w53aAtNLCe",
-	"xNdMIrWislVnkeCKezyQ9SEvk0fjRG1eBsk0AFRNW3Yxrj3wVH/6ScACz/D/neSR9iQJsycpFRivO01l",
-	"mjVHwOxSe/WPgF08zvtvHZQkg3jpgMbV87EkC9gZFH/7uWq3iCgFQg/6n/dk/GU6/sf1X4/+ORtnX47/",
-	"8pPLCvYHHUPjULMwfNbDkACP8EfYeET441sSB6rw3acCNAduDCFXB4wjv4sdbJMB3KAV4cTgO86gjDh0",
-	"AwFnS03juCvyUM1zVZzn0hLrJV5WcvYSGZbWXoxVNSeoh6pzM0x9Ya8M1tCCi4RT2RIRxGBddK0DxZf2",
-	"eNJjtCSCHK1pEKAbQMA8sYkU+CZ8SsUF+LpRLCDYHH9/8v+f5ewStfahsJS8EhhWHaQOfAe8UdK5BeUV",
-	"pm1BVLqCHYlf8z4XqRcD882eVT/JCCYWtNdeivsw91YkCIAtYR6CWnFfzvUmkQsFxrnMPtuZUzUMT4Qg",
-	"G/38w/qjnOuZDJiZgCWVSuy/ROnxCA62JMU/wj7z2ToQleMhw0xvdDUxahfGDNdmUSTdyOLBSDswsnZA",
-	"0mDk7ImUnZExCAk7080bE5x3B8QEvQKl0zoNYP1XQMhvQaeDdlqnSfvJAz392ekJJSBrA2U5W6jD0TxH",
-	"55wx8NTQQBhLEJQt+KFXXJ5cL1YurbeRlfusuic191n78LX24Z3Skht5p8+SW8nHDtCXfL4tJHp4Qhcm",
-	"OqoAPdGwTy0g3Q7vVxEobKpr2tsBVV146lBXG5KyfGFyp6WVZOZ7qjMdpVWd3ehrUmMh4zbpvMm4GYLP",
-	"VJrPB867G8wy2bnee/D8fJ+ZPeTx3zePb/ORZtd4pxXgODPRijEOkdTItBuI7Ggk0SBhqFhCq7uHW0/n",
-	"sVQ8RD4PCWVGTejo/I+zF0+OjcSCXbJQteJSNeiz7iJ/zrOKRGX35pygab49zggcmwKSjjckdGknGHoi",
-	"YPrWTwOKpbRkEtmI1/fpsOAua/t6ezq3S1ObeRplnUjKqCzb/cY6cpmQrQk/4EvKhlb9y7X+HIC9Sv3v",
-	"SjguM+vuJX4nir8Pj35LpvsRAqo2WJ+ieMX2Ldt4B68Mq002sFtzbalJRqkHynqMOsuBZVESxC2IeQiK",
-	"+ESRNolnJYmvTEf0IumYzQAdTdYQBOOPjK/ZiSHMcUnk2Io87jFV3xNzYBoxfvObM483jITUQ+d2m3xV",
-	"qGAhKlHa3/UuBJUydm088zXbFuWTtq5ZF+tv5XGfvnr5B3oLN+gZbMz+fAezRR89mOcIbtLG5bPzJ3rZ",
-	"aUsLupLlPO4DWgR8LZ1KEWCPiN1LyFWTtkNvri4Slsr3AoOL2U3S2qy8gxbrhcQmgaZl/6Gr4ckiq8vb",
-	"Rk2OX5tpxS5NGiygrwqZsjtVqa/fYU2dBvc6qDGpSWPtp+b9C/MqQxJ4Dk4GDgfrIXBff9t22mGnqDT0",
-	"mCTd+eUhCh1FRChKguTRcbd99jJIw8ai3UCHsEiX4B4Wak/KD3Jm0LZ5yLbb5VOGLkH50X9JUEMgNwnP",
-	"uCShTwh31q1bp/VGgrhgCz6YexvU4ZpLjQX7n5A49pi7ZLnt1Dc02XUUq826enJJ3yL1EO44RGG6ke+a",
-	"F9zumkPLyP0Icr9kDx1JVwX3uGcS+ENVeX+0pDA/yxhYuFA8r11UShc1u8VMgjre6XzOYLgJutsRNmV+",
-	"qjYGpxZsN0AECO0c+bd/pTh5+vY1ru5gnr59jX4zzdBrs9c9y198t3Y2mjOx0DTLZ7JSKsJbPRGaXAsp",
-	"D/3MvmuKzi5tZhASRpap39jX8dUKqMjr0BOcL77QG4/wLQhpR51OppNHaTmPRBTP8M+T6WSKTUlsZbRw",
-	"YiToT0vXocoVqFgwiQgKqFSIL5IZpX5XfPffr1bEtWubzxc+nuHnVKp3RpgWL0gICoTEs/dfMdWiPsUg",
-	"NmkpapYWpiwYHe9AbEfufsmtjgE9AxpSVeqYbWgfTafGz2gYh+bb1LhZ8jUzM2UKluYu0bWOsPbaklHu",
-	"6XRqbywxBTakk/waxckHaSkll1zmxew9kOxDl9+6XkyKyBLmKf5aj1fS60u1JM2IL45Ur+duq0yJH1st",
-	"oqv0HpdpkWh2B520TdlexXIIr1whK3KBgV6RBd5fa7vJOAyJ2CSItXjXzkaWGqzYQvha65NLh8fYDYMs",
-	"1DR7OMsEJcdOVDs7opIHpg2wWyo4C3UmoEe5OHtRpoCyi1nZSVVWGw6k+o37m4OpuVDY3W4tOvYAeTeI",
-	"6/YceDx3XyBnlZsdEFUwtx0lfH3ylfpbi70AnBtPECHR8w02yLaR6VYzuduFqJKISMk9aqCWqbCGqsem",
-	"f4KqCnM77iVcPMYjy686yOT0ao4bcjaxEb2ZpOsM+kt9mfeWWqxOm+w8ag/GPihCA6mjMUHZ6y/GuDcb",
-	"q/+yBX8H9f3N98ANe2Lmd1DNgImI8laOU1SzJU59//9lJRF1ZGRl5Nj+3wU8dxO9svz3IXodHqFWuT2i",
-	"l/5z4W9P0vRxlwQk65New85feEoE1/OOy0zOneYepVOvnXubZsV+hG1eLswka9cVHVcR81blm4y9mrZd",
-	"crz+wXOtVESZcizEvmnM2idpy25NPiRuB0rcooLPp1SU80DfBC6rYY33+/8Jlf+T0JC6Fe7OumjqMAg/",
-	"fGCtXOu94+Cau4orwH77/3hxz3LL4j8pcLhFW5QemHYWJLoyy7sGvTs+PKSj9XS0AxqD0tLMHxtT03tq",
-	"/wdC+xES4k7IdibGafNacqw1WHjxyJUY3x/o3l3Q/zYZ9YOP7JWSdwV9M6S4TdEbiwDP8InO/f4bAAD/",
-	"/0vzWRi2TwAA",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

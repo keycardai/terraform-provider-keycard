@@ -169,6 +169,197 @@ paths:
         - bearerAuth: []
       tags:
         - Zones
+  '/zones/{zoneId}/applications':
+    get:
+      operationId: listApplications
+      summary: List applications
+      description: Returns a list of applications in the specified zone
+      parameters:
+        - name: slug
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: identifier
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+            minimum: 1
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Application'
+                  page_info:
+                    $ref: '#/components/schemas/PageInfo'
+                required:
+                  - items
+                  - page_info
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Applications
+    post:
+      operationId: createApplication
+      summary: Create application
+      description: Creates a new Application - a software system with an identity that can access Resources
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicationCreate'
+      responses:
+        '200':
+          description: An Application is a software system with an associated identity that can access Resources. It may act on its own behalf (machine-to-machine) or on behalf of a user (delegated access).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Applications
+  '/zones/{zoneId}/applications/{id}':
+    get:
+      operationId: getApplication
+      summary: Get application
+      description: Returns details of a specific Application by ID
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: An Application is a software system with an associated identity that can access Resources. It may act on its own behalf (machine-to-machine) or on behalf of a user (delegated access).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Applications
+    patch:
+      operationId: updateApplication
+      summary: Update application
+      description: Updates an Application's configuration and metadata
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicationUpdate'
+      responses:
+        '200':
+          description: An Application is a software system with an associated identity that can access Resources. It may act on its own behalf (machine-to-machine) or on behalf of a user (delegated access).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Applications
+    delete:
+      operationId: deleteApplication
+      summary: Delete application
+      description: Permanently deletes an application
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Default Response
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Applications
   '/zones/{zoneId}/providers':
     get:
       operationId: listProviders
@@ -399,6 +590,28 @@ components:
         - has_next_page
         - has_previous_page
       title: Page Info
+    Metadata:
+      description: Entity metadata
+      type: object
+      properties:
+        docs_url:
+          description: Documentation URL
+          type: string
+          format: uri
+          maxLength: 2048
+      additionalProperties: false
+    MetadataUpdate:
+      description: 'Entity metadata (set to null or {} to remove metadata)'
+      type: object
+      properties:
+        docs_url:
+          description: Documentation URL (set to null to unset)
+          type: string
+          format: uri
+          maxLength: 2048
+          nullable: true
+      additionalProperties: false
+      nullable: true
     ZoneOAuth2Protocol:
       description: OAuth 2.0 protocol configuration for a zone
       type: object
@@ -641,6 +854,63 @@ components:
           $ref: '#/components/schemas/ProviderOpenIDProtocolUpdate'
       nullable: true
       title: Provider Protocol Update
+    ApplicationOAuth2Protocol:
+      description: OAuth 2.0 protocol configuration
+      type: object
+      properties:
+        redirect_uris:
+          description: OAuth 2.0 redirect URIs for this application
+          type: array
+          items:
+            format: uri
+            type: string
+          nullable: true
+      additionalProperties: false
+      nullable: true
+      title: Application OAuth 2.0 Protocol
+    ApplicationOAuth2ProtocolCreate:
+      description: OAuth 2.0 protocol configuration for application creation
+      type: object
+      properties:
+        redirect_uris:
+          description: OAuth 2.0 redirect URIs for this application
+          type: array
+          items:
+            format: uri
+            type: string
+      additionalProperties: false
+      title: Application OAuth 2.0 Protocol Create
+    ApplicationProtocolCreate:
+      description: Protocol-specific configuration for application creation
+      type: object
+      properties:
+        oauth2:
+          $ref: '#/components/schemas/ApplicationOAuth2ProtocolCreate'
+      additionalProperties: false
+      title: Application Protocol Create
+    ApplicationOAuth2ProtocolUpdate:
+      description: OAuth 2.0 protocol configuration for application update
+      type: object
+      properties:
+        redirect_uris:
+          description: 'OAuth 2.0 redirect URIs for this application (set to null or [] to unset)'
+          type: array
+          items:
+            format: uri
+            type: string
+          nullable: true
+      additionalProperties: false
+      nullable: true
+      title: Application OAuth 2.0 Protocol Update
+    ApplicationProtocolUpdate:
+      description: Protocol-specific configuration for application update
+      type: object
+      properties:
+        oauth2:
+          $ref: '#/components/schemas/ApplicationOAuth2ProtocolUpdate'
+      additionalProperties: false
+      nullable: true
+      title: Application Protocol Update
     Error:
       description: Error response
       type: object
@@ -791,6 +1061,136 @@ components:
         protocols:
           $ref: '#/components/schemas/ProviderProtocolUpdate'
       title: Provider Update
+    Application:
+      description: An Application is a software system with an associated identity that can access Resources. It may act on its own behalf (machine-to-machine) or on behalf of a user (delegated access).
+      type: object
+      properties:
+        id:
+          description: Unique identifier of the application
+          type: string
+        organization_id:
+          description: Organization that owns this application
+          type: string
+        zone_id:
+          description: Zone this application belongs to
+          type: string
+        slug:
+          description: 'URL-safe identifier, unique within the zone'
+          type: string
+          maxLength: 63
+          minLength: 1
+          pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+        identifier:
+          description: 'User specified identifier, unique within the zone'
+          type: string
+          maxLength: 2048
+          minLength: 1
+        name:
+          description: Human-readable name
+          type: string
+          maxLength: 255
+          minLength: 1
+        description:
+          description: Human-readable description
+          type: string
+          maxLength: 2048
+          nullable: true
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+        protocols:
+          description: Protocol-specific configuration
+          type: object
+          additionalProperties: false
+          nullable: true
+          properties:
+            oauth2:
+              $ref: '#/components/schemas/ApplicationOAuth2Protocol'
+        dependencies_count:
+          description: Number of resource dependencies
+          type: integer
+        created_at:
+          description: Entity creation timestamp
+          type: string
+          format: date-time
+        updated_at:
+          description: Entity update timestamp
+          type: string
+          format: date-time
+      required:
+        - id
+        - organization_id
+        - zone_id
+        - slug
+        - identifier
+        - name
+        - dependencies_count
+        - created_at
+        - updated_at
+      title: Application
+    ApplicationCreate:
+      description: Schema for creating a new application
+      type: object
+      properties:
+        name:
+          description: Human-readable name
+          type: string
+          maxLength: 255
+          minLength: 1
+        identifier:
+          description: 'User specified identifier, unique within the zone'
+          type: string
+          maxLength: 2048
+          minLength: 1
+        description:
+          description: Human-readable description
+          type: string
+          maxLength: 2048
+          nullable: true
+        dependencies:
+          description: Dependencies of the application
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                description: Resource identifier
+                type: string
+              type:
+                type: string
+            required:
+              - id
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+        protocols:
+          $ref: '#/components/schemas/ApplicationProtocolCreate'
+      required:
+        - name
+        - identifier
+      title: Application Create
+    ApplicationUpdate:
+      description: Schema for updating an existing application
+      type: object
+      properties:
+        name:
+          description: Human-readable name
+          type: string
+          maxLength: 255
+          minLength: 1
+        description:
+          description: Human-readable description
+          type: string
+          maxLength: 2048
+          nullable: true
+        identifier:
+          description: 'User specified identifier, unique within the zone'
+          type: string
+          maxLength: 2048
+          minLength: 1
+        metadata:
+          $ref: '#/components/schemas/MetadataUpdate'
+        protocols:
+          $ref: '#/components/schemas/ApplicationProtocolUpdate'
+      title: Application Update
     Zone:
       description: A zone for organizing resources within an organization
       type: object
