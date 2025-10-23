@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -146,6 +147,30 @@ func (r *ZoneResource) Configure(ctx context.Context, req resource.ConfigureRequ
 	r.client = client
 }
 
+// updateZoneModelFromAPIResponse maps a Zone API response to the ZoneResourceModel.
+// This is a shared helper function used by Create, Read, and Update operations.
+// It returns any diagnostics encountered during the mapping.
+func updateZoneModelFromAPIResponse(ctx context.Context, zone *client.Zone, data *ZoneResourceModel) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	data.ID = types.StringValue(zone.Id)
+	data.Name = types.StringValue(zone.Name)
+	data.Description = types.StringPointerValue(zone.Description)
+
+	oauth2Data := OAuth2Model{
+		PkceRequired: types.BoolValue(zone.Protocols.Oauth2.PkceRequired),
+		DcrEnabled:   types.BoolValue(zone.Protocols.Oauth2.DcrEnabled),
+		IssuerUri:    types.StringValue(zone.Protocols.Oauth2.Issuer),
+		RedirectUri:  types.StringValue(zone.Protocols.Oauth2.RedirectUri),
+	}
+
+	oauth2Obj, objDiags := types.ObjectValueFrom(ctx, oauth2Data.AttributeTypes(), oauth2Data)
+	diags.Append(objDiags...)
+	data.OAuth2 = oauth2Obj
+
+	return diags
+}
+
 func (r *ZoneResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data ZoneResourceModel
 
@@ -210,23 +235,10 @@ func (r *ZoneResource) Create(ctx context.Context, req resource.CreateRequest, r
 	}
 
 	// Update the model with the response data
-	zone := createResp.JSON200
-	data.ID = types.StringValue(zone.Id)
-	data.Name = types.StringValue(zone.Name)
-	data.Description = types.StringPointerValue(zone.Description)
-	oauth2Data := OAuth2Model{
-		PkceRequired: types.BoolValue(zone.Protocols.Oauth2.PkceRequired),
-		DcrEnabled:   types.BoolValue(zone.Protocols.Oauth2.DcrEnabled),
-		IssuerUri:    types.StringValue(zone.Protocols.Oauth2.Issuer),
-		RedirectUri:  types.StringValue(zone.Protocols.Oauth2.RedirectUri),
-	}
-
-	oauth2Obj, diags := types.ObjectValueFrom(ctx, oauth2Data.AttributeTypes(), oauth2Data)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(updateZoneModelFromAPIResponse(ctx, createResp.JSON200, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	data.OAuth2 = oauth2Obj
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -269,24 +281,10 @@ func (r *ZoneResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	}
 
 	// Update the model with the response data
-	zone := getResp.JSON200
-	data.ID = types.StringValue(zone.Id)
-	data.Name = types.StringValue(zone.Name)
-	data.Description = types.StringPointerValue(zone.Description)
-
-	oauth2Data := OAuth2Model{
-		PkceRequired: types.BoolValue(zone.Protocols.Oauth2.PkceRequired),
-		DcrEnabled:   types.BoolValue(zone.Protocols.Oauth2.DcrEnabled),
-		IssuerUri:    types.StringValue(zone.Protocols.Oauth2.Issuer),
-		RedirectUri:  types.StringValue(zone.Protocols.Oauth2.RedirectUri),
-	}
-
-	oauth2Obj, diags := types.ObjectValueFrom(ctx, oauth2Data.AttributeTypes(), oauth2Data)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(updateZoneModelFromAPIResponse(ctx, getResp.JSON200, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	data.OAuth2 = oauth2Obj
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -359,24 +357,10 @@ func (r *ZoneResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	}
 
 	// Update the model with the response data
-	zone := updateResp.JSON200
-	data.ID = types.StringValue(zone.Id)
-	data.Name = types.StringValue(zone.Name)
-	data.Description = types.StringPointerValue(zone.Description)
-
-	oauth2Data := OAuth2Model{
-		PkceRequired: types.BoolValue(zone.Protocols.Oauth2.PkceRequired),
-		DcrEnabled:   types.BoolValue(zone.Protocols.Oauth2.DcrEnabled),
-		IssuerUri:    types.StringValue(zone.Protocols.Oauth2.Issuer),
-		RedirectUri:  types.StringValue(zone.Protocols.Oauth2.RedirectUri),
-	}
-
-	oauth2Obj, diags := types.ObjectValueFrom(ctx, oauth2Data.AttributeTypes(), oauth2Data)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(updateZoneModelFromAPIResponse(ctx, updateResp.JSON200, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	data.OAuth2 = oauth2Obj
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
