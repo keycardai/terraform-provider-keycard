@@ -228,7 +228,7 @@ func TestAccApplicationResource_zoneChange(t *testing.T) {
 	})
 }
 
-// Helper function to generate import state ID in format zone_id:application_id
+// Helper function to generate import state ID in format zones/{zone-id}/applications/{application-id}
 func testAccApplicationImportStateIdFunc(resourceName string) resource.ImportStateIdFunc {
 	return func(s *terraform.State) (string, error) {
 		rs, ok := s.RootModule().Resources[resourceName]
@@ -243,7 +243,7 @@ func testAccApplicationImportStateIdFunc(resourceName string) resource.ImportSta
 			return "", fmt.Errorf("zone_id or id is empty")
 		}
 
-		return fmt.Sprintf("%s:%s", zoneID, id), nil
+		return fmt.Sprintf("zones/%s/applications/%s", zoneID, id), nil
 	}
 }
 
