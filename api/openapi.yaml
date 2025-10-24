@@ -360,6 +360,432 @@ paths:
         - bearerAuth: []
       tags:
         - Applications
+  '/zones/{zoneId}/applications/{id}/dependencies':
+    get:
+      operationId: listApplicationDependencies
+      summary: List application dependencies
+      description: Returns resource dependencies for an application
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+            minimum: 1
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Resource'
+                  page_info:
+                    $ref: '#/components/schemas/PageInfo'
+                required:
+                  - items
+                  - page_info
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Applications
+  '/zones/{zoneId}/applications/{id}/dependencies/{dependencyId}':
+    put:
+      operationId: addApplicationDependency
+      summary: Add application dependency
+      description: Adds a resource dependency to an application
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: dependencyId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Default Response
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Applications
+    delete:
+      operationId: removeApplicationDependency
+      summary: Remove application dependency
+      description: Removes a resource dependency from an application
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: dependencyId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Default Response
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Applications
+  '/zones/{zoneId}/applications/{id}/application-credentials':
+    get:
+      operationId: listApplicationCredentialsForApplication
+      summary: List application credentials
+      description: Returns a list of application credentials for a specific application
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+            minimum: 1
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApplicationCredential'
+                  page_info:
+                    $ref: '#/components/schemas/PageInfo'
+                required:
+                  - items
+                  - page_info
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Applications
+  '/zones/{zoneId}/applications/{id}/resources':
+    get:
+      operationId: listApplicationResources
+      summary: List application resources
+      description: Returns a list of resources provided by an application
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+            minimum: 1
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Resource'
+                  page_info:
+                    $ref: '#/components/schemas/PageInfo'
+                required:
+                  - items
+                  - page_info
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Applications
+  '/zones/{zoneId}/application-credentials':
+    get:
+      operationId: listApplicationCredentials
+      summary: List application credentials
+      description: Returns a list of application credentials in the specified zone
+      parameters:
+        - name: slug
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: applicationId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+            minimum: 1
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApplicationCredential'
+                  page_info:
+                    $ref: '#/components/schemas/PageInfo'
+                required:
+                  - items
+                  - page_info
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Application Credentials
+    post:
+      operationId: createApplicationCredential
+      summary: Create application credential
+      description: Creates a new application credential
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicationCredentialCreate'
+      responses:
+        '200':
+          description: Response for creating a new application credential
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationCredentialCreateResponse'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Application Credentials
+  '/zones/{zoneId}/application-credentials/{id}':
+    get:
+      operationId: getApplicationCredential
+      summary: Get application credential
+      description: Returns details of a specific application credential by ID
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Credentials for accessing external services from applications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationCredential'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Application Credentials
+    patch:
+      operationId: updateApplicationCredential
+      summary: Update application credential
+      description: Updates an application credential's configuration
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicationCredentialUpdate'
+      responses:
+        '200':
+          description: Credentials for accessing external services from applications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationCredential'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Application Credentials
+    delete:
+      operationId: deleteApplicationCredential
+      summary: Delete application credential
+      description: Permanently deletes an application credential
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Default Response
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Application Credentials
   '/zones/{zoneId}/providers':
     get:
       operationId: listProviders
@@ -565,6 +991,202 @@ paths:
         - bearerAuth: []
       tags:
         - Providers
+  '/zones/{zoneId}/resources':
+    get:
+      operationId: listResources
+      summary: List resources
+      description: Returns a list of resources in the specified zone
+      parameters:
+        - name: identifier
+          in: query
+          description: Filter resources by identifier
+          required: false
+          schema:
+            type: string
+        - name: credentialProviderId
+          in: query
+          description: Filter resources by credential provider ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: slug
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: zoneId
+          in: path
+          description: Zone ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Resource'
+                required:
+                  - items
+        '400':
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
+      security:
+        - bearerAuth: []
+      tags:
+        - Resources
+    post:
+      operationId: createResource
+      summary: Create resource
+      description: Creates a new Resource - a system that exposes protected information or functionality requiring authentication
+      parameters:
+        - name: zoneId
+          in: path
+          description: Zone ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceCreate'
+      responses:
+        '200':
+          description: 'A Resource is a system that exposes protected information or functionality. It requires authentication of the requesting actor, which may be a user or application, before allowing access.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Resources
+  '/zones/{zoneId}/resources/{id}':
+    get:
+      operationId: getResource
+      summary: Get resource
+      description: Returns details of a specific Resource by ID
+      parameters:
+        - name: zoneId
+          in: path
+          description: Zone ID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Resource ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 'A Resource is a system that exposes protected information or functionality. It requires authentication of the requesting actor, which may be a user or application, before allowing access.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Resources
+    patch:
+      operationId: updateResource
+      summary: Update resource
+      description: Updates a Resource's configuration and metadata
+      parameters:
+        - name: zoneId
+          in: path
+          description: Zone ID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Resource ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceUpdate'
+      responses:
+        '200':
+          description: 'A Resource is a system that exposes protected information or functionality. It requires authentication of the requesting actor, which may be a user or application, before allowing access.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Resources
+    delete:
+      operationId: deleteResource
+      summary: Delete resource
+      description: Permanently deletes a Resource
+      parameters:
+        - name: zoneId
+          in: path
+          description: Zone ID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Resource ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Default Response
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Resources
 components:
   schemas:
     PageInfo:
@@ -911,6 +1533,162 @@ components:
       additionalProperties: false
       nullable: true
       title: Application Protocol Update
+    TokenCredentialType:
+      description: Token-based credential type fields
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - token
+        identifier:
+          description: 'Identifier for this credential. For token type, this equals the subject value, or ''*'' when subject is not specified.'
+          type: string
+        subject:
+          description: 'Subject identifier for the token. When null or omitted, any token from the provider is accepted without checking application-specific claims.'
+          type: string
+          nullable: true
+      required:
+        - type
+        - identifier
+      title: Token Credential Type
+    PasswordCredentialType:
+      description: Password-based credential type fields
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - password
+        identifier:
+          description: 'Username for password credential, also used as OAuth 2.0 client ID'
+          type: string
+      required:
+        - type
+        - identifier
+      title: Password Credential Type
+    PublicKeyCredentialType:
+      description: Public key-based credential type fields
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - public-key
+        identifier:
+          description: 'Client ID for public key credential, also used as OAuth 2.0 client ID'
+          type: string
+        jwks_uri:
+          description: JWKS URI to retrieve public keys from
+          type: string
+          format: uri
+      required:
+        - type
+        - identifier
+        - jwks_uri
+      title: Public Key Credential Type
+    UrlCredentialType:
+      description: URL-based credential type fields
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - url
+        identifier:
+          description: URL of the credential (must be a valid URL)
+          type: string
+          format: uri
+      required:
+        - type
+        - identifier
+      title: URL Credential Type
+    PasswordCredentialCreateResponseType:
+      description: Password credential response type with secret
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - password
+        identifier:
+          description: 'Username for password credential, also used as OAuth 2.0 client ID'
+          type: string
+        password:
+          description: 'Password for credential (only returned on creation, store securely), also used as OAuth 2.0 client secret'
+          type: string
+      required:
+        - type
+        - identifier
+        - password
+      title: Password Credential Create Response Type
+    TokenCredentialCreate:
+      description: Schema for creating a token credential. The identifier is computed by the backend from the subject field.
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - token
+        provider_id:
+          description: ID of the provider issuing tokens this credential verifies
+          type: string
+        subject:
+          description: 'Subject identifier for the token. When omitted, any token from the provider is accepted without checking application-specific claims. The identifier field is computed from this value.'
+          type: string
+      required:
+        - type
+        - provider_id
+      title: Token Credential Create
+    PasswordCredentialCreate:
+      description: Schema for creating a password credential within the zone identity provider
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - password
+        identifier:
+          description: 'Username for password credential, also used as OAuth 2.0 client ID (auto-generated if not provided)'
+          type: string
+      required:
+        - type
+      title: Password Credential Create
+    PublicKeyCredentialCreate:
+      description: Schema for creating a public key credential within the zone identity provider
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - public-key
+        jwks_uri:
+          description: JWKS URI to retrieve public keys from
+          type: string
+          format: uri
+        identifier:
+          description: 'Client ID for public key credential, also used as OAuth 2.0 client ID (auto-generated if not provided)'
+          type: string
+      required:
+        - type
+        - jwks_uri
+      title: Public Key Credential Create
+    UrlCredentialCreate:
+      description: Schema for creating a URL credential within the zone identity provider
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - url
+        identifier:
+          description: URL of the credential (must be a valid URL)
+          type: string
+          format: uri
+      required:
+        - type
+        - identifier
+      title: URL Credential Create
     Error:
       description: Error response
       type: object
@@ -1061,6 +1839,158 @@ components:
         protocols:
           $ref: '#/components/schemas/ProviderProtocolUpdate'
       title: Provider Update
+    Resource:
+      description: 'A Resource is a system that exposes protected information or functionality. It requires authentication of the requesting actor, which may be a user or application, before allowing access.'
+      type: object
+      properties:
+        id:
+          description: Unique identifier of the resource
+          type: string
+        organization_id:
+          description: Organization that owns this resource
+          type: string
+        zone_id:
+          description: Zone this resource belongs to
+          type: string
+        slug:
+          description: 'URL-safe identifier, unique within the zone'
+          type: string
+          maxLength: 63
+          minLength: 1
+          pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+        identifier:
+          description: 'User specified identifier, unique within the zone'
+          type: string
+          maxLength: 2048
+          minLength: 1
+        name:
+          description: Human-readable name
+          type: string
+          maxLength: 255
+          minLength: 1
+        description:
+          description: Human-readable description
+          type: string
+          maxLength: 2048
+          nullable: true
+        scopes:
+          description: Scopes supported by the resource
+          type: array
+          items:
+            type: string
+          nullable: true
+        credential_provider_id:
+          description: ID of the credential provider for this resource
+          type: string
+        credential_provider:
+          description: 'Deprecated: Nested provider object. Use credential_provider_id to fetch provider separately. When this resource appears nested in another API response, this field will be undefined.'
+          allOf:
+            - $ref: '#/components/schemas/Provider'
+          deprecated: true
+        application_id:
+          description: ID of the application that provides this resource
+          type: string
+        application:
+          description: 'Deprecated: Nested application object. Use application_id to fetch application separately. When this resource appears nested in another API response, this field will be undefined.'
+          allOf:
+            - $ref: '#/components/schemas/Application'
+          deprecated: true
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+        created_at:
+          description: Entity creation timestamp
+          type: string
+          format: date-time
+        updated_at:
+          description: Entity update timestamp
+          type: string
+          format: date-time
+      required:
+        - id
+        - organization_id
+        - zone_id
+        - slug
+        - identifier
+        - name
+        - created_at
+        - updated_at
+      title: Resource
+    ResourceCreate:
+      description: Schema for creating a new resource
+      type: object
+      properties:
+        name:
+          description: Human-readable name
+          type: string
+          maxLength: 255
+          minLength: 1
+        identifier:
+          description: 'User specified identifier, unique within the zone'
+          type: string
+          maxLength: 2048
+          minLength: 1
+        description:
+          description: Human-readable description
+          type: string
+          maxLength: 2048
+          nullable: true
+        scopes:
+          description: Scopes supported by the resource
+          type: array
+          items:
+            type: string
+        credential_provider_id:
+          description: ID of the credential provider to associate with the resource
+          type: string
+        application_id:
+          description: ID of the application that provides this resource
+          type: string
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+      required:
+        - name
+        - identifier
+      title: Resource Create
+    ResourceUpdate:
+      description: |-
+        Schema for updating an existing resource (partial update).
+
+        **Warning:** Changing the `identifier` field may break existing integrations and dependencies.
+      type: object
+      properties:
+        name:
+          description: Human-readable name
+          type: string
+          maxLength: 255
+          minLength: 1
+        description:
+          description: Human-readable description
+          type: string
+          maxLength: 2048
+          nullable: true
+        scopes:
+          description: Scopes supported by the resource (set to null to unset)
+          type: array
+          items:
+            minLength: 1
+            type: string
+          nullable: true
+        identifier:
+          description: 'User specified identifier, unique within the zone'
+          type: string
+          maxLength: 2048
+          minLength: 1
+        credential_provider_id:
+          description: ID of the credential provider to associate with the resource (set to null to unset)
+          type: string
+          nullable: true
+        application_id:
+          description: ID of the application that provides this resource (set to null to unset)
+          type: string
+          nullable: true
+        metadata:
+          $ref: '#/components/schemas/MetadataUpdate'
+      title: Resource Update
     Application:
       description: An Application is a software system with an associated identity that can access Resources. It may act on its own behalf (machine-to-machine) or on behalf of a user (delegated access).
       type: object
@@ -1191,6 +2121,186 @@ components:
         protocols:
           $ref: '#/components/schemas/ApplicationProtocolUpdate'
       title: Application Update
+    ApplicationCredential:
+      description: Credentials for accessing external services from applications
+      allOf:
+        - type: object
+          properties:
+            id:
+              description: Unique identifier of the credential
+              type: string
+            organization_id:
+              description: Organization that owns this credential
+              type: string
+            zone_id:
+              description: Zone this credential belongs to
+              type: string
+            slug:
+              description: 'URL-safe identifier, unique within the zone'
+              type: string
+              maxLength: 63
+              minLength: 1
+              pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+            provider_id:
+              description: ID of the provider issuing tokens verified by this credential
+              type: string
+            provider:
+              description: 'Deprecated: Nested provider object. Use provider_id to fetch provider separately. When this credential appears nested in another API response, this field will be undefined.'
+              $ref: '#/components/schemas/Provider'
+              deprecated: true
+            application_id:
+              description: ID of the application this credential belongs to
+              type: string
+            application:
+              description: 'Deprecated: Nested application object. Use application_id to fetch application separately. When this credential appears nested in another API response, this field will be undefined.'
+              $ref: '#/components/schemas/Application'
+              deprecated: true
+            created_at:
+              description: Entity creation timestamp
+              type: string
+              format: date-time
+            updated_at:
+              description: Entity update timestamp
+              type: string
+              format: date-time
+          required:
+            - id
+            - organization_id
+            - zone_id
+            - slug
+            - provider_id
+            - application_id
+            - created_at
+            - updated_at
+        - anyOf:
+            - $ref: '#/components/schemas/TokenCredentialType'
+            - $ref: '#/components/schemas/PasswordCredentialType'
+            - $ref: '#/components/schemas/PublicKeyCredentialType'
+            - $ref: '#/components/schemas/UrlCredentialType'
+      title: Application Credential
+    ApplicationCredentialCreate:
+      description: Schema for creating a new application credential
+      allOf:
+        - type: object
+          properties:
+            application_id:
+              description: ID of the application this credential belongs to
+              type: string
+          required:
+            - application_id
+        - anyOf:
+            - $ref: '#/components/schemas/TokenCredentialCreate'
+            - $ref: '#/components/schemas/PasswordCredentialCreate'
+            - $ref: '#/components/schemas/PublicKeyCredentialCreate'
+            - $ref: '#/components/schemas/UrlCredentialCreate'
+      title: Application Credential Create
+    ApplicationCredentialCreateResponse:
+      description: Response for creating a new application credential
+      allOf:
+        - type: object
+          properties:
+            id:
+              description: Unique identifier of the credential
+              type: string
+            organization_id:
+              description: Organization that owns this credential
+              type: string
+            zone_id:
+              description: Zone this credential belongs to
+              type: string
+            slug:
+              description: 'URL-safe identifier, unique within the zone'
+              type: string
+              maxLength: 63
+              minLength: 1
+              pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+            provider_id:
+              description: ID of the provider issuing tokens verified by this credential
+              type: string
+            provider:
+              description: 'Deprecated: Nested provider object. Use provider_id to fetch provider separately. When this credential appears nested in another API response, this field will be undefined.'
+              $ref: '#/components/schemas/Provider'
+              deprecated: true
+            application_id:
+              description: ID of the application this credential belongs to
+              type: string
+            application:
+              description: 'Deprecated: Nested application object. Use application_id to fetch application separately. When this credential appears nested in another API response, this field will be undefined.'
+              $ref: '#/components/schemas/Application'
+              deprecated: true
+            created_at:
+              description: Entity creation timestamp
+              type: string
+              format: date-time
+            updated_at:
+              description: Entity update timestamp
+              type: string
+              format: date-time
+          required:
+            - id
+            - organization_id
+            - zone_id
+            - slug
+            - provider_id
+            - application_id
+            - created_at
+            - updated_at
+        - anyOf:
+            - $ref: '#/components/schemas/TokenCredentialType'
+            - $ref: '#/components/schemas/PasswordCredentialCreateResponseType'
+            - $ref: '#/components/schemas/PublicKeyCredentialType'
+            - $ref: '#/components/schemas/UrlCredentialType'
+      title: Application Credential Create Response
+    TokenCredentialUpdate:
+      description: Schema for updating a token credential
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - token
+        subject:
+          description: 'Subject identifier for the token. Set to null to unset, which allows any token from the provider to be accepted without checking application-specific claims.'
+          type: string
+          nullable: true
+      title: Token Credential Update
+    PasswordCredentialUpdate:
+      description: Schema for updating a password credential
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - password
+      title: Password Credential Update
+    PublicKeyCredentialUpdate:
+      description: Schema for updating a public key credential
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - public-key
+      title: Public Key Credential Update
+    UrlCredentialUpdate:
+      description: Schema for updating a URL credential
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - url
+      title: URL Credential Update
+    ApplicationCredentialUpdate:
+      description: Schema for updating an existing application credential
+      allOf:
+        - type: object
+        - anyOf:
+            - $ref: '#/components/schemas/TokenCredentialUpdate'
+            - $ref: '#/components/schemas/PasswordCredentialUpdate'
+            - $ref: '#/components/schemas/PublicKeyCredentialUpdate'
+            - $ref: '#/components/schemas/UrlCredentialUpdate'
+      title: Application Credential Update
     Zone:
       description: A zone for organizing resources within an organization
       type: object

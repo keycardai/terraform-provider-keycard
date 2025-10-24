@@ -20,10 +20,31 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/oapi-codegen/nullable"
 	"github.com/oapi-codegen/runtime"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 const (
 	BearerAuthScopes = "bearerAuth.Scopes"
+)
+
+// Defines values for PasswordCredentialCreateType.
+const (
+	PasswordCredentialCreateTypePassword PasswordCredentialCreateType = "password"
+)
+
+// Defines values for PasswordCredentialCreateResponseTypeType.
+const (
+	PasswordCredentialCreateResponseTypeTypePassword PasswordCredentialCreateResponseTypeType = "password"
+)
+
+// Defines values for PasswordCredentialTypeType.
+const (
+	PasswordCredentialTypeTypePassword PasswordCredentialTypeType = "password"
+)
+
+// Defines values for PasswordCredentialUpdateType.
+const (
+	PasswordCredentialUpdateTypePassword PasswordCredentialUpdateType = "password"
 )
 
 // Defines values for ProviderType.
@@ -31,6 +52,51 @@ const (
 	ProviderTypeExternal         ProviderType = "external"
 	ProviderTypeKeycardDirectory ProviderType = "keycard-directory"
 	ProviderTypeKeycardVault     ProviderType = "keycard-vault"
+)
+
+// Defines values for PublicKeyCredentialCreateType.
+const (
+	PublicKeyCredentialCreateTypePublicKey PublicKeyCredentialCreateType = "public-key"
+)
+
+// Defines values for PublicKeyCredentialTypeType.
+const (
+	PublicKeyCredentialTypeTypePublicKey PublicKeyCredentialTypeType = "public-key"
+)
+
+// Defines values for PublicKeyCredentialUpdateType.
+const (
+	PublicKey PublicKeyCredentialUpdateType = "public-key"
+)
+
+// Defines values for TokenCredentialCreateType.
+const (
+	TokenCredentialCreateTypeToken TokenCredentialCreateType = "token"
+)
+
+// Defines values for TokenCredentialTypeType.
+const (
+	TokenCredentialTypeTypeToken TokenCredentialTypeType = "token"
+)
+
+// Defines values for TokenCredentialUpdateType.
+const (
+	Token TokenCredentialUpdateType = "token"
+)
+
+// Defines values for UrlCredentialCreateType.
+const (
+	UrlCredentialCreateTypeUrl UrlCredentialCreateType = "url"
+)
+
+// Defines values for UrlCredentialTypeType.
+const (
+	UrlCredentialTypeTypeUrl UrlCredentialTypeType = "url"
+)
+
+// Defines values for UrlCredentialUpdateType.
+const (
+	Url UrlCredentialUpdateType = "url"
 )
 
 // Defines values for ListProvidersParamsType0.
@@ -115,6 +181,81 @@ type ApplicationCreate struct {
 	Protocols *ApplicationProtocolCreate `json:"protocols,omitempty"`
 }
 
+// ApplicationCredential defines model for ApplicationCredential.
+type ApplicationCredential struct {
+	// Application An Application is a software system with an associated identity that can access Resources. It may act on its own behalf (machine-to-machine) or on behalf of a user (delegated access).
+	Application *Application `json:"application,omitempty"`
+
+	// ApplicationId ID of the application this credential belongs to
+	ApplicationId string `json:"application_id"`
+
+	// CreatedAt Entity creation timestamp
+	CreatedAt time.Time `json:"created_at"`
+
+	// Id Unique identifier of the credential
+	Id string `json:"id"`
+
+	// OrganizationId Organization that owns this credential
+	OrganizationId string `json:"organization_id"`
+
+	// Provider A Provider is a system that supplies access to Resources and allows actors (Users or Applications) to authenticate.
+	Provider *Provider `json:"provider,omitempty"`
+
+	// ProviderId ID of the provider issuing tokens verified by this credential
+	ProviderId string `json:"provider_id"`
+
+	// Slug URL-safe identifier, unique within the zone
+	Slug string `json:"slug"`
+
+	// UpdatedAt Entity update timestamp
+	UpdatedAt time.Time `json:"updated_at"`
+
+	// ZoneId Zone this credential belongs to
+	ZoneId string `json:"zone_id"`
+}
+
+// ApplicationCredentialCreate defines model for ApplicationCredentialCreate.
+type ApplicationCredentialCreate struct {
+	// ApplicationId ID of the application this credential belongs to
+	ApplicationId string `json:"application_id"`
+}
+
+// ApplicationCredentialCreateResponse defines model for ApplicationCredentialCreateResponse.
+type ApplicationCredentialCreateResponse struct {
+	// Application An Application is a software system with an associated identity that can access Resources. It may act on its own behalf (machine-to-machine) or on behalf of a user (delegated access).
+	Application *Application `json:"application,omitempty"`
+
+	// ApplicationId ID of the application this credential belongs to
+	ApplicationId string `json:"application_id"`
+
+	// CreatedAt Entity creation timestamp
+	CreatedAt time.Time `json:"created_at"`
+
+	// Id Unique identifier of the credential
+	Id string `json:"id"`
+
+	// OrganizationId Organization that owns this credential
+	OrganizationId string `json:"organization_id"`
+
+	// Provider A Provider is a system that supplies access to Resources and allows actors (Users or Applications) to authenticate.
+	Provider *Provider `json:"provider,omitempty"`
+
+	// ProviderId ID of the provider issuing tokens verified by this credential
+	ProviderId string `json:"provider_id"`
+
+	// Slug URL-safe identifier, unique within the zone
+	Slug string `json:"slug"`
+
+	// UpdatedAt Entity update timestamp
+	UpdatedAt time.Time `json:"updated_at"`
+
+	// ZoneId Zone this credential belongs to
+	ZoneId string `json:"zone_id"`
+}
+
+// ApplicationCredentialUpdate defines model for ApplicationCredentialUpdate.
+type ApplicationCredentialUpdate = map[string]interface{}
+
 // ApplicationOAuth2Protocol OAuth 2.0 protocol configuration
 type ApplicationOAuth2Protocol struct {
 	// RedirectUris OAuth 2.0 redirect URIs for this application
@@ -196,6 +337,47 @@ type PageInfo struct {
 	// StartCursor Cursor pointing to the first item in the current page
 	StartCursor nullable.Nullable[string] `json:"start_cursor,omitempty"`
 }
+
+// PasswordCredentialCreate Schema for creating a password credential within the zone identity provider
+type PasswordCredentialCreate struct {
+	// Identifier Username for password credential, also used as OAuth 2.0 client ID (auto-generated if not provided)
+	Identifier *string                      `json:"identifier,omitempty"`
+	Type       PasswordCredentialCreateType `json:"type"`
+}
+
+// PasswordCredentialCreateType defines model for PasswordCredentialCreate.Type.
+type PasswordCredentialCreateType string
+
+// PasswordCredentialCreateResponseType Password credential response type with secret
+type PasswordCredentialCreateResponseType struct {
+	// Identifier Username for password credential, also used as OAuth 2.0 client ID
+	Identifier string `json:"identifier"`
+
+	// Password Password for credential (only returned on creation, store securely), also used as OAuth 2.0 client secret
+	Password string                                   `json:"password"`
+	Type     PasswordCredentialCreateResponseTypeType `json:"type"`
+}
+
+// PasswordCredentialCreateResponseTypeType defines model for PasswordCredentialCreateResponseType.Type.
+type PasswordCredentialCreateResponseTypeType string
+
+// PasswordCredentialType Password-based credential type fields
+type PasswordCredentialType struct {
+	// Identifier Username for password credential, also used as OAuth 2.0 client ID
+	Identifier string                     `json:"identifier"`
+	Type       PasswordCredentialTypeType `json:"type"`
+}
+
+// PasswordCredentialTypeType defines model for PasswordCredentialType.Type.
+type PasswordCredentialTypeType string
+
+// PasswordCredentialUpdate Schema for updating a password credential
+type PasswordCredentialUpdate struct {
+	Type *PasswordCredentialUpdateType `json:"type,omitempty"`
+}
+
+// PasswordCredentialUpdateType defines model for PasswordCredentialUpdate.Type.
+type PasswordCredentialUpdateType string
 
 // Provider A Provider is a system that supplies access to Resources and allows actors (Users or Applications) to authenticate.
 type Provider struct {
@@ -351,6 +533,204 @@ type ProviderUpdate struct {
 	Protocols nullable.Nullable[ProviderProtocolUpdate] `json:"protocols,omitempty"`
 }
 
+// PublicKeyCredentialCreate Schema for creating a public key credential within the zone identity provider
+type PublicKeyCredentialCreate struct {
+	// Identifier Client ID for public key credential, also used as OAuth 2.0 client ID (auto-generated if not provided)
+	Identifier *string `json:"identifier,omitempty"`
+
+	// JwksUri JWKS URI to retrieve public keys from
+	JwksUri string                        `json:"jwks_uri"`
+	Type    PublicKeyCredentialCreateType `json:"type"`
+}
+
+// PublicKeyCredentialCreateType defines model for PublicKeyCredentialCreate.Type.
+type PublicKeyCredentialCreateType string
+
+// PublicKeyCredentialType Public key-based credential type fields
+type PublicKeyCredentialType struct {
+	// Identifier Client ID for public key credential, also used as OAuth 2.0 client ID
+	Identifier string `json:"identifier"`
+
+	// JwksUri JWKS URI to retrieve public keys from
+	JwksUri string                      `json:"jwks_uri"`
+	Type    PublicKeyCredentialTypeType `json:"type"`
+}
+
+// PublicKeyCredentialTypeType defines model for PublicKeyCredentialType.Type.
+type PublicKeyCredentialTypeType string
+
+// PublicKeyCredentialUpdate Schema for updating a public key credential
+type PublicKeyCredentialUpdate struct {
+	Type *PublicKeyCredentialUpdateType `json:"type,omitempty"`
+}
+
+// PublicKeyCredentialUpdateType defines model for PublicKeyCredentialUpdate.Type.
+type PublicKeyCredentialUpdateType string
+
+// Resource A Resource is a system that exposes protected information or functionality. It requires authentication of the requesting actor, which may be a user or application, before allowing access.
+type Resource struct {
+	// Application Deprecated: Nested application object. Use application_id to fetch application separately. When this resource appears nested in another API response, this field will be undefined.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
+	Application *Application `json:"application,omitempty"`
+
+	// ApplicationId ID of the application that provides this resource
+	ApplicationId *string `json:"application_id,omitempty"`
+
+	// CreatedAt Entity creation timestamp
+	CreatedAt time.Time `json:"created_at"`
+
+	// CredentialProvider Deprecated: Nested provider object. Use credential_provider_id to fetch provider separately. When this resource appears nested in another API response, this field will be undefined.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
+	CredentialProvider *Provider `json:"credential_provider,omitempty"`
+
+	// CredentialProviderId ID of the credential provider for this resource
+	CredentialProviderId *string `json:"credential_provider_id,omitempty"`
+
+	// Description Human-readable description
+	Description nullable.Nullable[string] `json:"description,omitempty"`
+
+	// Id Unique identifier of the resource
+	Id string `json:"id"`
+
+	// Identifier User specified identifier, unique within the zone
+	Identifier string `json:"identifier"`
+
+	// Metadata Entity metadata
+	Metadata *Metadata `json:"metadata,omitempty"`
+
+	// Name Human-readable name
+	Name string `json:"name"`
+
+	// OrganizationId Organization that owns this resource
+	OrganizationId string `json:"organization_id"`
+
+	// Scopes Scopes supported by the resource
+	Scopes nullable.Nullable[[]string] `json:"scopes,omitempty"`
+
+	// Slug URL-safe identifier, unique within the zone
+	Slug string `json:"slug"`
+
+	// UpdatedAt Entity update timestamp
+	UpdatedAt time.Time `json:"updated_at"`
+
+	// ZoneId Zone this resource belongs to
+	ZoneId string `json:"zone_id"`
+}
+
+// ResourceCreate Schema for creating a new resource
+type ResourceCreate struct {
+	// ApplicationId ID of the application that provides this resource
+	ApplicationId *string `json:"application_id,omitempty"`
+
+	// CredentialProviderId ID of the credential provider to associate with the resource
+	CredentialProviderId *string `json:"credential_provider_id,omitempty"`
+
+	// Description Human-readable description
+	Description nullable.Nullable[string] `json:"description,omitempty"`
+
+	// Identifier User specified identifier, unique within the zone
+	Identifier string `json:"identifier"`
+
+	// Metadata Entity metadata
+	Metadata *Metadata `json:"metadata,omitempty"`
+
+	// Name Human-readable name
+	Name string `json:"name"`
+
+	// Scopes Scopes supported by the resource
+	Scopes *[]string `json:"scopes,omitempty"`
+}
+
+// ResourceUpdate Schema for updating an existing resource (partial update).
+//
+// **Warning:** Changing the `identifier` field may break existing integrations and dependencies.
+type ResourceUpdate struct {
+	// ApplicationId ID of the application that provides this resource (set to null to unset)
+	ApplicationId nullable.Nullable[string] `json:"application_id,omitempty"`
+
+	// CredentialProviderId ID of the credential provider to associate with the resource (set to null to unset)
+	CredentialProviderId nullable.Nullable[string] `json:"credential_provider_id,omitempty"`
+
+	// Description Human-readable description
+	Description nullable.Nullable[string] `json:"description,omitempty"`
+
+	// Identifier User specified identifier, unique within the zone
+	Identifier *string `json:"identifier,omitempty"`
+
+	// Metadata Entity metadata (set to null or {} to remove metadata)
+	Metadata nullable.Nullable[MetadataUpdate] `json:"metadata,omitempty"`
+
+	// Name Human-readable name
+	Name *string `json:"name,omitempty"`
+
+	// Scopes Scopes supported by the resource (set to null to unset)
+	Scopes nullable.Nullable[[]string] `json:"scopes,omitempty"`
+}
+
+// TokenCredentialCreate Schema for creating a token credential. The identifier is computed by the backend from the subject field.
+type TokenCredentialCreate struct {
+	// ProviderId ID of the provider issuing tokens this credential verifies
+	ProviderId string `json:"provider_id"`
+
+	// Subject Subject identifier for the token. When omitted, any token from the provider is accepted without checking application-specific claims. The identifier field is computed from this value.
+	Subject *string                   `json:"subject,omitempty"`
+	Type    TokenCredentialCreateType `json:"type"`
+}
+
+// TokenCredentialCreateType defines model for TokenCredentialCreate.Type.
+type TokenCredentialCreateType string
+
+// TokenCredentialType Token-based credential type fields
+type TokenCredentialType struct {
+	// Identifier Identifier for this credential. For token type, this equals the subject value, or '*' when subject is not specified.
+	Identifier string `json:"identifier"`
+
+	// Subject Subject identifier for the token. When null or omitted, any token from the provider is accepted without checking application-specific claims.
+	Subject nullable.Nullable[string] `json:"subject,omitempty"`
+	Type    TokenCredentialTypeType   `json:"type"`
+}
+
+// TokenCredentialTypeType defines model for TokenCredentialType.Type.
+type TokenCredentialTypeType string
+
+// TokenCredentialUpdate Schema for updating a token credential
+type TokenCredentialUpdate struct {
+	// Subject Subject identifier for the token. Set to null to unset, which allows any token from the provider to be accepted without checking application-specific claims.
+	Subject nullable.Nullable[string]  `json:"subject,omitempty"`
+	Type    *TokenCredentialUpdateType `json:"type,omitempty"`
+}
+
+// TokenCredentialUpdateType defines model for TokenCredentialUpdate.Type.
+type TokenCredentialUpdateType string
+
+// UrlCredentialCreate Schema for creating a URL credential within the zone identity provider
+type UrlCredentialCreate struct {
+	// Identifier URL of the credential (must be a valid URL)
+	Identifier string                  `json:"identifier"`
+	Type       UrlCredentialCreateType `json:"type"`
+}
+
+// UrlCredentialCreateType defines model for UrlCredentialCreate.Type.
+type UrlCredentialCreateType string
+
+// UrlCredentialType URL-based credential type fields
+type UrlCredentialType struct {
+	// Identifier URL of the credential (must be a valid URL)
+	Identifier string                `json:"identifier"`
+	Type       UrlCredentialTypeType `json:"type"`
+}
+
+// UrlCredentialTypeType defines model for UrlCredentialType.Type.
+type UrlCredentialTypeType string
+
+// UrlCredentialUpdate Schema for updating a URL credential
+type UrlCredentialUpdate struct {
+	Type *UrlCredentialUpdateType `json:"type,omitempty"`
+}
+
+// UrlCredentialUpdateType defines model for UrlCredentialUpdate.Type.
+type UrlCredentialUpdateType string
+
 // Zone A zone for organizing resources within an organization
 type Zone struct {
 	// Cname Custom domain name (CNAME) for the zone
@@ -499,12 +879,38 @@ type ListZonesParams struct {
 	Limit  *int    `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListApplicationCredentialsParams defines parameters for ListApplicationCredentials.
+type ListApplicationCredentialsParams struct {
+	Slug          *string `form:"slug,omitempty" json:"slug,omitempty"`
+	ApplicationId *string `form:"applicationId,omitempty" json:"applicationId,omitempty"`
+	Cursor        *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Limit         *int    `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListApplicationsParams defines parameters for ListApplications.
 type ListApplicationsParams struct {
 	Slug       *string `form:"slug,omitempty" json:"slug,omitempty"`
 	Identifier *string `form:"identifier,omitempty" json:"identifier,omitempty"`
 	Cursor     *string `form:"cursor,omitempty" json:"cursor,omitempty"`
 	Limit      *int    `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListApplicationCredentialsForApplicationParams defines parameters for ListApplicationCredentialsForApplication.
+type ListApplicationCredentialsForApplicationParams struct {
+	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Limit  *int    `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListApplicationDependenciesParams defines parameters for ListApplicationDependencies.
+type ListApplicationDependenciesParams struct {
+	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Limit  *int    `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListApplicationResourcesParams defines parameters for ListApplicationResources.
+type ListApplicationResourcesParams struct {
+	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Limit  *int    `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListProvidersParams defines parameters for ListProviders.
@@ -527,11 +933,27 @@ type ListProvidersParamsType1 string
 // ListProvidersParamsType2 defines parameters for ListProviders.
 type ListProvidersParamsType2 string
 
+// ListResourcesParams defines parameters for ListResources.
+type ListResourcesParams struct {
+	// Identifier Filter resources by identifier
+	Identifier *string `form:"identifier,omitempty" json:"identifier,omitempty"`
+
+	// CredentialProviderId Filter resources by credential provider ID
+	CredentialProviderId *openapi_types.UUID `form:"credentialProviderId,omitempty" json:"credentialProviderId,omitempty"`
+	Slug                 *string             `form:"slug,omitempty" json:"slug,omitempty"`
+}
+
 // CreateZoneJSONRequestBody defines body for CreateZone for application/json ContentType.
 type CreateZoneJSONRequestBody = ZoneCreate
 
 // UpdateZoneJSONRequestBody defines body for UpdateZone for application/json ContentType.
 type UpdateZoneJSONRequestBody = ZoneUpdate
+
+// CreateApplicationCredentialJSONRequestBody defines body for CreateApplicationCredential for application/json ContentType.
+type CreateApplicationCredentialJSONRequestBody = ApplicationCredentialCreate
+
+// UpdateApplicationCredentialJSONRequestBody defines body for UpdateApplicationCredential for application/json ContentType.
+type UpdateApplicationCredentialJSONRequestBody = ApplicationCredentialUpdate
 
 // CreateApplicationJSONRequestBody defines body for CreateApplication for application/json ContentType.
 type CreateApplicationJSONRequestBody = ApplicationCreate
@@ -544,6 +966,12 @@ type CreateProviderJSONRequestBody = ProviderCreate
 
 // UpdateProviderJSONRequestBody defines body for UpdateProvider for application/json ContentType.
 type UpdateProviderJSONRequestBody = ProviderUpdate
+
+// CreateResourceJSONRequestBody defines body for CreateResource for application/json ContentType.
+type CreateResourceJSONRequestBody = ResourceCreate
+
+// UpdateResourceJSONRequestBody defines body for UpdateResource for application/json ContentType.
+type UpdateResourceJSONRequestBody = ResourceUpdate
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -637,6 +1065,25 @@ type ClientInterface interface {
 
 	UpdateZone(ctx context.Context, id string, body UpdateZoneJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListApplicationCredentials request
+	ListApplicationCredentials(ctx context.Context, zoneId string, params *ListApplicationCredentialsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateApplicationCredentialWithBody request with any body
+	CreateApplicationCredentialWithBody(ctx context.Context, zoneId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateApplicationCredential(ctx context.Context, zoneId string, body CreateApplicationCredentialJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteApplicationCredential request
+	DeleteApplicationCredential(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetApplicationCredential request
+	GetApplicationCredential(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateApplicationCredentialWithBody request with any body
+	UpdateApplicationCredentialWithBody(ctx context.Context, zoneId string, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateApplicationCredential(ctx context.Context, zoneId string, id string, body UpdateApplicationCredentialJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListApplications request
 	ListApplications(ctx context.Context, zoneId string, params *ListApplicationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -656,6 +1103,21 @@ type ClientInterface interface {
 
 	UpdateApplication(ctx context.Context, zoneId string, id string, body UpdateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListApplicationCredentialsForApplication request
+	ListApplicationCredentialsForApplication(ctx context.Context, zoneId string, id string, params *ListApplicationCredentialsForApplicationParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListApplicationDependencies request
+	ListApplicationDependencies(ctx context.Context, zoneId string, id string, params *ListApplicationDependenciesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RemoveApplicationDependency request
+	RemoveApplicationDependency(ctx context.Context, zoneId string, id string, dependencyId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AddApplicationDependency request
+	AddApplicationDependency(ctx context.Context, zoneId string, id string, dependencyId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListApplicationResources request
+	ListApplicationResources(ctx context.Context, zoneId string, id string, params *ListApplicationResourcesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListProviders request
 	ListProviders(ctx context.Context, zoneId string, params *ListProvidersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -674,6 +1136,25 @@ type ClientInterface interface {
 	UpdateProviderWithBody(ctx context.Context, zoneId string, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	UpdateProvider(ctx context.Context, zoneId string, id string, body UpdateProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListResources request
+	ListResources(ctx context.Context, zoneId string, params *ListResourcesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateResourceWithBody request with any body
+	CreateResourceWithBody(ctx context.Context, zoneId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateResource(ctx context.Context, zoneId string, body CreateResourceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteResource request
+	DeleteResource(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetResource request
+	GetResource(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateResourceWithBody request with any body
+	UpdateResourceWithBody(ctx context.Context, zoneId string, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateResource(ctx context.Context, zoneId string, id string, body UpdateResourceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) ListZones(ctx context.Context, params *ListZonesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -750,6 +1231,90 @@ func (c *Client) UpdateZoneWithBody(ctx context.Context, id string, contentType 
 
 func (c *Client) UpdateZone(ctx context.Context, id string, body UpdateZoneJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateZoneRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListApplicationCredentials(ctx context.Context, zoneId string, params *ListApplicationCredentialsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListApplicationCredentialsRequest(c.Server, zoneId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateApplicationCredentialWithBody(ctx context.Context, zoneId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateApplicationCredentialRequestWithBody(c.Server, zoneId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateApplicationCredential(ctx context.Context, zoneId string, body CreateApplicationCredentialJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateApplicationCredentialRequest(c.Server, zoneId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteApplicationCredential(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteApplicationCredentialRequest(c.Server, zoneId, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetApplicationCredential(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApplicationCredentialRequest(c.Server, zoneId, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateApplicationCredentialWithBody(ctx context.Context, zoneId string, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateApplicationCredentialRequestWithBody(c.Server, zoneId, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateApplicationCredential(ctx context.Context, zoneId string, id string, body UpdateApplicationCredentialJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateApplicationCredentialRequest(c.Server, zoneId, id, body)
 	if err != nil {
 		return nil, err
 	}
@@ -844,6 +1409,66 @@ func (c *Client) UpdateApplication(ctx context.Context, zoneId string, id string
 	return c.Client.Do(req)
 }
 
+func (c *Client) ListApplicationCredentialsForApplication(ctx context.Context, zoneId string, id string, params *ListApplicationCredentialsForApplicationParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListApplicationCredentialsForApplicationRequest(c.Server, zoneId, id, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListApplicationDependencies(ctx context.Context, zoneId string, id string, params *ListApplicationDependenciesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListApplicationDependenciesRequest(c.Server, zoneId, id, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RemoveApplicationDependency(ctx context.Context, zoneId string, id string, dependencyId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRemoveApplicationDependencyRequest(c.Server, zoneId, id, dependencyId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AddApplicationDependency(ctx context.Context, zoneId string, id string, dependencyId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddApplicationDependencyRequest(c.Server, zoneId, id, dependencyId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListApplicationResources(ctx context.Context, zoneId string, id string, params *ListApplicationResourcesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListApplicationResourcesRequest(c.Server, zoneId, id, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) ListProviders(ctx context.Context, zoneId string, params *ListProvidersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListProvidersRequest(c.Server, zoneId, params)
 	if err != nil {
@@ -918,6 +1543,90 @@ func (c *Client) UpdateProviderWithBody(ctx context.Context, zoneId string, id s
 
 func (c *Client) UpdateProvider(ctx context.Context, zoneId string, id string, body UpdateProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateProviderRequest(c.Server, zoneId, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListResources(ctx context.Context, zoneId string, params *ListResourcesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListResourcesRequest(c.Server, zoneId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateResourceWithBody(ctx context.Context, zoneId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateResourceRequestWithBody(c.Server, zoneId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateResource(ctx context.Context, zoneId string, body CreateResourceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateResourceRequest(c.Server, zoneId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteResource(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteResourceRequest(c.Server, zoneId, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetResource(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetResourceRequest(c.Server, zoneId, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateResourceWithBody(ctx context.Context, zoneId string, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateResourceRequestWithBody(c.Server, zoneId, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateResource(ctx context.Context, zoneId string, id string, body UpdateResourceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateResourceRequest(c.Server, zoneId, id, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1145,6 +1854,293 @@ func NewUpdateZoneRequestWithBody(server string, id string, contentType string, 
 	}
 
 	operationPath := fmt.Sprintf("/zones/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListApplicationCredentialsRequest generates requests for ListApplicationCredentials
+func NewListApplicationCredentialsRequest(server string, zoneId string, params *ListApplicationCredentialsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/application-credentials", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Slug != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "slug", runtime.ParamLocationQuery, *params.Slug); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ApplicationId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "applicationId", runtime.ParamLocationQuery, *params.ApplicationId); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cursor", runtime.ParamLocationQuery, *params.Cursor); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateApplicationCredentialRequest calls the generic CreateApplicationCredential builder with application/json body
+func NewCreateApplicationCredentialRequest(server string, zoneId string, body CreateApplicationCredentialJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateApplicationCredentialRequestWithBody(server, zoneId, "application/json", bodyReader)
+}
+
+// NewCreateApplicationCredentialRequestWithBody generates requests for CreateApplicationCredential with any type of body
+func NewCreateApplicationCredentialRequestWithBody(server string, zoneId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/application-credentials", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteApplicationCredentialRequest generates requests for DeleteApplicationCredential
+func NewDeleteApplicationCredentialRequest(server string, zoneId string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/application-credentials/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetApplicationCredentialRequest generates requests for GetApplicationCredential
+func NewGetApplicationCredentialRequest(server string, zoneId string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/application-credentials/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateApplicationCredentialRequest calls the generic UpdateApplicationCredential builder with application/json body
+func NewUpdateApplicationCredentialRequest(server string, zoneId string, id string, body UpdateApplicationCredentialJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateApplicationCredentialRequestWithBody(server, zoneId, id, "application/json", bodyReader)
+}
+
+// NewUpdateApplicationCredentialRequestWithBody generates requests for UpdateApplicationCredential with any type of body
+func NewUpdateApplicationCredentialRequestWithBody(server string, zoneId string, id string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/application-credentials/%s", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -1447,6 +2443,339 @@ func NewUpdateApplicationRequestWithBody(server string, zoneId string, id string
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListApplicationCredentialsForApplicationRequest generates requests for ListApplicationCredentialsForApplication
+func NewListApplicationCredentialsForApplicationRequest(server string, zoneId string, id string, params *ListApplicationCredentialsForApplicationParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/applications/%s/application-credentials", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cursor", runtime.ParamLocationQuery, *params.Cursor); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListApplicationDependenciesRequest generates requests for ListApplicationDependencies
+func NewListApplicationDependenciesRequest(server string, zoneId string, id string, params *ListApplicationDependenciesParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/applications/%s/dependencies", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cursor", runtime.ParamLocationQuery, *params.Cursor); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRemoveApplicationDependencyRequest generates requests for RemoveApplicationDependency
+func NewRemoveApplicationDependencyRequest(server string, zoneId string, id string, dependencyId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "dependencyId", runtime.ParamLocationPath, dependencyId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/applications/%s/dependencies/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAddApplicationDependencyRequest generates requests for AddApplicationDependency
+func NewAddApplicationDependencyRequest(server string, zoneId string, id string, dependencyId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "dependencyId", runtime.ParamLocationPath, dependencyId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/applications/%s/dependencies/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListApplicationResourcesRequest generates requests for ListApplicationResources
+func NewListApplicationResourcesRequest(server string, zoneId string, id string, params *ListApplicationResourcesParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/applications/%s/resources", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cursor", runtime.ParamLocationQuery, *params.Cursor); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -1754,6 +3083,277 @@ func NewUpdateProviderRequestWithBody(server string, zoneId string, id string, c
 	return req, nil
 }
 
+// NewListResourcesRequest generates requests for ListResources
+func NewListResourcesRequest(server string, zoneId string, params *ListResourcesParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/resources", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Identifier != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "identifier", runtime.ParamLocationQuery, *params.Identifier); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.CredentialProviderId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "credentialProviderId", runtime.ParamLocationQuery, *params.CredentialProviderId); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Slug != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "slug", runtime.ParamLocationQuery, *params.Slug); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateResourceRequest calls the generic CreateResource builder with application/json body
+func NewCreateResourceRequest(server string, zoneId string, body CreateResourceJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateResourceRequestWithBody(server, zoneId, "application/json", bodyReader)
+}
+
+// NewCreateResourceRequestWithBody generates requests for CreateResource with any type of body
+func NewCreateResourceRequestWithBody(server string, zoneId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/resources", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteResourceRequest generates requests for DeleteResource
+func NewDeleteResourceRequest(server string, zoneId string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/resources/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetResourceRequest generates requests for GetResource
+func NewGetResourceRequest(server string, zoneId string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/resources/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateResourceRequest calls the generic UpdateResource builder with application/json body
+func NewUpdateResourceRequest(server string, zoneId string, id string, body UpdateResourceJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateResourceRequestWithBody(server, zoneId, id, "application/json", bodyReader)
+}
+
+// NewUpdateResourceRequestWithBody generates requests for UpdateResource with any type of body
+func NewUpdateResourceRequestWithBody(server string, zoneId string, id string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "zoneId", runtime.ParamLocationPath, zoneId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/resources/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -1816,6 +3416,25 @@ type ClientWithResponsesInterface interface {
 
 	UpdateZoneWithResponse(ctx context.Context, id string, body UpdateZoneJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateZoneResponse, error)
 
+	// ListApplicationCredentialsWithResponse request
+	ListApplicationCredentialsWithResponse(ctx context.Context, zoneId string, params *ListApplicationCredentialsParams, reqEditors ...RequestEditorFn) (*ListApplicationCredentialsResponse, error)
+
+	// CreateApplicationCredentialWithBodyWithResponse request with any body
+	CreateApplicationCredentialWithBodyWithResponse(ctx context.Context, zoneId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateApplicationCredentialResponse, error)
+
+	CreateApplicationCredentialWithResponse(ctx context.Context, zoneId string, body CreateApplicationCredentialJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateApplicationCredentialResponse, error)
+
+	// DeleteApplicationCredentialWithResponse request
+	DeleteApplicationCredentialWithResponse(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*DeleteApplicationCredentialResponse, error)
+
+	// GetApplicationCredentialWithResponse request
+	GetApplicationCredentialWithResponse(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*GetApplicationCredentialResponse, error)
+
+	// UpdateApplicationCredentialWithBodyWithResponse request with any body
+	UpdateApplicationCredentialWithBodyWithResponse(ctx context.Context, zoneId string, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateApplicationCredentialResponse, error)
+
+	UpdateApplicationCredentialWithResponse(ctx context.Context, zoneId string, id string, body UpdateApplicationCredentialJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateApplicationCredentialResponse, error)
+
 	// ListApplicationsWithResponse request
 	ListApplicationsWithResponse(ctx context.Context, zoneId string, params *ListApplicationsParams, reqEditors ...RequestEditorFn) (*ListApplicationsResponse, error)
 
@@ -1835,6 +3454,21 @@ type ClientWithResponsesInterface interface {
 
 	UpdateApplicationWithResponse(ctx context.Context, zoneId string, id string, body UpdateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateApplicationResponse, error)
 
+	// ListApplicationCredentialsForApplicationWithResponse request
+	ListApplicationCredentialsForApplicationWithResponse(ctx context.Context, zoneId string, id string, params *ListApplicationCredentialsForApplicationParams, reqEditors ...RequestEditorFn) (*ListApplicationCredentialsForApplicationResponse, error)
+
+	// ListApplicationDependenciesWithResponse request
+	ListApplicationDependenciesWithResponse(ctx context.Context, zoneId string, id string, params *ListApplicationDependenciesParams, reqEditors ...RequestEditorFn) (*ListApplicationDependenciesResponse, error)
+
+	// RemoveApplicationDependencyWithResponse request
+	RemoveApplicationDependencyWithResponse(ctx context.Context, zoneId string, id string, dependencyId string, reqEditors ...RequestEditorFn) (*RemoveApplicationDependencyResponse, error)
+
+	// AddApplicationDependencyWithResponse request
+	AddApplicationDependencyWithResponse(ctx context.Context, zoneId string, id string, dependencyId string, reqEditors ...RequestEditorFn) (*AddApplicationDependencyResponse, error)
+
+	// ListApplicationResourcesWithResponse request
+	ListApplicationResourcesWithResponse(ctx context.Context, zoneId string, id string, params *ListApplicationResourcesParams, reqEditors ...RequestEditorFn) (*ListApplicationResourcesResponse, error)
+
 	// ListProvidersWithResponse request
 	ListProvidersWithResponse(ctx context.Context, zoneId string, params *ListProvidersParams, reqEditors ...RequestEditorFn) (*ListProvidersResponse, error)
 
@@ -1853,6 +3487,25 @@ type ClientWithResponsesInterface interface {
 	UpdateProviderWithBodyWithResponse(ctx context.Context, zoneId string, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateProviderResponse, error)
 
 	UpdateProviderWithResponse(ctx context.Context, zoneId string, id string, body UpdateProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateProviderResponse, error)
+
+	// ListResourcesWithResponse request
+	ListResourcesWithResponse(ctx context.Context, zoneId string, params *ListResourcesParams, reqEditors ...RequestEditorFn) (*ListResourcesResponse, error)
+
+	// CreateResourceWithBodyWithResponse request with any body
+	CreateResourceWithBodyWithResponse(ctx context.Context, zoneId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateResourceResponse, error)
+
+	CreateResourceWithResponse(ctx context.Context, zoneId string, body CreateResourceJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateResourceResponse, error)
+
+	// DeleteResourceWithResponse request
+	DeleteResourceWithResponse(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*DeleteResourceResponse, error)
+
+	// GetResourceWithResponse request
+	GetResourceWithResponse(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*GetResourceResponse, error)
+
+	// UpdateResourceWithBodyWithResponse request with any body
+	UpdateResourceWithBodyWithResponse(ctx context.Context, zoneId string, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateResourceResponse, error)
+
+	UpdateResourceWithResponse(ctx context.Context, zoneId string, id string, body UpdateResourceJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateResourceResponse, error)
 }
 
 type ListZonesResponse struct {
@@ -1968,6 +3621,125 @@ func (r UpdateZoneResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdateZoneResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListApplicationCredentialsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Items []ApplicationCredential `json:"items"`
+
+		// PageInfo Pagination information
+		PageInfo PageInfo `json:"page_info"`
+	}
+	JSONDefault *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r ListApplicationCredentialsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListApplicationCredentialsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateApplicationCredentialResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ApplicationCredentialCreateResponse
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateApplicationCredentialResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateApplicationCredentialResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteApplicationCredentialResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteApplicationCredentialResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteApplicationCredentialResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetApplicationCredentialResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ApplicationCredential
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GetApplicationCredentialResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetApplicationCredentialResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateApplicationCredentialResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ApplicationCredential
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateApplicationCredentialResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateApplicationCredentialResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2093,6 +3865,134 @@ func (r UpdateApplicationResponse) StatusCode() int {
 	return 0
 }
 
+type ListApplicationCredentialsForApplicationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Items []ApplicationCredential `json:"items"`
+
+		// PageInfo Pagination information
+		PageInfo PageInfo `json:"page_info"`
+	}
+	JSONDefault *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r ListApplicationCredentialsForApplicationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListApplicationCredentialsForApplicationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListApplicationDependenciesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Items []Resource `json:"items"`
+
+		// PageInfo Pagination information
+		PageInfo PageInfo `json:"page_info"`
+	}
+	JSONDefault *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r ListApplicationDependenciesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListApplicationDependenciesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RemoveApplicationDependencyResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r RemoveApplicationDependencyResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RemoveApplicationDependencyResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AddApplicationDependencyResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r AddApplicationDependencyResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AddApplicationDependencyResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListApplicationResourcesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Items []Resource `json:"items"`
+
+		// PageInfo Pagination information
+		PageInfo PageInfo `json:"page_info"`
+	}
+	JSONDefault *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r ListApplicationResourcesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListApplicationResourcesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type ListProvidersResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -2212,6 +4112,124 @@ func (r UpdateProviderResponse) StatusCode() int {
 	return 0
 }
 
+type ListResourcesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Items []Resource `json:"items"`
+	}
+	JSON400 *struct {
+		Message string `json:"message"`
+	}
+}
+
+// Status returns HTTPResponse.Status
+func (r ListResourcesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListResourcesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateResourceResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Resource
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateResourceResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateResourceResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteResourceResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteResourceResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteResourceResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetResourceResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Resource
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GetResourceResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetResourceResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateResourceResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Resource
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateResourceResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateResourceResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // ListZonesWithResponse request returning *ListZonesResponse
 func (c *ClientWithResponses) ListZonesWithResponse(ctx context.Context, params *ListZonesParams, reqEditors ...RequestEditorFn) (*ListZonesResponse, error) {
 	rsp, err := c.ListZones(ctx, params, reqEditors...)
@@ -2271,6 +4289,67 @@ func (c *ClientWithResponses) UpdateZoneWithResponse(ctx context.Context, id str
 		return nil, err
 	}
 	return ParseUpdateZoneResponse(rsp)
+}
+
+// ListApplicationCredentialsWithResponse request returning *ListApplicationCredentialsResponse
+func (c *ClientWithResponses) ListApplicationCredentialsWithResponse(ctx context.Context, zoneId string, params *ListApplicationCredentialsParams, reqEditors ...RequestEditorFn) (*ListApplicationCredentialsResponse, error) {
+	rsp, err := c.ListApplicationCredentials(ctx, zoneId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListApplicationCredentialsResponse(rsp)
+}
+
+// CreateApplicationCredentialWithBodyWithResponse request with arbitrary body returning *CreateApplicationCredentialResponse
+func (c *ClientWithResponses) CreateApplicationCredentialWithBodyWithResponse(ctx context.Context, zoneId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateApplicationCredentialResponse, error) {
+	rsp, err := c.CreateApplicationCredentialWithBody(ctx, zoneId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateApplicationCredentialResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateApplicationCredentialWithResponse(ctx context.Context, zoneId string, body CreateApplicationCredentialJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateApplicationCredentialResponse, error) {
+	rsp, err := c.CreateApplicationCredential(ctx, zoneId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateApplicationCredentialResponse(rsp)
+}
+
+// DeleteApplicationCredentialWithResponse request returning *DeleteApplicationCredentialResponse
+func (c *ClientWithResponses) DeleteApplicationCredentialWithResponse(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*DeleteApplicationCredentialResponse, error) {
+	rsp, err := c.DeleteApplicationCredential(ctx, zoneId, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteApplicationCredentialResponse(rsp)
+}
+
+// GetApplicationCredentialWithResponse request returning *GetApplicationCredentialResponse
+func (c *ClientWithResponses) GetApplicationCredentialWithResponse(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*GetApplicationCredentialResponse, error) {
+	rsp, err := c.GetApplicationCredential(ctx, zoneId, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetApplicationCredentialResponse(rsp)
+}
+
+// UpdateApplicationCredentialWithBodyWithResponse request with arbitrary body returning *UpdateApplicationCredentialResponse
+func (c *ClientWithResponses) UpdateApplicationCredentialWithBodyWithResponse(ctx context.Context, zoneId string, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateApplicationCredentialResponse, error) {
+	rsp, err := c.UpdateApplicationCredentialWithBody(ctx, zoneId, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateApplicationCredentialResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateApplicationCredentialWithResponse(ctx context.Context, zoneId string, id string, body UpdateApplicationCredentialJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateApplicationCredentialResponse, error) {
+	rsp, err := c.UpdateApplicationCredential(ctx, zoneId, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateApplicationCredentialResponse(rsp)
 }
 
 // ListApplicationsWithResponse request returning *ListApplicationsResponse
@@ -2334,6 +4413,51 @@ func (c *ClientWithResponses) UpdateApplicationWithResponse(ctx context.Context,
 	return ParseUpdateApplicationResponse(rsp)
 }
 
+// ListApplicationCredentialsForApplicationWithResponse request returning *ListApplicationCredentialsForApplicationResponse
+func (c *ClientWithResponses) ListApplicationCredentialsForApplicationWithResponse(ctx context.Context, zoneId string, id string, params *ListApplicationCredentialsForApplicationParams, reqEditors ...RequestEditorFn) (*ListApplicationCredentialsForApplicationResponse, error) {
+	rsp, err := c.ListApplicationCredentialsForApplication(ctx, zoneId, id, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListApplicationCredentialsForApplicationResponse(rsp)
+}
+
+// ListApplicationDependenciesWithResponse request returning *ListApplicationDependenciesResponse
+func (c *ClientWithResponses) ListApplicationDependenciesWithResponse(ctx context.Context, zoneId string, id string, params *ListApplicationDependenciesParams, reqEditors ...RequestEditorFn) (*ListApplicationDependenciesResponse, error) {
+	rsp, err := c.ListApplicationDependencies(ctx, zoneId, id, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListApplicationDependenciesResponse(rsp)
+}
+
+// RemoveApplicationDependencyWithResponse request returning *RemoveApplicationDependencyResponse
+func (c *ClientWithResponses) RemoveApplicationDependencyWithResponse(ctx context.Context, zoneId string, id string, dependencyId string, reqEditors ...RequestEditorFn) (*RemoveApplicationDependencyResponse, error) {
+	rsp, err := c.RemoveApplicationDependency(ctx, zoneId, id, dependencyId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRemoveApplicationDependencyResponse(rsp)
+}
+
+// AddApplicationDependencyWithResponse request returning *AddApplicationDependencyResponse
+func (c *ClientWithResponses) AddApplicationDependencyWithResponse(ctx context.Context, zoneId string, id string, dependencyId string, reqEditors ...RequestEditorFn) (*AddApplicationDependencyResponse, error) {
+	rsp, err := c.AddApplicationDependency(ctx, zoneId, id, dependencyId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddApplicationDependencyResponse(rsp)
+}
+
+// ListApplicationResourcesWithResponse request returning *ListApplicationResourcesResponse
+func (c *ClientWithResponses) ListApplicationResourcesWithResponse(ctx context.Context, zoneId string, id string, params *ListApplicationResourcesParams, reqEditors ...RequestEditorFn) (*ListApplicationResourcesResponse, error) {
+	rsp, err := c.ListApplicationResources(ctx, zoneId, id, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListApplicationResourcesResponse(rsp)
+}
+
 // ListProvidersWithResponse request returning *ListProvidersResponse
 func (c *ClientWithResponses) ListProvidersWithResponse(ctx context.Context, zoneId string, params *ListProvidersParams, reqEditors ...RequestEditorFn) (*ListProvidersResponse, error) {
 	rsp, err := c.ListProviders(ctx, zoneId, params, reqEditors...)
@@ -2393,6 +4517,67 @@ func (c *ClientWithResponses) UpdateProviderWithResponse(ctx context.Context, zo
 		return nil, err
 	}
 	return ParseUpdateProviderResponse(rsp)
+}
+
+// ListResourcesWithResponse request returning *ListResourcesResponse
+func (c *ClientWithResponses) ListResourcesWithResponse(ctx context.Context, zoneId string, params *ListResourcesParams, reqEditors ...RequestEditorFn) (*ListResourcesResponse, error) {
+	rsp, err := c.ListResources(ctx, zoneId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListResourcesResponse(rsp)
+}
+
+// CreateResourceWithBodyWithResponse request with arbitrary body returning *CreateResourceResponse
+func (c *ClientWithResponses) CreateResourceWithBodyWithResponse(ctx context.Context, zoneId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateResourceResponse, error) {
+	rsp, err := c.CreateResourceWithBody(ctx, zoneId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateResourceResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateResourceWithResponse(ctx context.Context, zoneId string, body CreateResourceJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateResourceResponse, error) {
+	rsp, err := c.CreateResource(ctx, zoneId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateResourceResponse(rsp)
+}
+
+// DeleteResourceWithResponse request returning *DeleteResourceResponse
+func (c *ClientWithResponses) DeleteResourceWithResponse(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*DeleteResourceResponse, error) {
+	rsp, err := c.DeleteResource(ctx, zoneId, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteResourceResponse(rsp)
+}
+
+// GetResourceWithResponse request returning *GetResourceResponse
+func (c *ClientWithResponses) GetResourceWithResponse(ctx context.Context, zoneId string, id string, reqEditors ...RequestEditorFn) (*GetResourceResponse, error) {
+	rsp, err := c.GetResource(ctx, zoneId, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetResourceResponse(rsp)
+}
+
+// UpdateResourceWithBodyWithResponse request with arbitrary body returning *UpdateResourceResponse
+func (c *ClientWithResponses) UpdateResourceWithBodyWithResponse(ctx context.Context, zoneId string, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateResourceResponse, error) {
+	rsp, err := c.UpdateResourceWithBody(ctx, zoneId, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateResourceResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateResourceWithResponse(ctx context.Context, zoneId string, id string, body UpdateResourceJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateResourceResponse, error) {
+	rsp, err := c.UpdateResource(ctx, zoneId, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateResourceResponse(rsp)
 }
 
 // ParseListZonesResponse parses an HTTP response from a ListZonesWithResponse call
@@ -2541,6 +4726,169 @@ func ParseUpdateZoneResponse(rsp *http.Response) (*UpdateZoneResponse, error) {
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest Zone
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListApplicationCredentialsResponse parses an HTTP response from a ListApplicationCredentialsWithResponse call
+func ParseListApplicationCredentialsResponse(rsp *http.Response) (*ListApplicationCredentialsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListApplicationCredentialsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Items []ApplicationCredential `json:"items"`
+
+			// PageInfo Pagination information
+			PageInfo PageInfo `json:"page_info"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateApplicationCredentialResponse parses an HTTP response from a CreateApplicationCredentialWithResponse call
+func ParseCreateApplicationCredentialResponse(rsp *http.Response) (*CreateApplicationCredentialResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateApplicationCredentialResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ApplicationCredentialCreateResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteApplicationCredentialResponse parses an HTTP response from a DeleteApplicationCredentialWithResponse call
+func ParseDeleteApplicationCredentialResponse(rsp *http.Response) (*DeleteApplicationCredentialResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteApplicationCredentialResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetApplicationCredentialResponse parses an HTTP response from a GetApplicationCredentialWithResponse call
+func ParseGetApplicationCredentialResponse(rsp *http.Response) (*GetApplicationCredentialResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetApplicationCredentialResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ApplicationCredential
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateApplicationCredentialResponse parses an HTTP response from a UpdateApplicationCredentialWithResponse call
+func ParseUpdateApplicationCredentialResponse(rsp *http.Response) (*UpdateApplicationCredentialResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateApplicationCredentialResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ApplicationCredential
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2721,6 +5069,172 @@ func ParseUpdateApplicationResponse(rsp *http.Response) (*UpdateApplicationRespo
 	return response, nil
 }
 
+// ParseListApplicationCredentialsForApplicationResponse parses an HTTP response from a ListApplicationCredentialsForApplicationWithResponse call
+func ParseListApplicationCredentialsForApplicationResponse(rsp *http.Response) (*ListApplicationCredentialsForApplicationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListApplicationCredentialsForApplicationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Items []ApplicationCredential `json:"items"`
+
+			// PageInfo Pagination information
+			PageInfo PageInfo `json:"page_info"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListApplicationDependenciesResponse parses an HTTP response from a ListApplicationDependenciesWithResponse call
+func ParseListApplicationDependenciesResponse(rsp *http.Response) (*ListApplicationDependenciesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListApplicationDependenciesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Items []Resource `json:"items"`
+
+			// PageInfo Pagination information
+			PageInfo PageInfo `json:"page_info"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRemoveApplicationDependencyResponse parses an HTTP response from a RemoveApplicationDependencyWithResponse call
+func ParseRemoveApplicationDependencyResponse(rsp *http.Response) (*RemoveApplicationDependencyResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RemoveApplicationDependencyResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAddApplicationDependencyResponse parses an HTTP response from a AddApplicationDependencyWithResponse call
+func ParseAddApplicationDependencyResponse(rsp *http.Response) (*AddApplicationDependencyResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AddApplicationDependencyResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListApplicationResourcesResponse parses an HTTP response from a ListApplicationResourcesWithResponse call
+func ParseListApplicationResourcesResponse(rsp *http.Response) (*ListApplicationResourcesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListApplicationResourcesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Items []Resource `json:"items"`
+
+			// PageInfo Pagination information
+			PageInfo PageInfo `json:"page_info"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListProvidersResponse parses an HTTP response from a ListProvidersWithResponse call
 func ParseListProvidersResponse(rsp *http.Response) (*ListProvidersResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -2884,66 +5398,265 @@ func ParseUpdateProviderResponse(rsp *http.Response) (*UpdateProviderResponse, e
 	return response, nil
 }
 
+// ParseListResourcesResponse parses an HTTP response from a ListResourcesWithResponse call
+func ParseListResourcesResponse(rsp *http.Response) (*ListResourcesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListResourcesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Items []Resource `json:"items"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest struct {
+			Message string `json:"message"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateResourceResponse parses an HTTP response from a CreateResourceWithResponse call
+func ParseCreateResourceResponse(rsp *http.Response) (*CreateResourceResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateResourceResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Resource
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteResourceResponse parses an HTTP response from a DeleteResourceWithResponse call
+func ParseDeleteResourceResponse(rsp *http.Response) (*DeleteResourceResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteResourceResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetResourceResponse parses an HTTP response from a GetResourceWithResponse call
+func ParseGetResourceResponse(rsp *http.Response) (*GetResourceResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetResourceResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Resource
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateResourceResponse parses an HTTP response from a UpdateResourceWithResponse call
+func ParseUpdateResourceResponse(rsp *http.Response) (*UpdateResourceResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateResourceResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Resource
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"uHLYAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
