@@ -115,3 +115,57 @@ func BoolValueNullable(val basetypes.BoolValue) nullable.Nullable[bool] {
 		return nullable.NewNullableWithValue(val.ValueBool())
 	}
 }
+
+// updateApplicationModelFromAPIResponse maps an Application API response to the ApplicationModel.
+// This is a shared helper function used by both the resource and data source.
+// It returns any diagnostics encountered during the mapping.
+func updateApplicationModelFromAPIResponse(ctx context.Context, app *client.Application, data *ApplicationModel) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	data.ID = types.StringValue(app.Id)
+	data.ZoneID = types.StringValue(app.ZoneId)
+	data.Name = types.StringValue(app.Name)
+	data.Description = NullableStringValue(app.Description)
+	data.Identifier = types.StringValue(app.Identifier)
+
+	// Handle metadata
+	if app.Metadata != nil && app.Metadata.DocsUrl != nil {
+		metadataData := ApplicationMetadataModel{
+			DocsURL: types.StringPointerValue(app.Metadata.DocsUrl),
+		}
+		metadataObj, metadataDiags := types.ObjectValueFrom(ctx, metadataData.AttributeTypes(), metadataData)
+		diags.Append(metadataDiags...)
+		data.Metadata = metadataObj
+	} else {
+		data.Metadata = types.ObjectNull(ApplicationMetadataModel{}.AttributeTypes())
+	}
+
+	// Handle oauth2 protocols
+	protocols, err := app.Protocols.Get()
+	if err == nil {
+		oauth2, err := protocols.Oauth2.Get()
+		if err == nil {
+			redirectURIs, err := oauth2.RedirectUris.Get()
+			if err == nil && redirectURIs != nil {
+				redirectURIsList, listDiags := types.ListValueFrom(ctx, types.StringType, redirectURIs)
+				diags.Append(listDiags...)
+				if !diags.HasError() {
+					oauth2Data := ApplicationOAuth2Model{
+						RedirectURIs: redirectURIsList,
+					}
+					oauth2Obj, oauth2Diags := types.ObjectValueFrom(ctx, oauth2Data.AttributeTypes(), oauth2Data)
+					diags.Append(oauth2Diags...)
+					data.OAuth2 = oauth2Obj
+				}
+			} else {
+				data.OAuth2 = types.ObjectNull(ApplicationOAuth2Model{}.AttributeTypes())
+			}
+		} else {
+			data.OAuth2 = types.ObjectNull(ApplicationOAuth2Model{}.AttributeTypes())
+		}
+	} else {
+		data.OAuth2 = types.ObjectNull(ApplicationOAuth2Model{}.AttributeTypes())
+	}
+
+	return diags
+}
