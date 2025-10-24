@@ -99,19 +99,11 @@ const (
 	Url UrlCredentialUpdateType = "url"
 )
 
-// Defines values for ListProvidersParamsType0.
+// Defines values for ListProvidersParamsType.
 const (
-	ListProvidersParamsType0External ListProvidersParamsType0 = "external"
-)
-
-// Defines values for ListProvidersParamsType1.
-const (
-	KeycardVault ListProvidersParamsType1 = "keycard-vault"
-)
-
-// Defines values for ListProvidersParamsType2.
-const (
-	KeycardDirectory ListProvidersParamsType2 = "keycard-directory"
+	ListProvidersParamsTypeExternal         ListProvidersParamsType = "external"
+	ListProvidersParamsTypeKeycardDirectory ListProvidersParamsType = "keycard-directory"
+	ListProvidersParamsTypeKeycardVault     ListProvidersParamsType = "keycard-vault"
 )
 
 // Application An Application is a software system with an associated identity that can access Resources. It may act on its own behalf (machine-to-machine) or on behalf of a user (delegated access).
@@ -915,23 +907,15 @@ type ListApplicationResourcesParams struct {
 
 // ListProvidersParams defines parameters for ListProviders.
 type ListProvidersParams struct {
-	Slug       *string `form:"slug,omitempty" json:"slug,omitempty"`
-	Identifier *string `form:"identifier,omitempty" json:"identifier,omitempty"`
-	Type       *struct {
-		union json.RawMessage
-	} `form:"type,omitempty" json:"type,omitempty"`
-	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
-	Limit  *int    `form:"limit,omitempty" json:"limit,omitempty"`
+	Slug       *string                  `form:"slug,omitempty" json:"slug,omitempty"`
+	Identifier *string                  `form:"identifier,omitempty" json:"identifier,omitempty"`
+	Type       *ListProvidersParamsType `form:"type,omitempty" json:"type,omitempty"`
+	Cursor     *string                  `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Limit      *int                     `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
-// ListProvidersParamsType0 defines parameters for ListProviders.
-type ListProvidersParamsType0 string
-
-// ListProvidersParamsType1 defines parameters for ListProviders.
-type ListProvidersParamsType1 string
-
-// ListProvidersParamsType2 defines parameters for ListProviders.
-type ListProvidersParamsType2 string
+// ListProvidersParamsType defines parameters for ListProviders.
+type ListProvidersParamsType string
 
 // ListResourcesParams defines parameters for ListResources.
 type ListResourcesParams struct {
@@ -5647,16 +5631,15 @@ var swaggerSpec = []string{
 	"UNYt4V+3J38Q1ng8W/86ztad9YJ5eWinMsjvWzRbaQVA+gj+a3PQUdafoaznd1OP4r0H8Q7K8rEr+T75",
 	"kv9aX7SHMK5UNZ00/3WZX6cHLe0ir3uwCf36oDfw9k5Mwo2hkhy5V+lX/mzYXbf6i4nFzJwHQRPiBO3C",
 	"23kQjGD7qsF2HgS9keakI4tqGHdvqEjjzr7qhm7XPbdB5unKuAca90DjHsiQbrNEzV24sxL1PqKct+mR",
-	"7XCZj3PAqQ7pXa9FO0zW6VfAsgtWsyQayy2rk+KtO11zPr1XOHJ6Vd/GRJntG33XY3LG/rVT8S23UTvt",
-	"RjutDJnPNFKhB1xzMvJ7MqaVD0nyRK4ZeBYSF7SIimd1vOq+cylW6rFZYt6QoHFp3O/9jLIzsmk/TmpG",
-	"ISq2Ir5L8/r/bTh29IFLI0OZeXTCj6ucfHY5FcYd8jaxaLPSA0vbjRFtaRT7Bv2YQ+GaQ9EBjUHZE7k8",
-	"NqZOPFP+jwrtEBIeOiHbWXyfvT4kzeH5QHd/Rv9xEhxGGdkqM6G/0d8uyubumrdE1crD/RBGAoxb1qRB",
-	"KTnc23nk3YPZPm5YXKpRdY3zlzM6Vy4TKG4BTcLAdg3o8NBEj8s/npmX3BzDszq8Q53c77ZaUgyc4wVY",
-	"mVOaZPbisGn2dohtIbpC+lwd4vyLilWHGD6vKNcBdgG+/ua7Brk0ppSheUJ8+X8chWKd3misSs2rVzXa",
-	"PGPj68rDr7o5HI+58kHoPRvPQmxsxjPnaM149mOpygVMKcsrXC0+ZK9oqdguLW72cTj14VzIUgEpM2PL",
-	"E3QLc8pAm2rdVNryZ+d5m1+8tshfmxEe6HkbUmPzvJ9KqCb1rUQKwfGCOndvvQNOg7z1nBGN3vqfCDOj",
-	"Av5aFPCPILrFpTNSkL0+JFLwdYvN/jZIjxNdGOXzIKIUXRsk1SW7zyQnYZF35p14m+vNvwMAAP//Awe1",
-	"uHLYAAA=",
+	"7XCZj3PAqQ7pXa9Fu+xa1Sx1xpt4d7qcfHqvIFL81rcpUWb/xt6YWrFn3VJ8iW3ULbvRLStDYjN9Ukix",
+	"a0ZFfsvFtPIZSJ7INQPPAtqCFjHtrApX3VYuhUo9NgvEG9IrLo3buZ9RbkU27cdJrChExVaCd2le3r8N",
+	"x44+cGkiKDMPPvhxlZPPLiPCuAHeJhZtNnZgYboxoi0JYt+gHzMgXDMgOqAxKPchl8fGxIdnyv9RoR1C",
+	"ukInZDtL57PXhyQpPB/o7s/oP056wigjW+UV9Df628XI3B3rlphYebgfwkiAcUeaNCgld3k7f7p7MNun",
+	"CYsrMaqucf5yRufKVQDFHZ5JGHjOLrdLYKHH1R3PzEtujsBZHd6hTu53Wy0pBs7xAqzMKU0ye3HYNHs7",
+	"xLYAWyF9rg5x/j3EqkMMn1eU6/C4AF9/sV2DXBpTytA8Ib78P45CsU7vI1aF4tWLFm2esfFt5OEX1RyO",
+	"x1z5nPOejWchNjbjmXO0Zjz7sVRl8qWU5RWuFp+hV7RUbJcWN/u0m/rsLWSJfJSZkeEJuoU5ZaBNtW4q",
+	"bfmz87zN71Vb5K/NCA/0vA2psXneTyVUk/pWIoXgeL2cu7feAadB3nrOiEZv/U+EmVEBfy0K+EcQ3eLS",
+	"GSnIXh8SKfi6xWZ/G6THiS6M8nkQUYquDZLqkt1nkpOwyDvzTrzN9ebfAQAA///OsKDeMNgAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

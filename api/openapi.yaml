@@ -806,16 +806,11 @@ paths:
           in: query
           required: false
           schema:
-            anyOf:
-              - type: string
-                enum:
-                  - external
-              - type: string
-                enum:
-                  - keycard-vault
-              - type: string
-                enum:
-                  - keycard-directory
+            type: string
+            enum:
+              - external
+              - keycard-vault
+              - keycard-directory
         - name: cursor
           in: query
           required: false
