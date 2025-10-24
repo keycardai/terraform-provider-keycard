@@ -30,8 +30,9 @@ type ApplicationResource struct {
 	client *client.ClientWithResponses
 }
 
-// ApplicationResourceModel describes the resource data model.
-type ApplicationResourceModel struct {
+// ApplicationModel describes the application data model.
+// This model is shared between the resource and data source.
+type ApplicationModel struct {
 	ID          types.String `tfsdk:"id"`
 	ZoneID      types.String `tfsdk:"zone_id"`
 	Name        types.String `tfsdk:"name"`
@@ -144,7 +145,7 @@ func (r *ApplicationResource) Configure(ctx context.Context, req resource.Config
 }
 
 func (r *ApplicationResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var data ApplicationResourceModel
+	var data ApplicationModel
 
 	// Read Terraform plan data into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -238,7 +239,7 @@ func (r *ApplicationResource) Create(ctx context.Context, req resource.CreateReq
 }
 
 func (r *ApplicationResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var data ApplicationResourceModel
+	var data ApplicationModel
 
 	// Read Terraform prior state data into the model
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -284,7 +285,7 @@ func (r *ApplicationResource) Read(ctx context.Context, req resource.ReadRequest
 }
 
 func (r *ApplicationResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data ApplicationResourceModel
+	var data ApplicationModel
 
 	// Read Terraform plan data into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -408,7 +409,7 @@ func (r *ApplicationResource) Update(ctx context.Context, req resource.UpdateReq
 }
 
 func (r *ApplicationResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data ApplicationResourceModel
+	var data ApplicationModel
 
 	// Read Terraform prior state data into the model
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)

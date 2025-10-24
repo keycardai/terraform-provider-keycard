@@ -22,17 +22,6 @@ type ApplicationDataSource struct {
 	client *client.ClientWithResponses
 }
 
-// ApplicationDataSourceModel describes the data source data model.
-type ApplicationDataSourceModel struct {
-	ID          types.String `tfsdk:"id"`
-	ZoneID      types.String `tfsdk:"zone_id"`
-	Name        types.String `tfsdk:"name"`
-	Description types.String `tfsdk:"description"`
-	Identifier  types.String `tfsdk:"identifier"`
-	Metadata    types.Object `tfsdk:"metadata"`
-	OAuth2      types.Object `tfsdk:"oauth2"`
-}
-
 func (d *ApplicationDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_application"
 }
@@ -108,7 +97,7 @@ func (d *ApplicationDataSource) Configure(ctx context.Context, req datasource.Co
 }
 
 func (d *ApplicationDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data ApplicationDataSourceModel
+	var data ApplicationModel
 
 	// Read Terraform configuration data into the model
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -147,7 +136,7 @@ func (d *ApplicationDataSource) Read(ctx context.Context, req datasource.ReadReq
 
 	// Update the model with the response data
 	application := getResp.JSON200
-	resp.Diagnostics.Append(updateApplicationDataSourceModelFromAPIResponse(ctx, application, &data)...)
+	resp.Diagnostics.Append(updateApplicationModelFromAPIResponse(ctx, application, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
