@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-func TestAccResourceDependencyResource_basic(t *testing.T) {
+func TestAccApplicationDependencyResource_basic(t *testing.T) {
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 	appName := acctest.RandomWithPrefix("tftest-app")
@@ -21,18 +21,18 @@ func TestAccResourceDependencyResource_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: testAccResourceDependencyResourceConfig_basic(zoneName, providerName, appName, resourceName),
+				Config: testAccApplicationDependencyResourceConfig_basic(zoneName, providerName, appName, resourceName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrPair("keycard_resource_dependency.test", "zone_id", "keycard_zone.test", "id"),
-					resource.TestCheckResourceAttrPair("keycard_resource_dependency.test", "application_id", "keycard_application.test", "id"),
-					resource.TestCheckResourceAttrPair("keycard_resource_dependency.test", "resource_id", "keycard_resource.test", "id"),
+					resource.TestCheckResourceAttrPair("keycard_application_dependency.test", "zone_id", "keycard_zone.test", "id"),
+					resource.TestCheckResourceAttrPair("keycard_application_dependency.test", "application_id", "keycard_application.test", "id"),
+					resource.TestCheckResourceAttrPair("keycard_application_dependency.test", "resource_id", "keycard_resource.test", "id"),
 				),
 			},
 			// ImportState testing
 			{
-				ResourceName:                         "keycard_resource_dependency.test",
+				ResourceName:                         "keycard_application_dependency.test",
 				ImportState:                          true,
-				ImportStateIdFunc:                    testAccResourceDependencyImportStateIdFunc("keycard_resource_dependency.test"),
+				ImportStateIdFunc:                    testAccApplicationDependencyImportStateIdFunc("keycard_application_dependency.test"),
 				ImportStateVerify:                    true,
 				ImportStateVerifyIdentifierAttribute: "resource_id",
 			},
@@ -41,7 +41,7 @@ func TestAccResourceDependencyResource_basic(t *testing.T) {
 	})
 }
 
-func TestAccResourceDependencyResource_multipleResources(t *testing.T) {
+func TestAccApplicationDependencyResource_multipleResources(t *testing.T) {
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 	appName := acctest.RandomWithPrefix("tftest-app")
@@ -54,19 +54,19 @@ func TestAccResourceDependencyResource_multipleResources(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create dependencies for multiple resources
 			{
-				Config: testAccResourceDependencyResourceConfig_multiple(zoneName, providerName, appName, resourceName1, resourceName2),
+				Config: testAccApplicationDependencyResourceConfig_multiple(zoneName, providerName, appName, resourceName1, resourceName2),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrPair("keycard_resource_dependency.test1", "application_id", "keycard_application.test", "id"),
-					resource.TestCheckResourceAttrPair("keycard_resource_dependency.test2", "application_id", "keycard_application.test", "id"),
-					resource.TestCheckResourceAttrPair("keycard_resource_dependency.test1", "resource_id", "keycard_resource.test1", "id"),
-					resource.TestCheckResourceAttrPair("keycard_resource_dependency.test2", "resource_id", "keycard_resource.test2", "id"),
+					resource.TestCheckResourceAttrPair("keycard_application_dependency.test1", "application_id", "keycard_application.test", "id"),
+					resource.TestCheckResourceAttrPair("keycard_application_dependency.test2", "application_id", "keycard_application.test", "id"),
+					resource.TestCheckResourceAttrPair("keycard_application_dependency.test1", "resource_id", "keycard_resource.test1", "id"),
+					resource.TestCheckResourceAttrPair("keycard_application_dependency.test2", "resource_id", "keycard_resource.test2", "id"),
 				),
 			},
 		},
 	})
 }
 
-func TestAccResourceDependencyResource_resourceChange(t *testing.T) {
+func TestAccApplicationDependencyResource_resourceChange(t *testing.T) {
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 	appName := acctest.RandomWithPrefix("tftest-app")
@@ -79,16 +79,16 @@ func TestAccResourceDependencyResource_resourceChange(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create dependency with first resource
 			{
-				Config: testAccResourceDependencyResourceConfig_withTwoResources(zoneName, providerName, appName, resourceName1, resourceName2, "test1"),
+				Config: testAccApplicationDependencyResourceConfig_withTwoResources(zoneName, providerName, appName, resourceName1, resourceName2, "test1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrPair("keycard_resource_dependency.test", "resource_id", "keycard_resource.test1", "id"),
+					resource.TestCheckResourceAttrPair("keycard_application_dependency.test", "resource_id", "keycard_resource.test1", "id"),
 				),
 			},
 			// Change to second resource (should force replacement)
 			{
-				Config: testAccResourceDependencyResourceConfig_withTwoResources(zoneName, providerName, appName, resourceName1, resourceName2, "test2"),
+				Config: testAccApplicationDependencyResourceConfig_withTwoResources(zoneName, providerName, appName, resourceName1, resourceName2, "test2"),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrPair("keycard_resource_dependency.test", "resource_id", "keycard_resource.test2", "id"),
+					resource.TestCheckResourceAttrPair("keycard_application_dependency.test", "resource_id", "keycard_resource.test2", "id"),
 				),
 			},
 		},
@@ -96,7 +96,7 @@ func TestAccResourceDependencyResource_resourceChange(t *testing.T) {
 }
 
 // Helper function to generate import state ID in format zones/{zone-id}/applications/{application-id}/dependencies/{resource-id}.
-func testAccResourceDependencyImportStateIdFunc(resourceName string) resource.ImportStateIdFunc {
+func testAccApplicationDependencyImportStateIdFunc(resourceName string) resource.ImportStateIdFunc {
 	return func(s *terraform.State) (string, error) {
 		rs, ok := s.RootModule().Resources[resourceName]
 		if !ok {
@@ -115,7 +115,7 @@ func testAccResourceDependencyImportStateIdFunc(resourceName string) resource.Im
 	}
 }
 
-func testAccResourceDependencyResourceConfig_basic(zoneName, providerName, appName, resourceName string) string {
+func testAccApplicationDependencyResourceConfig_basic(zoneName, providerName, appName, resourceName string) string {
 	return fmt.Sprintf(`
 resource "keycard_zone" "test" {
   name = %[1]q
@@ -140,7 +140,7 @@ resource "keycard_resource" "test" {
   credential_provider_id = keycard_provider.test.id
 }
 
-resource "keycard_resource_dependency" "test" {
+resource "keycard_application_dependency" "test" {
   zone_id        = keycard_zone.test.id
   application_id = keycard_application.test.id
   resource_id    = keycard_resource.test.id
@@ -148,7 +148,7 @@ resource "keycard_resource_dependency" "test" {
 `, zoneName, providerName, appName, resourceName)
 }
 
-func testAccResourceDependencyResourceConfig_multiple(zoneName, providerName, appName, resourceName1, resourceName2 string) string {
+func testAccApplicationDependencyResourceConfig_multiple(zoneName, providerName, appName, resourceName1, resourceName2 string) string {
 	return fmt.Sprintf(`
 resource "keycard_zone" "test" {
   name = %[1]q
@@ -180,13 +180,13 @@ resource "keycard_resource" "test2" {
   credential_provider_id = keycard_provider.test.id
 }
 
-resource "keycard_resource_dependency" "test1" {
+resource "keycard_application_dependency" "test1" {
   zone_id        = keycard_zone.test.id
   application_id = keycard_application.test.id
   resource_id    = keycard_resource.test1.id
 }
 
-resource "keycard_resource_dependency" "test2" {
+resource "keycard_application_dependency" "test2" {
   zone_id        = keycard_zone.test.id
   application_id = keycard_application.test.id
   resource_id    = keycard_resource.test2.id
@@ -194,7 +194,7 @@ resource "keycard_resource_dependency" "test2" {
 `, zoneName, providerName, appName, resourceName1, resourceName2)
 }
 
-func testAccResourceDependencyResourceConfig_withTwoResources(zoneName, providerName, appName, resourceName1, resourceName2, targetResource string) string {
+func testAccApplicationDependencyResourceConfig_withTwoResources(zoneName, providerName, appName, resourceName1, resourceName2, targetResource string) string {
 	return fmt.Sprintf(`
 resource "keycard_zone" "test" {
   name = %[1]q
@@ -226,7 +226,7 @@ resource "keycard_resource" "test2" {
   credential_provider_id = keycard_provider.test.id
 }
 
-resource "keycard_resource_dependency" "test" {
+resource "keycard_application_dependency" "test" {
   zone_id        = keycard_zone.test.id
   application_id = keycard_application.test.id
   resource_id    = keycard_resource.%[6]s.id
