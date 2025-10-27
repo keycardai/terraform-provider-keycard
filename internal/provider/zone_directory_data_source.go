@@ -121,6 +121,15 @@ func (d *ZoneDirectoryDataSource) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
+	// If we got more than 1 directory provider then this is a bug.
+	if len(listResp.JSON200.Items) > 1 {
+		resp.Diagnostics.AddError(
+			"Unexpected Provider Count",
+			fmt.Sprintf("Zone %s has more than 1 directory provider (%d). This should not happen as every zone should have exactly 1 built-in directory provider.", data.ZoneID.ValueString(), len(listResp.JSON200.Items)),
+		)
+		return
+	}
+
 	// Get the first (and should be only) directory provider
 	directoryProvider := listResp.JSON200.Items[0]
 	data.ProviderID = types.StringValue(directoryProvider.Id)
