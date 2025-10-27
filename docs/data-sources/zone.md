@@ -55,7 +55,7 @@ data "keycard_zone" "lookup" {
 
 ### Read-Only
 
-- `description` (String) Optional description of the zone's purpose.
+- `description` (String) Optional description of the zone's purpose. May be empty.
 - `name` (String) Human-readable name for the zone.
 - `oauth2` (Attributes) OAuth2 configuration for the zone. (see [below for nested schema](#nestedatt--oauth2))
 

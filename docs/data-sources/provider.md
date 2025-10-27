@@ -69,16 +69,16 @@ data "keycard_provider" "lookup" {
 
 ### Read-Only
 
-- `client_id` (String) OAuth 2.0 client identifier.
-- `description` (String) Optional description of the provider's purpose.
+- `client_id` (String) OAuth 2.0 client identifier. May be empty.
+- `description` (String) Optional description of the provider's purpose. May be empty.
 - `identifier` (String) User-specified identifier, unique within the zone.
 - `name` (String) Human-readable name for the provider.
-- `oauth2` (Attributes) OAuth 2.0 protocol configuration. (see [below for nested schema](#nestedatt--oauth2))
+- `oauth2` (Attributes) OAuth 2.0 protocol configuration. May be empty. (see [below for nested schema](#nestedatt--oauth2))
 
 <a id="nestedatt--oauth2"></a>
 ### Nested Schema for `oauth2`
 
 Read-Only:
 
-- `authorization_endpoint` (String) OAuth 2.0 Authorization endpoint URL.
-- `token_endpoint` (String) OAuth 2.0 Token endpoint URL.
+- `authorization_endpoint` (String) OAuth 2.0 Authorization endpoint URL. May be empty.
+- `token_endpoint` (String) OAuth 2.0 Token endpoint URL. May be empty.

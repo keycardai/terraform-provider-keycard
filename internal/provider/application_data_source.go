@@ -44,7 +44,7 @@ func (d *ApplicationDataSource) Schema(ctx context.Context, req datasource.Schem
 				Computed:            true,
 			},
 			"description": schema.StringAttribute{
-				MarkdownDescription: "Optional description of the application's purpose.",
+				MarkdownDescription: "Optional description of the application's purpose. May be empty.",
 				Computed:            true,
 			},
 			"identifier": schema.StringAttribute{
@@ -52,21 +52,21 @@ func (d *ApplicationDataSource) Schema(ctx context.Context, req datasource.Schem
 				Computed:            true,
 			},
 			"metadata": schema.SingleNestedAttribute{
-				MarkdownDescription: "Metadata associated with the application.",
+				MarkdownDescription: "Metadata associated with the application. May be empty.",
 				Computed:            true,
 				Attributes: map[string]schema.Attribute{
 					"docs_url": schema.StringAttribute{
-						MarkdownDescription: "URL to documentation relevant to this application.",
+						MarkdownDescription: "URL to documentation relevant to this application. May be empty.",
 						Computed:            true,
 					},
 				},
 			},
 			"oauth2": schema.SingleNestedAttribute{
-				MarkdownDescription: "OAuth2 configuration for the application.",
+				MarkdownDescription: "OAuth2 configuration for the application. May be empty.",
 				Computed:            true,
 				Attributes: map[string]schema.Attribute{
 					"redirect_uris": schema.ListAttribute{
-						MarkdownDescription: "OAuth 2.0 redirect URIs for authorization code/token delivery.",
+						MarkdownDescription: "OAuth 2.0 redirect URIs for authorization code/token delivery. May be empty.",
 						ElementType:         types.StringType,
 						Computed:            true,
 					},

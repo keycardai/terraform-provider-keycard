@@ -56,7 +56,7 @@ func (d *ProviderDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 				Computed:            true,
 			},
 			"description": schema.StringAttribute{
-				MarkdownDescription: "Optional description of the provider's purpose.",
+				MarkdownDescription: "Optional description of the provider's purpose. May be empty.",
 				Computed:            true,
 			},
 			"identifier": schema.StringAttribute{
@@ -64,19 +64,19 @@ func (d *ProviderDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 				Computed:            true,
 			},
 			"client_id": schema.StringAttribute{
-				MarkdownDescription: "OAuth 2.0 client identifier.",
+				MarkdownDescription: "OAuth 2.0 client identifier. May be empty.",
 				Computed:            true,
 			},
 			"oauth2": schema.SingleNestedAttribute{
-				MarkdownDescription: "OAuth 2.0 protocol configuration.",
+				MarkdownDescription: "OAuth 2.0 protocol configuration. May be empty.",
 				Computed:            true,
 				Attributes: map[string]schema.Attribute{
 					"authorization_endpoint": schema.StringAttribute{
-						MarkdownDescription: "OAuth 2.0 Authorization endpoint URL.",
+						MarkdownDescription: "OAuth 2.0 Authorization endpoint URL. May be empty.",
 						Computed:            true,
 					},
 					"token_endpoint": schema.StringAttribute{
-						MarkdownDescription: "OAuth 2.0 Token endpoint URL.",
+						MarkdownDescription: "OAuth 2.0 Token endpoint URL. May be empty.",
 						Computed:            true,
 					},
 				},

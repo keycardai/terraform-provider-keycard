@@ -79,18 +79,18 @@ data "keycard_application" "lookup" {
 
 ### Read-Only
 
-- `description` (String) Optional description of the application's purpose.
+- `description` (String) Optional description of the application's purpose. May be empty.
 - `identifier` (String) Unique identifier for the application, typically its URL or URN. Must be unique within the zone.
-- `metadata` (Attributes) Metadata associated with the application. (see [below for nested schema](#nestedatt--metadata))
+- `metadata` (Attributes) Metadata associated with the application. May be empty. (see [below for nested schema](#nestedatt--metadata))
 - `name` (String) Human-readable name for the application.
-- `oauth2` (Attributes) OAuth2 configuration for the application. (see [below for nested schema](#nestedatt--oauth2))
+- `oauth2` (Attributes) OAuth2 configuration for the application. May be empty. (see [below for nested schema](#nestedatt--oauth2))
 
 <a id="nestedatt--metadata"></a>
 ### Nested Schema for `metadata`
 
 Read-Only:
 
-- `docs_url` (String) URL to documentation relevant to this application.
+- `docs_url` (String) URL to documentation relevant to this application. May be empty.
 
 
 <a id="nestedatt--oauth2"></a>
@@ -98,4 +98,4 @@ Read-Only:
 
 Read-Only:
 
-- `redirect_uris` (List of String) OAuth 2.0 redirect URIs for authorization code/token delivery.
+- `redirect_uris` (List of String) OAuth 2.0 redirect URIs for authorization code/token delivery. May be empty.
