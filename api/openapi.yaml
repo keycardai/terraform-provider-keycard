@@ -1565,99 +1565,13 @@ components:
       additionalProperties: false
       nullable: true
       title: Application Protocol Update
-    TokenCredentialType:
-      description: Token-based credential type fields
+    ApplicationCredentialCreateToken:
+      description: Schema for creating a token application credential
       type: object
       properties:
-        type:
+        application_id:
+          description: ID of the application this credential belongs to
           type: string
-          enum:
-            - token
-        identifier:
-          description: 'Identifier for this credential. For token type, this equals the subject value, or ''*'' when subject is not specified.'
-          type: string
-        subject:
-          description: 'Subject identifier for the token. When null or omitted, any token from the provider is accepted without checking application-specific claims.'
-          type: string
-          nullable: true
-      required:
-        - type
-        - identifier
-      title: Token Credential Type
-    PasswordCredentialType:
-      description: Password-based credential type fields
-      type: object
-      properties:
-        type:
-          type: string
-          enum:
-            - password
-        identifier:
-          description: 'Username for password credential, also used as OAuth 2.0 client ID'
-          type: string
-      required:
-        - type
-        - identifier
-      title: Password Credential Type
-    PublicKeyCredentialType:
-      description: Public key-based credential type fields
-      type: object
-      properties:
-        type:
-          type: string
-          enum:
-            - public-key
-        identifier:
-          description: 'Client ID for public key credential, also used as OAuth 2.0 client ID'
-          type: string
-        jwks_uri:
-          description: JWKS URI to retrieve public keys from
-          type: string
-          format: uri
-      required:
-        - type
-        - identifier
-        - jwks_uri
-      title: Public Key Credential Type
-    UrlCredentialType:
-      description: URL-based credential type fields
-      type: object
-      properties:
-        type:
-          type: string
-          enum:
-            - url
-        identifier:
-          description: URL of the credential (must be a valid URL)
-          type: string
-          format: uri
-      required:
-        - type
-        - identifier
-      title: URL Credential Type
-    PasswordCredentialCreateResponseType:
-      description: Password credential response type with secret
-      type: object
-      properties:
-        type:
-          type: string
-          enum:
-            - password
-        identifier:
-          description: 'Username for password credential, also used as OAuth 2.0 client ID'
-          type: string
-        password:
-          description: 'Password for credential (only returned on creation, store securely), also used as OAuth 2.0 client secret'
-          type: string
-      required:
-        - type
-        - identifier
-        - password
-      title: Password Credential Create Response Type
-    TokenCredentialCreate:
-      description: Schema for creating a token credential. The identifier is computed by the backend from the subject field.
-      type: object
-      properties:
         type:
           type: string
           enum:
@@ -1666,16 +1580,20 @@ components:
           description: ID of the provider issuing tokens this credential verifies
           type: string
         subject:
-          description: 'Subject identifier for the token. When omitted, any token from the provider is accepted without checking application-specific claims. The identifier field is computed from this value.'
+          description: 'Subject identifier for the token. When omitted, any token from the provider is accepted without checking application-specific claims.'
           type: string
       required:
+        - application_id
         - type
         - provider_id
-      title: Token Credential Create
-    PasswordCredentialCreate:
-      description: Schema for creating a password credential within the zone identity provider
+      title: Application Credential Create Token
+    ApplicationCredentialCreatePassword:
+      description: Schema for creating a password application credential
       type: object
       properties:
+        application_id:
+          description: ID of the application this credential belongs to
+          type: string
         type:
           type: string
           enum:
@@ -1684,12 +1602,16 @@ components:
           description: 'Username for password credential, also used as OAuth 2.0 client ID (auto-generated if not provided)'
           type: string
       required:
+        - application_id
         - type
-      title: Password Credential Create
-    PublicKeyCredentialCreate:
-      description: Schema for creating a public key credential within the zone identity provider
+      title: Application Credential Create Password
+    ApplicationCredentialCreatePublicKey:
+      description: Schema for creating a public key application credential
       type: object
       properties:
+        application_id:
+          description: ID of the application this credential belongs to
+          type: string
         type:
           type: string
           enum:
@@ -1702,13 +1624,17 @@ components:
           description: 'Client ID for public key credential, also used as OAuth 2.0 client ID (auto-generated if not provided)'
           type: string
       required:
+        - application_id
         - type
         - jwks_uri
-      title: Public Key Credential Create
-    UrlCredentialCreate:
-      description: Schema for creating a URL credential within the zone identity provider
+      title: Application Credential Create Public Key
+    ApplicationCredentialCreateUrl:
+      description: Schema for creating a URL application credential
       type: object
       properties:
+        application_id:
+          description: ID of the application this credential belongs to
+          type: string
         type:
           type: string
           enum:
@@ -1718,9 +1644,28 @@ components:
           type: string
           format: uri
       required:
+        - application_id
         - type
         - identifier
-      title: URL Credential Create
+      title: Application Credential Create URL
+    ApplicationCredentialCreatePublic:
+      description: Schema for creating a public application credential
+      type: object
+      properties:
+        application_id:
+          description: ID of the application this credential belongs to
+          type: string
+        type:
+          type: string
+          enum:
+            - public
+        identifier:
+          description: 'Identifier for public credential, also used as OAuth 2.0 client ID (auto-generated if not provided)'
+          type: string
+      required:
+        - application_id
+        - type
+      title: Application Credential Create Public
     Error:
       description: Error response
       type: object
@@ -2153,135 +2098,181 @@ components:
         protocols:
           $ref: '#/components/schemas/ApplicationProtocolUpdate'
       title: Application Update
-    ApplicationCredential:
-      description: Credentials for accessing external services from applications
+    ApplicationCredentialBaseFields:
+      description: Common fields shared by all application credential types
+      type: object
+      properties:
+        id:
+          description: Unique identifier of the credential
+          type: string
+        organization_id:
+          description: Organization that owns this credential
+          type: string
+        zone_id:
+          description: Zone this credential belongs to
+          type: string
+        slug:
+          description: 'URL-safe identifier, unique within the zone'
+          type: string
+          maxLength: 63
+          minLength: 1
+          pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+        provider_id:
+          description: ID of the provider issuing tokens verified by this credential
+          type: string
+        provider:
+          description: 'Deprecated: Nested provider object. Use provider_id to fetch provider separately. When this credential appears nested in another API response, this field will be undefined.'
+          $ref: '#/components/schemas/Provider'
+          deprecated: true
+        application_id:
+          description: ID of the application this credential belongs to
+          type: string
+        application:
+          description: 'Deprecated: Nested application object. Use application_id to fetch application separately. When this credential appears nested in another API response, this field will be undefined.'
+          $ref: '#/components/schemas/Application'
+          deprecated: true
+        created_at:
+          description: Entity creation timestamp
+          type: string
+          format: date-time
+        updated_at:
+          description: Entity update timestamp
+          type: string
+          format: date-time
+      required:
+        - id
+        - organization_id
+        - zone_id
+        - slug
+        - provider_id
+        - application_id
+        - created_at
+        - updated_at
+      title: Application Credential Base Fields
+    ApplicationCredentialToken:
+      description: Token-based application credential
       allOf:
+        - $ref: '#/components/schemas/ApplicationCredentialBaseFields'
         - type: object
           properties:
-            id:
-              description: Unique identifier of the credential
+            type:
               type: string
-            organization_id:
-              description: Organization that owns this credential
+              enum:
+                - token
+            identifier:
+              description: 'Identifier for this credential. For token type, this equals the subject value, or ''*'' when subject is not specified.'
               type: string
-            zone_id:
-              description: Zone this credential belongs to
+            subject:
+              description: 'Subject identifier for the token. When null or omitted, any token from the provider is accepted without checking application-specific claims.'
               type: string
-            slug:
-              description: 'URL-safe identifier, unique within the zone'
-              type: string
-              maxLength: 63
-              minLength: 1
-              pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
-            provider_id:
-              description: ID of the provider issuing tokens verified by this credential
-              type: string
-            provider:
-              description: 'Deprecated: Nested provider object. Use provider_id to fetch provider separately. When this credential appears nested in another API response, this field will be undefined.'
-              $ref: '#/components/schemas/Provider'
-              deprecated: true
-            application_id:
-              description: ID of the application this credential belongs to
-              type: string
-            application:
-              description: 'Deprecated: Nested application object. Use application_id to fetch application separately. When this credential appears nested in another API response, this field will be undefined.'
-              $ref: '#/components/schemas/Application'
-              deprecated: true
-            created_at:
-              description: Entity creation timestamp
-              type: string
-              format: date-time
-            updated_at:
-              description: Entity update timestamp
-              type: string
-              format: date-time
+              nullable: true
           required:
-            - id
-            - organization_id
-            - zone_id
-            - slug
-            - provider_id
-            - application_id
-            - created_at
-            - updated_at
-        - anyOf:
-            - $ref: '#/components/schemas/TokenCredentialType'
-            - $ref: '#/components/schemas/PasswordCredentialType'
-            - $ref: '#/components/schemas/PublicKeyCredentialType'
-            - $ref: '#/components/schemas/UrlCredentialType'
+            - type
+            - identifier
+      title: Application Credential Token
+    ApplicationCredentialPassword:
+      description: Password-based application credential
+      allOf:
+        - $ref: '#/components/schemas/ApplicationCredentialBaseFields'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - password
+            identifier:
+              description: 'Username for password credential, also used as OAuth 2.0 client ID'
+              type: string
+            password:
+              description: 'Password for credential (only returned on creation, store securely), also used as OAuth 2.0 client secret'
+              type: string
+          required:
+            - type
+            - identifier
+      title: Application Credential Password
+    ApplicationCredentialPublicKey:
+      description: Public key-based application credential
+      allOf:
+        - $ref: '#/components/schemas/ApplicationCredentialBaseFields'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - public-key
+            identifier:
+              description: 'Client ID for public key credential, also used as OAuth 2.0 client ID'
+              type: string
+            jwks_uri:
+              description: JWKS URI to retrieve public keys from
+              type: string
+              format: uri
+          required:
+            - type
+            - identifier
+            - jwks_uri
+      title: Application Credential Public Key
+    ApplicationCredentialUrl:
+      description: URL-based application credential
+      allOf:
+        - $ref: '#/components/schemas/ApplicationCredentialBaseFields'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - url
+            identifier:
+              description: URL of the credential (must be a valid URL)
+              type: string
+              format: uri
+          required:
+            - type
+            - identifier
+      title: Application Credential URL
+    ApplicationCredentialPublic:
+      description: Public credential (no secret storage)
+      allOf:
+        - $ref: '#/components/schemas/ApplicationCredentialBaseFields'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - public
+            identifier:
+              description: 'Identifier for public credential, also used as OAuth 2.0 client ID'
+              type: string
+          required:
+            - type
+            - identifier
+      title: Application Credential Public
+    ApplicationCredential:
+      description: Credentials for accessing external services from applications
+      anyOf:
+        - $ref: '#/components/schemas/ApplicationCredentialToken'
+        - $ref: '#/components/schemas/ApplicationCredentialPassword'
+        - $ref: '#/components/schemas/ApplicationCredentialPublicKey'
+        - $ref: '#/components/schemas/ApplicationCredentialUrl'
+        - $ref: '#/components/schemas/ApplicationCredentialPublic'
       title: Application Credential
     ApplicationCredentialCreate:
       description: Schema for creating a new application credential
-      allOf:
-        - type: object
-          properties:
-            application_id:
-              description: ID of the application this credential belongs to
-              type: string
-          required:
-            - application_id
-        - anyOf:
-            - $ref: '#/components/schemas/TokenCredentialCreate'
-            - $ref: '#/components/schemas/PasswordCredentialCreate'
-            - $ref: '#/components/schemas/PublicKeyCredentialCreate'
-            - $ref: '#/components/schemas/UrlCredentialCreate'
+      anyOf:
+        - $ref: '#/components/schemas/ApplicationCredentialCreateToken'
+        - $ref: '#/components/schemas/ApplicationCredentialCreatePassword'
+        - $ref: '#/components/schemas/ApplicationCredentialCreatePublicKey'
+        - $ref: '#/components/schemas/ApplicationCredentialCreateUrl'
+        - $ref: '#/components/schemas/ApplicationCredentialCreatePublic'
       title: Application Credential Create
     ApplicationCredentialCreateResponse:
       description: Response for creating a new application credential
-      allOf:
-        - type: object
-          properties:
-            id:
-              description: Unique identifier of the credential
-              type: string
-            organization_id:
-              description: Organization that owns this credential
-              type: string
-            zone_id:
-              description: Zone this credential belongs to
-              type: string
-            slug:
-              description: 'URL-safe identifier, unique within the zone'
-              type: string
-              maxLength: 63
-              minLength: 1
-              pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
-            provider_id:
-              description: ID of the provider issuing tokens verified by this credential
-              type: string
-            provider:
-              description: 'Deprecated: Nested provider object. Use provider_id to fetch provider separately. When this credential appears nested in another API response, this field will be undefined.'
-              $ref: '#/components/schemas/Provider'
-              deprecated: true
-            application_id:
-              description: ID of the application this credential belongs to
-              type: string
-            application:
-              description: 'Deprecated: Nested application object. Use application_id to fetch application separately. When this credential appears nested in another API response, this field will be undefined.'
-              $ref: '#/components/schemas/Application'
-              deprecated: true
-            created_at:
-              description: Entity creation timestamp
-              type: string
-              format: date-time
-            updated_at:
-              description: Entity update timestamp
-              type: string
-              format: date-time
-          required:
-            - id
-            - organization_id
-            - zone_id
-            - slug
-            - provider_id
-            - application_id
-            - created_at
-            - updated_at
-        - anyOf:
-            - $ref: '#/components/schemas/TokenCredentialType'
-            - $ref: '#/components/schemas/PasswordCredentialCreateResponseType'
-            - $ref: '#/components/schemas/PublicKeyCredentialType'
-            - $ref: '#/components/schemas/UrlCredentialType'
+      anyOf:
+        - $ref: '#/components/schemas/ApplicationCredentialToken'
+        - $ref: '#/components/schemas/ApplicationCredentialPassword'
+        - $ref: '#/components/schemas/ApplicationCredentialPublicKey'
+        - $ref: '#/components/schemas/ApplicationCredentialUrl'
+        - $ref: '#/components/schemas/ApplicationCredentialPublic'
       title: Application Credential Create Response
     TokenCredentialUpdate:
       description: Schema for updating a token credential
@@ -2323,15 +2314,26 @@ components:
           enum:
             - url
       title: URL Credential Update
+    PublicCredentialUpdate:
+      description: Schema for updating a public credential
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - public
+        identifier:
+          description: 'Identifier for public credential, also used as OAuth 2.0 client ID'
+          type: string
+      title: Public Credential Update
     ApplicationCredentialUpdate:
       description: Schema for updating an existing application credential
-      allOf:
-        - type: object
-        - anyOf:
-            - $ref: '#/components/schemas/TokenCredentialUpdate'
-            - $ref: '#/components/schemas/PasswordCredentialUpdate'
-            - $ref: '#/components/schemas/PublicKeyCredentialUpdate'
-            - $ref: '#/components/schemas/UrlCredentialUpdate'
+      anyOf:
+        - $ref: '#/components/schemas/TokenCredentialUpdate'
+        - $ref: '#/components/schemas/PasswordCredentialUpdate'
+        - $ref: '#/components/schemas/PublicKeyCredentialUpdate'
+        - $ref: '#/components/schemas/UrlCredentialUpdate'
+        - $ref: '#/components/schemas/PublicCredentialUpdate'
       title: Application Credential Update
     Zone:
       description: A zone for organizing resources within an organization
