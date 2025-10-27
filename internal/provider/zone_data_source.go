@@ -39,7 +39,7 @@ func (d *ZoneDataSource) Schema(ctx context.Context, req datasource.SchemaReques
 				Computed:            true,
 			},
 			"description": schema.StringAttribute{
-				MarkdownDescription: "Optional description of the zone's purpose.",
+				MarkdownDescription: "Optional description of the zone's purpose. May be empty.",
 				Computed:            true,
 			},
 			"oauth2": schema.SingleNestedAttribute{

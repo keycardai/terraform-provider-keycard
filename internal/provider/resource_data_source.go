@@ -44,7 +44,7 @@ func (d *ResourceDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 				Computed:            true,
 			},
 			"description": schema.StringAttribute{
-				MarkdownDescription: "Optional description of the resource's purpose.",
+				MarkdownDescription: "Optional description of the resource's purpose. May be empty.",
 				Computed:            true,
 			},
 			"identifier": schema.StringAttribute{
@@ -52,29 +52,29 @@ func (d *ResourceDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 				Computed:            true,
 			},
 			"credential_provider_id": schema.StringAttribute{
-				MarkdownDescription: "The provider that issues credentials for accessing this resource.",
+				MarkdownDescription: "The provider that issues credentials for accessing this resource. May be empty.",
 				Computed:            true,
 			},
 			"application_id": schema.StringAttribute{
-				MarkdownDescription: "The application that provides this resource.",
+				MarkdownDescription: "The application that provides this resource. May be empty.",
 				Computed:            true,
 			},
 			"metadata": schema.SingleNestedAttribute{
-				MarkdownDescription: "Metadata associated with the resource.",
+				MarkdownDescription: "Metadata associated with the resource. May be empty.",
 				Computed:            true,
 				Attributes: map[string]schema.Attribute{
 					"docs_url": schema.StringAttribute{
-						MarkdownDescription: "URL to documentation relevant to this resource.",
+						MarkdownDescription: "URL to documentation relevant to this resource. May be empty.",
 						Computed:            true,
 					},
 				},
 			},
 			"oauth2": schema.SingleNestedAttribute{
-				MarkdownDescription: "OAuth2 configuration for the resource.",
+				MarkdownDescription: "OAuth2 configuration for the resource. May be empty.",
 				Computed:            true,
 				Attributes: map[string]schema.Attribute{
 					"scopes": schema.ListAttribute{
-						MarkdownDescription: "OAuth2 scopes required to access this resource. Must match scopes configured in the authorization server.",
+						MarkdownDescription: "OAuth2 scopes required to access this resource. Must match scopes configured in the authorization server. May be empty.",
 						ElementType:         types.StringType,
 						Computed:            true,
 					},

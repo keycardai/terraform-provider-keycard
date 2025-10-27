@@ -99,20 +99,20 @@ data "keycard_resource" "lookup" {
 
 ### Read-Only
 
-- `application_id` (String) The application that provides this resource.
-- `credential_provider_id` (String) The provider that issues credentials for accessing this resource.
-- `description` (String) Optional description of the resource's purpose.
+- `application_id` (String) The application that provides this resource. May be empty.
+- `credential_provider_id` (String) The provider that issues credentials for accessing this resource. May be empty.
+- `description` (String) Optional description of the resource's purpose. May be empty.
 - `identifier` (String) Unique identifier for the resource, typically its URL or URN.
-- `metadata` (Attributes) Metadata associated with the resource. (see [below for nested schema](#nestedatt--metadata))
+- `metadata` (Attributes) Metadata associated with the resource. May be empty. (see [below for nested schema](#nestedatt--metadata))
 - `name` (String) Human-readable name for the resource.
-- `oauth2` (Attributes) OAuth2 configuration for the resource. (see [below for nested schema](#nestedatt--oauth2))
+- `oauth2` (Attributes) OAuth2 configuration for the resource. May be empty. (see [below for nested schema](#nestedatt--oauth2))
 
 <a id="nestedatt--metadata"></a>
 ### Nested Schema for `metadata`
 
 Read-Only:
 
-- `docs_url` (String) URL to documentation relevant to this resource.
+- `docs_url` (String) URL to documentation relevant to this resource. May be empty.
 
 
 <a id="nestedatt--oauth2"></a>
@@ -120,4 +120,4 @@ Read-Only:
 
 Read-Only:
 
-- `scopes` (List of String) OAuth2 scopes required to access this resource. Must match scopes configured in the authorization server.
+- `scopes` (List of String) OAuth2 scopes required to access this resource. Must match scopes configured in the authorization server. May be empty.
