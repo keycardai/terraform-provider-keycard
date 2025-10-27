@@ -483,6 +483,43 @@ paths:
         - bearerAuth: []
       tags:
         - Applications
+    get:
+      operationId: getApplicationDependency
+      summary: Get application dependency
+      description: Retrieves a specific resource dependency of an application
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: dependencyId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 'A Resource is a system that exposes protected information or functionality. It requires authentication of the requesting actor, which may be a user or application, before allowing access.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Applications
   '/zones/{zoneId}/applications/{id}/application-credentials':
     get:
       operationId: listApplicationCredentialsForApplication
