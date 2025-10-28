@@ -50,3 +50,28 @@ Optional:
 
 - `authorization_endpoint` (String) OAuth 2.0 Authorization endpoint URL.
 - `token_endpoint` (String) OAuth 2.0 Token endpoint URL.
+
+## Import
+
+Import is supported using the following syntax:
+
+In Terraform v1.5.0 and later, the [`import` block](https://developer.hashicorp.com/terraform/language/import) can be used with the `id` attribute, for example:
+
+```terraform
+# Providers can be imported using the format: zones/{zone-id}/providers/{provider-id}
+import {
+  to = keycard_provider.okta
+  id = "zones/zone-id-123/providers/provider-id-xyz"
+}
+
+resource "keycard_provider" "okta" {
+  # Configuration will be populated after import
+}
+```
+
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
+```shell
+# Providers can be imported using the format: zones/{zone-id}/providers/{provider-id}
+terraform import keycard_provider.okta zones/zone-id-123/providers/provider-id-xyz
+```

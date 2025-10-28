@@ -116,3 +116,28 @@ Optional:
 Optional:
 
 - `redirect_uris` (List of String) OAuth 2.0 redirect URIs for authorization code/token delivery. Required if the application will perform user login flows.
+
+## Import
+
+Import is supported using the following syntax:
+
+In Terraform v1.5.0 and later, the [`import` block](https://developer.hashicorp.com/terraform/language/import) can be used with the `id` attribute, for example:
+
+```terraform
+# Applications can be imported using the format: zones/{zone-id}/applications/{application-id}
+import {
+  to = keycard_application.basic
+  id = "zones/zone-id-123/applications/application-id-456"
+}
+
+resource "keycard_application" "basic" {
+  # Configuration will be populated after import
+}
+```
+
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
+```shell
+# Applications can be imported using the format: zones/{zone-id}/applications/{application-id}
+terraform import keycard_application.basic zones/zone-id-123/applications/application-id-456
+```

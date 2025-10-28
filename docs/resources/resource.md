@@ -106,3 +106,28 @@ Optional:
 Optional:
 
 - `scopes` (List of String) OAuth2 scopes required to access this resource. Must match scopes configured in the authorization server.
+
+## Import
+
+Import is supported using the following syntax:
+
+In Terraform v1.5.0 and later, the [`import` block](https://developer.hashicorp.com/terraform/language/import) can be used with the `id` attribute, for example:
+
+```terraform
+# Resources can be imported using the format: zones/{zone-id}/resources/{resource-id}
+import {
+  to = keycard_resource.example
+  id = "zones/zone-id-123/resources/resource-id-789"
+}
+
+resource "keycard_resource" "example" {
+  # Configuration will be populated after import
+}
+```
+
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
+```shell
+# Resources can be imported using the format: zones/{zone-id}/resources/{resource-id}
+terraform import keycard_resource.example zones/zone-id-123/resources/resource-id-789
+```

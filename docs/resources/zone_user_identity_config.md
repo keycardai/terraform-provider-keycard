@@ -51,3 +51,28 @@ resource "keycard_zone_user_identity_config" "example" {
 
 - `provider_id` (String) The ID of the provider to use for user authentication in this zone.
 - `zone_id` (String) The ID of the zone to configure. Changing this will replace the resource.
+
+## Import
+
+Import is supported using the following syntax:
+
+In Terraform v1.5.0 and later, the [`import` block](https://developer.hashicorp.com/terraform/language/import) can be used with the `id` attribute, for example:
+
+```terraform
+# Zone user identity configs can be imported using the zone ID
+import {
+  to = keycard_zone_user_identity_config.example
+  id = "zone-id-123"
+}
+
+resource "keycard_zone_user_identity_config" "example" {
+  # Configuration will be populated after import
+}
+```
+
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
+```shell
+# Zone user identity configs can be imported using the zone ID
+terraform import keycard_zone_user_identity_config.example zone-id-123
+```
