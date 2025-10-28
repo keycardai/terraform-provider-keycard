@@ -69,3 +69,28 @@ resource "keycard_application_workload_identity" "eks_any" {
 ### Read-Only
 
 - `id` (String) Unique identifier of the workload identity credential.
+
+## Import
+
+Import is supported using the following syntax:
+
+In Terraform v1.5.0 and later, the [`import` block](https://developer.hashicorp.com/terraform/language/import) can be used with the `id` attribute, for example:
+
+```terraform
+# Application workload identities can be imported using the format: zones/{zone-id}/application-credentials/{credential-id}
+import {
+  to = keycard_application_workload_identity.example
+  id = "zones/zone-id-123/application-credentials/credential-id-abc"
+}
+
+resource "keycard_application_workload_identity" "example" {
+  # Configuration will be populated after import
+}
+```
+
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
+```shell
+# Application workload identities can be imported using the format: zones/{zone-id}/application-credentials/{credential-id}
+terraform import keycard_application_workload_identity.example zones/zone-id-123/application-credentials/credential-id-abc
+```

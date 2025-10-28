@@ -75,3 +75,28 @@ Read-Only:
 
 - `issuer_uri` (String) OAuth 2.0 issuer URI for this zone.
 - `redirect_uri` (String) OAuth 2.0 redirect URI for this zone.
+
+## Import
+
+Import is supported using the following syntax:
+
+In Terraform v1.5.0 and later, the [`import` block](https://developer.hashicorp.com/terraform/language/import) can be used with the `id` attribute, for example:
+
+```terraform
+# Zones can be imported using the zone ID
+import {
+  to = keycard_zone.basic
+  id = "zone-id-123"
+}
+
+resource "keycard_zone" "basic" {
+  # Configuration will be populated after import
+}
+```
+
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
+```shell
+# Zones can be imported using the zone ID
+terraform import keycard_zone.basic zone-id-123
+```

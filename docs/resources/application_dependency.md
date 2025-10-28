@@ -76,3 +76,28 @@ resource "keycard_application_dependency" "second_dep" {
 - `application_id` (String) The application that needs access to the resource. Changing this will replace the dependency.
 - `resource_id` (String) The resource that the application needs to access. Changing this will replace the dependency.
 - `zone_id` (String) The zone this application dependency belongs to. Changing this will replace the dependency.
+
+## Import
+
+Import is supported using the following syntax:
+
+In Terraform v1.5.0 and later, the [`import` block](https://developer.hashicorp.com/terraform/language/import) can be used with the `id` attribute, for example:
+
+```terraform
+# Application dependencies can be imported using the format: zones/{zone-id}/applications/{application-id}/dependencies/{resource-id}
+import {
+  to = keycard_application_dependency.example
+  id = "zones/zone-id-123/applications/application-id-456/dependencies/resource-id-789"
+}
+
+resource "keycard_application_dependency" "example" {
+  # Configuration will be populated after import
+}
+```
+
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
+```shell
+# Application dependencies can be imported using the format: zones/{zone-id}/applications/{application-id}/dependencies/{resource-id}
+terraform import keycard_application_dependency.example zones/zone-id-123/applications/application-id-456/dependencies/resource-id-789
+```

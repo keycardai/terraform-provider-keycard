@@ -1,64 +1,199 @@
-# Terraform Provider Scaffolding (Terraform Plugin Framework)
+# Terraform Provider for Keycard
 
-_This template repository is built on the [Terraform Plugin Framework](https://github.com/hashicorp/terraform-plugin-framework). The template repository built on the [Terraform Plugin SDK](https://github.com/hashicorp/terraform-plugin-sdk) can be found at [terraform-provider-scaffolding](https://github.com/hashicorp/terraform-provider-scaffolding). See [Which SDK Should I Use?](https://developer.hashicorp.com/terraform/plugin/framework-benefits) in the Terraform documentation for additional information._
-
-This repository is a *template* for a [Terraform](https://www.terraform.io) provider. It is intended as a starting point for creating Terraform providers, containing:
-
-- A resource and a data source (`internal/provider/`),
-- Examples (`examples/`) and generated documentation (`docs/`),
-- Miscellaneous meta files.
-
-These files contain boilerplate code that you will need to edit to create your own Terraform provider. Tutorials for creating Terraform providers can be found on the [HashiCorp Developer](https://developer.hashicorp.com/terraform/tutorials/providers-plugin-framework) platform. _Terraform Plugin Framework specific guides are titled accordingly._
-
-Please see the [GitHub template repository documentation](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/creating-a-repository-from-a-template) for how to create a new repository from this template on GitHub.
-
-Once you've written your provider, you'll want to [publish it on the Terraform Registry](https://developer.hashicorp.com/terraform/registry/providers/publishing) so that others can use it.
+This is the official Terraform provider for [Keycard](https://keycard.ai), enabling you to manage Keycard resources such as zones, applications, providers, and identity configurations using Terraform.
 
 ## Requirements
 
-- [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.0
-- [Go](https://golang.org/doc/install) >= 1.24
+- [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.7
+- [Go](https://golang.org/doc/install) >= 1.24 (for development)
 
-## Building The Provider
+## Installation
 
-1. Clone the repository
-1. Enter the repository directory
-1. Build the provider using the Go `install` command:
+### From Terraform Registry (Production Use)
 
-```shell
-go install
+The provider is published to the Terraform Registry and can be used by declaring it in your Terraform configuration:
+
+```hcl
+terraform {
+  required_providers {
+    keycard = {
+      source  = "keycardai/keycard"
+      version = "~> 0.1"
+    }
+  }
+}
+
+provider "keycard" {
+  organization_id = var.keycard_organization_id
+  client_id       = var.keycard_client_id
+  client_secret   = var.keycard_client_secret
+}
 ```
 
-## Adding Dependencies
+### Local Development Installation
 
-This provider uses [Go modules](https://github.com/golang/go/wiki/Modules).
-Please see the Go documentation for the most up to date information about using Go modules.
+For local development and testing, you can build and install the provider locally with development overrides.
 
-To add a new dependency `github.com/author/dependency` to your Terraform provider:
+#### Step 1: Build and Install the Provider
 
-```shell
-go get github.com/author/dependency
-go mod tidy
+```bash
+# Clone the repository
+git clone https://github.com/keycardai/terraform-provider-keycard.git
+cd terraform-provider-keycard
+
+# Build and install the provider to $GOPATH/bin
+make install
 ```
 
-Then commit the changes to `go.mod` and `go.sum`.
+This will compile the provider binary and place it in your `$GOPATH/bin` directory (typically `~/go/bin`).
 
-## Using the provider
+#### Step 2: Configure Terraform Development Overrides
 
-Fill this in for each provider
+Create or edit `~/.terraformrc` to tell Terraform to use your local build instead of downloading from the registry:
 
-## Developing the Provider
+```hcl
+provider_installation {
+  dev_overrides {
+    "keycardai/keycard" = "/Users/YOUR_USERNAME/go/bin"  # Replace with your actual $GOPATH/bin
+  }
 
-If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (see [Requirements](#requirements) above).
+  # For all other providers, use the registry
+  direct {}
+}
+```
 
-To compile the provider, run `go install`. This will build the provider and put the provider binary in the `$GOPATH/bin` directory.
+**Important:** Replace `/Users/YOUR_USERNAME/go/bin` with your actual `$GOPATH/bin` directory. You can find it by running `go env GOPATH`.
 
-To generate or update documentation, run `make generate`.
+#### Step 3: Test Your Local Provider
 
-In order to run the full suite of Acceptance tests, run `make testacc`.
+With dev overrides configured, Terraform will use your local build:
 
-*Note:* Acceptance tests create real resources, and often cost money to run.
+```bash
+cd examples/
+terraform init
+terraform plan
+terraform apply
+```
 
-```shell
+Note: When using dev overrides, Terraform will display a warning that the provider is being overridden. This is expected behavior.
+
+#### Step 4: Return to Production Provider
+
+When you're done with local development, remove or comment out the `dev_overrides` block in `~/.terraformrc` to use the published provider from the registry again.
+
+## Authentication
+
+The provider requires OAuth2 client credentials for authentication with the Keycard API. You can configure these credentials in three ways:
+
+### 1. Provider Block (not recommended for production)
+
+```hcl
+provider "keycard" {
+  organization_id = "your-org-id"
+  client_id       = "your-client-id"
+  client_secret   = "your-client-secret"
+  endpoint        = "https://api.keycard.ai"  # Optional, defaults to production API
+}
+```
+
+### 2. Environment Variables (recommended)
+
+```bash
+export KEYCARD_ORGANIZATION_ID="your-org-id"
+export KEYCARD_CLIENT_ID="your-client-id"
+export KEYCARD_CLIENT_SECRET="your-client-secret"
+export KEYCARD_ENDPOINT="https://api.keycard.ai"  # Optional
+```
+
+### 3. Terraform Variables
+
+```hcl
+variable "keycard_organization_id" {
+  type      = string
+  sensitive = true
+}
+
+variable "keycard_client_id" {
+  type      = string
+  sensitive = true
+}
+
+variable "keycard_client_secret" {
+  type      = string
+  sensitive = true
+}
+
+provider "keycard" {
+  organization_id = var.keycard_organization_id
+  client_id       = var.keycard_client_id
+  client_secret   = var.keycard_client_secret
+}
+```
+
+## Documentation
+
+Comprehensive documentation for all resources, data sources, and configuration options is available in the [`docs/`](./docs) directory:
+
+- **Provider Configuration:** [`docs/index.md`](./docs/index.md)
+- **Resources:** [`docs/resources/`](./docs/resources)
+- **Data Sources:** [`docs/data-sources/`](./docs/data-sources)
+
+You can also view the documentation on the [Terraform Registry](https://registry.terraform.io/providers/keycardai/keycard/latest/docs).
+
+## Development
+
+### Building the Provider
+
+```bash
+# Build the provider binary
+make build
+
+# Build and install to $GOPATH/bin
+make install
+```
+
+### Running Tests
+
+```bash
+# Run unit tests
+make test
+
+# Run acceptance tests (creates real resources)
 make testacc
 ```
+
+**Note:** Acceptance tests interact with the real Keycard API and may incur costs or modify resources. Set up appropriate test credentials before running.
+
+### Generating Documentation
+
+Documentation is automatically generated from code comments and example files:
+
+```bash
+# Generate provider documentation
+make generate
+```
+
+This runs `terraform-plugin-docs` to generate documentation from:
+- Schema descriptions in the code
+- Example Terraform configurations in `examples/`
+- Templates in `templates/` (if present)
+
+### Code Quality
+
+```bash
+# Format code
+make fmt
+
+# Run linter
+make lint
+```
+
+## Contributing
+
+This provider is maintained internally by the Keycard team. **We do not accept external contributions at this time.**
+
+If you encounter issues or have questions, please refer to the [official documentation](https://docs.keycard.ai) or contact Keycard support.
+
+## License
+
+Mozilla Public License 2.0 - see [LICENSE](LICENSE) for details.
