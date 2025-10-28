@@ -222,3 +222,45 @@ func updateApplicationClientSecretModelFromAPIResponse(cred *client.ApplicationC
 
 	return diags
 }
+
+// updateApplicationWorkloadIdentityModelFromCreateResponse updates the model with data from the
+// ApplicationCredential Create API response.
+func updateApplicationWorkloadIdentityModelFromCreateResponse(cred *client.ApplicationCredentialCreateResponse, data *ApplicationWorkloadIdentityModel) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	tokenCred, err := cred.AsApplicationCredentialToken()
+	if err != nil {
+		diags.AddError("API Error", fmt.Sprintf("Expected token credential in response, got error: %s", err))
+		return diags
+	}
+
+	// Map all fields
+	data.ID = types.StringValue(tokenCred.Id)
+	data.ZoneID = types.StringValue(tokenCred.ZoneId)
+	data.ApplicationID = types.StringValue(tokenCred.ApplicationId)
+	data.ProviderID = types.StringValue(tokenCred.ProviderId)
+	data.Subject = NullableStringValue(tokenCred.Subject)
+
+	return diags
+}
+
+// updateApplicationWorkloadIdentityModelFromCreateResponse updates the model with data from the
+// ApplicationCredential Read/Update API responses.
+func updateApplicationWorkloadIdentityModelFromAPIResponse(cred *client.ApplicationCredential, data *ApplicationWorkloadIdentityModel) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	tokenCred, err := cred.AsApplicationCredentialToken()
+	if err != nil {
+		diags.AddError("API Error", fmt.Sprintf("Expected token credential in response, got error: %s", err))
+		return diags
+	}
+
+	// Map all fields
+	data.ID = types.StringValue(tokenCred.Id)
+	data.ZoneID = types.StringValue(tokenCred.ZoneId)
+	data.ApplicationID = types.StringValue(tokenCred.ApplicationId)
+	data.ProviderID = types.StringValue(tokenCred.ProviderId)
+	data.Subject = NullableStringValue(tokenCred.Subject)
+
+	return diags
+}
