@@ -77,11 +77,12 @@ func (r *ApplicationWorkloadIdentityResource) Schema(ctx context.Context, req re
 			},
 			"subject": schema.StringAttribute{
 				MarkdownDescription: "The subject claim (sub) that must match in the bearer token. " +
+					"When omitted, any token from the provider will be accepted. " +
 					"Format depends on the token issuer:\n" +
 					"  - Kubernetes: `system:serviceaccount:<namespace>:<service-account-name>`\n" +
 					"  - GitHub Actions: `repo:<org>/<repo>:ref:refs/heads/<branch>`\n" +
 					"  - AWS EKS: `system:serviceaccount:<namespace>:<service-account-name>`\n\n",
-				Required: true,
+				Optional: true,
 			},
 		},
 	}
@@ -118,12 +119,16 @@ func (r *ApplicationWorkloadIdentityResource) Create(ctx context.Context, req re
 	}
 
 	// Build the create request for a token-type credential
-	subjectValue := data.Subject.ValueString()
+	var subjectPtr *string
+	if !data.Subject.IsNull() && !data.Subject.IsUnknown() {
+		subjectPtr = data.Subject.ValueStringPointer()
+	}
+
 	tokenCreate := client.ApplicationCredentialCreateToken{
 		ApplicationId: data.ApplicationID.ValueString(),
 		Type:          client.ApplicationCredentialCreateTokenTypeToken,
 		ProviderId:    data.ProviderID.ValueString(),
-		Subject:       &subjectValue,
+		Subject:       subjectPtr,
 	}
 
 	createReq := client.ApplicationCredentialCreate{}

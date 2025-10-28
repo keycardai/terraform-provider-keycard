@@ -107,6 +107,40 @@ func TestAccApplicationWorkloadIdentityResource_updateSubject(t *testing.T) {
 	})
 }
 
+func TestAccApplicationWorkloadIdentityResource_removeSubject(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+	namespace := acctest.RandomWithPrefix("ns")
+	serviceAccount := acctest.RandomWithPrefix("sa")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create with subject
+			{
+				Config: testAccApplicationWorkloadIdentityResourceConfig_kubernetes(zoneName, rName, namespace, serviceAccount),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("keycard_application_workload_identity.test", "id"),
+					resource.TestCheckResourceAttr(
+						"keycard_application_workload_identity.test",
+						"subject",
+						fmt.Sprintf("system:serviceaccount:%s:%s", namespace, serviceAccount),
+					),
+				),
+			},
+			// Remove subject (should accept any token from provider)
+			{
+				Config: testAccApplicationWorkloadIdentityResourceConfig_noSubject(zoneName, rName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("keycard_application_workload_identity.test", "id"),
+					resource.TestCheckNoResourceAttr("keycard_application_workload_identity.test", "subject"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccApplicationWorkloadIdentityResource_githubActions(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
@@ -262,6 +296,32 @@ resource "keycard_application_workload_identity" "test" {
   subject        = "system:serviceaccount:%[3]s:%[4]s"
 }
 `, zoneName, appName, namespace, serviceAccount)
+}
+
+func testAccApplicationWorkloadIdentityResourceConfig_noSubject(zoneName, appName string) string {
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+}
+
+resource "keycard_provider" "test" {
+  name        = "k8s-provider-%[2]s"
+  identifier  = "https://kubernetes.default.svc.cluster.local"
+  zone_id     = keycard_zone.test.id
+}
+
+resource "keycard_application" "test" {
+  name       = %[2]q
+  identifier = "https://%[2]s.example.com"
+  zone_id    = keycard_zone.test.id
+}
+
+resource "keycard_application_workload_identity" "test" {
+  zone_id        = keycard_zone.test.id
+  application_id = keycard_application.test.id
+  provider_id    = keycard_provider.test.id
+}
+`, zoneName, appName)
 }
 
 func testAccApplicationWorkloadIdentityResourceConfig_github(zoneName, appName, org, repo, branch string) string {

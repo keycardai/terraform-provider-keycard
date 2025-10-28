@@ -33,11 +33,20 @@ resource "keycard_provider" "eks" {
   description = "EKS cluster OIDC provider"
 }
 
+# Workload identity with a specific subject constraint
 resource "keycard_application_workload_identity" "eks_service_account" {
   zone_id        = keycard_zone.example.id
   application_id = keycard_application.api.id
   provider_id    = keycard_provider.eks.id
   subject        = "system:serviceaccount:default:my-service-account"
+}
+
+# Workload identity without subject - accepts any token from the provider
+# Useful when you want to allow all workloads authenticated by the provider
+resource "keycard_application_workload_identity" "eks_any" {
+  zone_id        = keycard_zone.example.id
+  application_id = keycard_application.api.id
+  provider_id    = keycard_provider.eks.id
 }
 ```
 
@@ -48,11 +57,14 @@ resource "keycard_application_workload_identity" "eks_service_account" {
 
 - `application_id` (String) The application this credential belongs to. Changing this will replace the credential.
 - `provider_id` (String) The provider that validates tokens for this credential. Changing this will replace the credential.
-- `subject` (String) The subject claim (sub) that must match in the bearer token. Format depends on the token issuer:
+- `zone_id` (String) The zone this credential belongs to. Changing this will replace the credential.
+
+### Optional
+
+- `subject` (String) The subject claim (sub) that must match in the bearer token. When omitted, any token from the provider will be accepted. Format depends on the token issuer:
   - Kubernetes: `system:serviceaccount:<namespace>:<service-account-name>`
   - GitHub Actions: `repo:<org>/<repo>:ref:refs/heads/<branch>`
   - AWS EKS: `system:serviceaccount:<namespace>:<service-account-name>`
-- `zone_id` (String) The zone this credential belongs to. Changing this will replace the credential.
 
 ### Read-Only
 
