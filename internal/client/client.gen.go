@@ -27,24 +27,59 @@ const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
 
-// Defines values for PasswordCredentialCreateType.
+// Defines values for ApplicationCredentialCreatePasswordType.
 const (
-	PasswordCredentialCreateTypePassword PasswordCredentialCreateType = "password"
+	ApplicationCredentialCreatePasswordTypePassword ApplicationCredentialCreatePasswordType = "password"
 )
 
-// Defines values for PasswordCredentialCreateResponseTypeType.
+// Defines values for ApplicationCredentialCreatePublicType.
 const (
-	PasswordCredentialCreateResponseTypeTypePassword PasswordCredentialCreateResponseTypeType = "password"
+	ApplicationCredentialCreatePublicTypePublic ApplicationCredentialCreatePublicType = "public"
 )
 
-// Defines values for PasswordCredentialTypeType.
+// Defines values for ApplicationCredentialCreatePublicKeyType.
 const (
-	PasswordCredentialTypeTypePassword PasswordCredentialTypeType = "password"
+	ApplicationCredentialCreatePublicKeyTypePublicKey ApplicationCredentialCreatePublicKeyType = "public-key"
+)
+
+// Defines values for ApplicationCredentialCreateTokenType.
+const (
+	ApplicationCredentialCreateTokenTypeToken ApplicationCredentialCreateTokenType = "token"
+)
+
+// Defines values for ApplicationCredentialCreateUrlType.
+const (
+	ApplicationCredentialCreateUrlTypeUrl ApplicationCredentialCreateUrlType = "url"
+)
+
+// Defines values for ApplicationCredentialPasswordType.
+const (
+	ApplicationCredentialPasswordTypePassword ApplicationCredentialPasswordType = "password"
+)
+
+// Defines values for ApplicationCredentialPublicType.
+const (
+	ApplicationCredentialPublicTypePublic ApplicationCredentialPublicType = "public"
+)
+
+// Defines values for ApplicationCredentialPublicKeyType.
+const (
+	ApplicationCredentialPublicKeyTypePublicKey ApplicationCredentialPublicKeyType = "public-key"
+)
+
+// Defines values for ApplicationCredentialTokenType.
+const (
+	ApplicationCredentialTokenTypeToken ApplicationCredentialTokenType = "token"
+)
+
+// Defines values for ApplicationCredentialUrlType.
+const (
+	ApplicationCredentialUrlTypeUrl ApplicationCredentialUrlType = "url"
 )
 
 // Defines values for PasswordCredentialUpdateType.
 const (
-	PasswordCredentialUpdateTypePassword PasswordCredentialUpdateType = "password"
+	Password PasswordCredentialUpdateType = "password"
 )
 
 // Defines values for ProviderType.
@@ -54,14 +89,9 @@ const (
 	ProviderTypeKeycardVault     ProviderType = "keycard-vault"
 )
 
-// Defines values for PublicKeyCredentialCreateType.
+// Defines values for PublicCredentialUpdateType.
 const (
-	PublicKeyCredentialCreateTypePublicKey PublicKeyCredentialCreateType = "public-key"
-)
-
-// Defines values for PublicKeyCredentialTypeType.
-const (
-	PublicKeyCredentialTypeTypePublicKey PublicKeyCredentialTypeType = "public-key"
+	Public PublicCredentialUpdateType = "public"
 )
 
 // Defines values for PublicKeyCredentialUpdateType.
@@ -69,29 +99,9 @@ const (
 	PublicKey PublicKeyCredentialUpdateType = "public-key"
 )
 
-// Defines values for TokenCredentialCreateType.
-const (
-	TokenCredentialCreateTypeToken TokenCredentialCreateType = "token"
-)
-
-// Defines values for TokenCredentialTypeType.
-const (
-	TokenCredentialTypeTypeToken TokenCredentialTypeType = "token"
-)
-
 // Defines values for TokenCredentialUpdateType.
 const (
 	Token TokenCredentialUpdateType = "token"
-)
-
-// Defines values for UrlCredentialCreateType.
-const (
-	UrlCredentialCreateTypeUrl UrlCredentialCreateType = "url"
-)
-
-// Defines values for UrlCredentialTypeType.
-const (
-	UrlCredentialTypeTypeUrl UrlCredentialTypeType = "url"
 )
 
 // Defines values for UrlCredentialUpdateType.
@@ -173,8 +183,13 @@ type ApplicationCreate struct {
 	Protocols *ApplicationProtocolCreate `json:"protocols,omitempty"`
 }
 
-// ApplicationCredential defines model for ApplicationCredential.
+// ApplicationCredential Credentials for accessing external services from applications
 type ApplicationCredential struct {
+	union json.RawMessage
+}
+
+// ApplicationCredentialBaseFields Common fields shared by all application credential types
+type ApplicationCredentialBaseFields struct {
 	// Application An Application is a software system with an associated identity that can access Resources. It may act on its own behalf (machine-to-machine) or on behalf of a user (delegated access).
 	Application *Application `json:"application,omitempty"`
 
@@ -206,14 +221,89 @@ type ApplicationCredential struct {
 	ZoneId string `json:"zone_id"`
 }
 
-// ApplicationCredentialCreate defines model for ApplicationCredentialCreate.
+// ApplicationCredentialCreate Schema for creating a new application credential
 type ApplicationCredentialCreate struct {
-	// ApplicationId ID of the application this credential belongs to
-	ApplicationId string `json:"application_id"`
+	union json.RawMessage
 }
 
-// ApplicationCredentialCreateResponse defines model for ApplicationCredentialCreateResponse.
+// ApplicationCredentialCreatePassword Schema for creating a password application credential
+type ApplicationCredentialCreatePassword struct {
+	// ApplicationId ID of the application this credential belongs to
+	ApplicationId string `json:"application_id"`
+
+	// Identifier Username for password credential, also used as OAuth 2.0 client ID (auto-generated if not provided)
+	Identifier *string                                 `json:"identifier,omitempty"`
+	Type       ApplicationCredentialCreatePasswordType `json:"type"`
+}
+
+// ApplicationCredentialCreatePasswordType defines model for ApplicationCredentialCreatePassword.Type.
+type ApplicationCredentialCreatePasswordType string
+
+// ApplicationCredentialCreatePublic Schema for creating a public application credential
+type ApplicationCredentialCreatePublic struct {
+	// ApplicationId ID of the application this credential belongs to
+	ApplicationId string `json:"application_id"`
+
+	// Identifier Identifier for public credential, also used as OAuth 2.0 client ID (auto-generated if not provided)
+	Identifier *string                               `json:"identifier,omitempty"`
+	Type       ApplicationCredentialCreatePublicType `json:"type"`
+}
+
+// ApplicationCredentialCreatePublicType defines model for ApplicationCredentialCreatePublic.Type.
+type ApplicationCredentialCreatePublicType string
+
+// ApplicationCredentialCreatePublicKey Schema for creating a public key application credential
+type ApplicationCredentialCreatePublicKey struct {
+	// ApplicationId ID of the application this credential belongs to
+	ApplicationId string `json:"application_id"`
+
+	// Identifier Client ID for public key credential, also used as OAuth 2.0 client ID (auto-generated if not provided)
+	Identifier *string `json:"identifier,omitempty"`
+
+	// JwksUri JWKS URI to retrieve public keys from
+	JwksUri string                                   `json:"jwks_uri"`
+	Type    ApplicationCredentialCreatePublicKeyType `json:"type"`
+}
+
+// ApplicationCredentialCreatePublicKeyType defines model for ApplicationCredentialCreatePublicKey.Type.
+type ApplicationCredentialCreatePublicKeyType string
+
+// ApplicationCredentialCreateResponse Response for creating a new application credential
 type ApplicationCredentialCreateResponse struct {
+	union json.RawMessage
+}
+
+// ApplicationCredentialCreateToken Schema for creating a token application credential
+type ApplicationCredentialCreateToken struct {
+	// ApplicationId ID of the application this credential belongs to
+	ApplicationId string `json:"application_id"`
+
+	// ProviderId ID of the provider issuing tokens this credential verifies
+	ProviderId string `json:"provider_id"`
+
+	// Subject Subject identifier for the token. When omitted, any token from the provider is accepted without checking application-specific claims.
+	Subject *string                              `json:"subject,omitempty"`
+	Type    ApplicationCredentialCreateTokenType `json:"type"`
+}
+
+// ApplicationCredentialCreateTokenType defines model for ApplicationCredentialCreateToken.Type.
+type ApplicationCredentialCreateTokenType string
+
+// ApplicationCredentialCreateUrl Schema for creating a URL application credential
+type ApplicationCredentialCreateUrl struct {
+	// ApplicationId ID of the application this credential belongs to
+	ApplicationId string `json:"application_id"`
+
+	// Identifier URL of the credential (must be a valid URL)
+	Identifier string                             `json:"identifier"`
+	Type       ApplicationCredentialCreateUrlType `json:"type"`
+}
+
+// ApplicationCredentialCreateUrlType defines model for ApplicationCredentialCreateUrl.Type.
+type ApplicationCredentialCreateUrlType string
+
+// ApplicationCredentialPassword defines model for ApplicationCredentialPassword.
+type ApplicationCredentialPassword struct {
 	// Application An Application is a software system with an associated identity that can access Resources. It may act on its own behalf (machine-to-machine) or on behalf of a user (delegated access).
 	Application *Application `json:"application,omitempty"`
 
@@ -225,6 +315,135 @@ type ApplicationCredentialCreateResponse struct {
 
 	// Id Unique identifier of the credential
 	Id string `json:"id"`
+
+	// Identifier Username for password credential, also used as OAuth 2.0 client ID
+	Identifier string `json:"identifier"`
+
+	// OrganizationId Organization that owns this credential
+	OrganizationId string `json:"organization_id"`
+
+	// Password Password for credential (only returned on creation, store securely), also used as OAuth 2.0 client secret
+	Password *string `json:"password,omitempty"`
+
+	// Provider A Provider is a system that supplies access to Resources and allows actors (Users or Applications) to authenticate.
+	Provider *Provider `json:"provider,omitempty"`
+
+	// ProviderId ID of the provider issuing tokens verified by this credential
+	ProviderId string `json:"provider_id"`
+
+	// Slug URL-safe identifier, unique within the zone
+	Slug string                            `json:"slug"`
+	Type ApplicationCredentialPasswordType `json:"type"`
+
+	// UpdatedAt Entity update timestamp
+	UpdatedAt time.Time `json:"updated_at"`
+
+	// ZoneId Zone this credential belongs to
+	ZoneId string `json:"zone_id"`
+}
+
+// ApplicationCredentialPasswordType defines model for ApplicationCredentialPassword.Type.
+type ApplicationCredentialPasswordType string
+
+// ApplicationCredentialPublic defines model for ApplicationCredentialPublic.
+type ApplicationCredentialPublic struct {
+	// Application An Application is a software system with an associated identity that can access Resources. It may act on its own behalf (machine-to-machine) or on behalf of a user (delegated access).
+	Application *Application `json:"application,omitempty"`
+
+	// ApplicationId ID of the application this credential belongs to
+	ApplicationId string `json:"application_id"`
+
+	// CreatedAt Entity creation timestamp
+	CreatedAt time.Time `json:"created_at"`
+
+	// Id Unique identifier of the credential
+	Id string `json:"id"`
+
+	// Identifier Identifier for public credential, also used as OAuth 2.0 client ID
+	Identifier string `json:"identifier"`
+
+	// OrganizationId Organization that owns this credential
+	OrganizationId string `json:"organization_id"`
+
+	// Provider A Provider is a system that supplies access to Resources and allows actors (Users or Applications) to authenticate.
+	Provider *Provider `json:"provider,omitempty"`
+
+	// ProviderId ID of the provider issuing tokens verified by this credential
+	ProviderId string `json:"provider_id"`
+
+	// Slug URL-safe identifier, unique within the zone
+	Slug string                          `json:"slug"`
+	Type ApplicationCredentialPublicType `json:"type"`
+
+	// UpdatedAt Entity update timestamp
+	UpdatedAt time.Time `json:"updated_at"`
+
+	// ZoneId Zone this credential belongs to
+	ZoneId string `json:"zone_id"`
+}
+
+// ApplicationCredentialPublicType defines model for ApplicationCredentialPublic.Type.
+type ApplicationCredentialPublicType string
+
+// ApplicationCredentialPublicKey defines model for ApplicationCredentialPublicKey.
+type ApplicationCredentialPublicKey struct {
+	// Application An Application is a software system with an associated identity that can access Resources. It may act on its own behalf (machine-to-machine) or on behalf of a user (delegated access).
+	Application *Application `json:"application,omitempty"`
+
+	// ApplicationId ID of the application this credential belongs to
+	ApplicationId string `json:"application_id"`
+
+	// CreatedAt Entity creation timestamp
+	CreatedAt time.Time `json:"created_at"`
+
+	// Id Unique identifier of the credential
+	Id string `json:"id"`
+
+	// Identifier Client ID for public key credential, also used as OAuth 2.0 client ID
+	Identifier string `json:"identifier"`
+
+	// JwksUri JWKS URI to retrieve public keys from
+	JwksUri string `json:"jwks_uri"`
+
+	// OrganizationId Organization that owns this credential
+	OrganizationId string `json:"organization_id"`
+
+	// Provider A Provider is a system that supplies access to Resources and allows actors (Users or Applications) to authenticate.
+	Provider *Provider `json:"provider,omitempty"`
+
+	// ProviderId ID of the provider issuing tokens verified by this credential
+	ProviderId string `json:"provider_id"`
+
+	// Slug URL-safe identifier, unique within the zone
+	Slug string                             `json:"slug"`
+	Type ApplicationCredentialPublicKeyType `json:"type"`
+
+	// UpdatedAt Entity update timestamp
+	UpdatedAt time.Time `json:"updated_at"`
+
+	// ZoneId Zone this credential belongs to
+	ZoneId string `json:"zone_id"`
+}
+
+// ApplicationCredentialPublicKeyType defines model for ApplicationCredentialPublicKey.Type.
+type ApplicationCredentialPublicKeyType string
+
+// ApplicationCredentialToken defines model for ApplicationCredentialToken.
+type ApplicationCredentialToken struct {
+	// Application An Application is a software system with an associated identity that can access Resources. It may act on its own behalf (machine-to-machine) or on behalf of a user (delegated access).
+	Application *Application `json:"application,omitempty"`
+
+	// ApplicationId ID of the application this credential belongs to
+	ApplicationId string `json:"application_id"`
+
+	// CreatedAt Entity creation timestamp
+	CreatedAt time.Time `json:"created_at"`
+
+	// Id Unique identifier of the credential
+	Id string `json:"id"`
+
+	// Identifier Identifier for this credential. For token type, this equals the subject value, or '*' when subject is not specified.
+	Identifier string `json:"identifier"`
 
 	// OrganizationId Organization that owns this credential
 	OrganizationId string `json:"organization_id"`
@@ -238,6 +457,10 @@ type ApplicationCredentialCreateResponse struct {
 	// Slug URL-safe identifier, unique within the zone
 	Slug string `json:"slug"`
 
+	// Subject Subject identifier for the token. When null or omitted, any token from the provider is accepted without checking application-specific claims.
+	Subject nullable.Nullable[string]      `json:"subject,omitempty"`
+	Type    ApplicationCredentialTokenType `json:"type"`
+
 	// UpdatedAt Entity update timestamp
 	UpdatedAt time.Time `json:"updated_at"`
 
@@ -245,8 +468,53 @@ type ApplicationCredentialCreateResponse struct {
 	ZoneId string `json:"zone_id"`
 }
 
-// ApplicationCredentialUpdate defines model for ApplicationCredentialUpdate.
-type ApplicationCredentialUpdate = map[string]interface{}
+// ApplicationCredentialTokenType defines model for ApplicationCredentialToken.Type.
+type ApplicationCredentialTokenType string
+
+// ApplicationCredentialUpdate Schema for updating an existing application credential
+type ApplicationCredentialUpdate struct {
+	union json.RawMessage
+}
+
+// ApplicationCredentialUrl defines model for ApplicationCredentialUrl.
+type ApplicationCredentialUrl struct {
+	// Application An Application is a software system with an associated identity that can access Resources. It may act on its own behalf (machine-to-machine) or on behalf of a user (delegated access).
+	Application *Application `json:"application,omitempty"`
+
+	// ApplicationId ID of the application this credential belongs to
+	ApplicationId string `json:"application_id"`
+
+	// CreatedAt Entity creation timestamp
+	CreatedAt time.Time `json:"created_at"`
+
+	// Id Unique identifier of the credential
+	Id string `json:"id"`
+
+	// Identifier URL of the credential (must be a valid URL)
+	Identifier string `json:"identifier"`
+
+	// OrganizationId Organization that owns this credential
+	OrganizationId string `json:"organization_id"`
+
+	// Provider A Provider is a system that supplies access to Resources and allows actors (Users or Applications) to authenticate.
+	Provider *Provider `json:"provider,omitempty"`
+
+	// ProviderId ID of the provider issuing tokens verified by this credential
+	ProviderId string `json:"provider_id"`
+
+	// Slug URL-safe identifier, unique within the zone
+	Slug string                       `json:"slug"`
+	Type ApplicationCredentialUrlType `json:"type"`
+
+	// UpdatedAt Entity update timestamp
+	UpdatedAt time.Time `json:"updated_at"`
+
+	// ZoneId Zone this credential belongs to
+	ZoneId string `json:"zone_id"`
+}
+
+// ApplicationCredentialUrlType defines model for ApplicationCredentialUrl.Type.
+type ApplicationCredentialUrlType string
 
 // ApplicationOAuth2Protocol OAuth 2.0 protocol configuration
 type ApplicationOAuth2Protocol struct {
@@ -329,39 +597,6 @@ type PageInfo struct {
 	// StartCursor Cursor pointing to the first item in the current page
 	StartCursor nullable.Nullable[string] `json:"start_cursor,omitempty"`
 }
-
-// PasswordCredentialCreate Schema for creating a password credential within the zone identity provider
-type PasswordCredentialCreate struct {
-	// Identifier Username for password credential, also used as OAuth 2.0 client ID (auto-generated if not provided)
-	Identifier *string                      `json:"identifier,omitempty"`
-	Type       PasswordCredentialCreateType `json:"type"`
-}
-
-// PasswordCredentialCreateType defines model for PasswordCredentialCreate.Type.
-type PasswordCredentialCreateType string
-
-// PasswordCredentialCreateResponseType Password credential response type with secret
-type PasswordCredentialCreateResponseType struct {
-	// Identifier Username for password credential, also used as OAuth 2.0 client ID
-	Identifier string `json:"identifier"`
-
-	// Password Password for credential (only returned on creation, store securely), also used as OAuth 2.0 client secret
-	Password string                                   `json:"password"`
-	Type     PasswordCredentialCreateResponseTypeType `json:"type"`
-}
-
-// PasswordCredentialCreateResponseTypeType defines model for PasswordCredentialCreateResponseType.Type.
-type PasswordCredentialCreateResponseTypeType string
-
-// PasswordCredentialType Password-based credential type fields
-type PasswordCredentialType struct {
-	// Identifier Username for password credential, also used as OAuth 2.0 client ID
-	Identifier string                     `json:"identifier"`
-	Type       PasswordCredentialTypeType `json:"type"`
-}
-
-// PasswordCredentialTypeType defines model for PasswordCredentialType.Type.
-type PasswordCredentialTypeType string
 
 // PasswordCredentialUpdate Schema for updating a password credential
 type PasswordCredentialUpdate struct {
@@ -525,31 +760,15 @@ type ProviderUpdate struct {
 	Protocols nullable.Nullable[ProviderProtocolUpdate] `json:"protocols,omitempty"`
 }
 
-// PublicKeyCredentialCreate Schema for creating a public key credential within the zone identity provider
-type PublicKeyCredentialCreate struct {
-	// Identifier Client ID for public key credential, also used as OAuth 2.0 client ID (auto-generated if not provided)
-	Identifier *string `json:"identifier,omitempty"`
-
-	// JwksUri JWKS URI to retrieve public keys from
-	JwksUri string                        `json:"jwks_uri"`
-	Type    PublicKeyCredentialCreateType `json:"type"`
+// PublicCredentialUpdate Schema for updating a public credential
+type PublicCredentialUpdate struct {
+	// Identifier Identifier for public credential, also used as OAuth 2.0 client ID
+	Identifier *string                     `json:"identifier,omitempty"`
+	Type       *PublicCredentialUpdateType `json:"type,omitempty"`
 }
 
-// PublicKeyCredentialCreateType defines model for PublicKeyCredentialCreate.Type.
-type PublicKeyCredentialCreateType string
-
-// PublicKeyCredentialType Public key-based credential type fields
-type PublicKeyCredentialType struct {
-	// Identifier Client ID for public key credential, also used as OAuth 2.0 client ID
-	Identifier string `json:"identifier"`
-
-	// JwksUri JWKS URI to retrieve public keys from
-	JwksUri string                      `json:"jwks_uri"`
-	Type    PublicKeyCredentialTypeType `json:"type"`
-}
-
-// PublicKeyCredentialTypeType defines model for PublicKeyCredentialType.Type.
-type PublicKeyCredentialTypeType string
+// PublicCredentialUpdateType defines model for PublicCredentialUpdate.Type.
+type PublicCredentialUpdateType string
 
 // PublicKeyCredentialUpdate Schema for updating a public key credential
 type PublicKeyCredentialUpdate struct {
@@ -659,32 +878,6 @@ type ResourceUpdate struct {
 	Scopes nullable.Nullable[[]string] `json:"scopes,omitempty"`
 }
 
-// TokenCredentialCreate Schema for creating a token credential. The identifier is computed by the backend from the subject field.
-type TokenCredentialCreate struct {
-	// ProviderId ID of the provider issuing tokens this credential verifies
-	ProviderId string `json:"provider_id"`
-
-	// Subject Subject identifier for the token. When omitted, any token from the provider is accepted without checking application-specific claims. The identifier field is computed from this value.
-	Subject *string                   `json:"subject,omitempty"`
-	Type    TokenCredentialCreateType `json:"type"`
-}
-
-// TokenCredentialCreateType defines model for TokenCredentialCreate.Type.
-type TokenCredentialCreateType string
-
-// TokenCredentialType Token-based credential type fields
-type TokenCredentialType struct {
-	// Identifier Identifier for this credential. For token type, this equals the subject value, or '*' when subject is not specified.
-	Identifier string `json:"identifier"`
-
-	// Subject Subject identifier for the token. When null or omitted, any token from the provider is accepted without checking application-specific claims.
-	Subject nullable.Nullable[string] `json:"subject,omitempty"`
-	Type    TokenCredentialTypeType   `json:"type"`
-}
-
-// TokenCredentialTypeType defines model for TokenCredentialType.Type.
-type TokenCredentialTypeType string
-
 // TokenCredentialUpdate Schema for updating a token credential
 type TokenCredentialUpdate struct {
 	// Subject Subject identifier for the token. Set to null to unset, which allows any token from the provider to be accepted without checking application-specific claims.
@@ -694,26 +887,6 @@ type TokenCredentialUpdate struct {
 
 // TokenCredentialUpdateType defines model for TokenCredentialUpdate.Type.
 type TokenCredentialUpdateType string
-
-// UrlCredentialCreate Schema for creating a URL credential within the zone identity provider
-type UrlCredentialCreate struct {
-	// Identifier URL of the credential (must be a valid URL)
-	Identifier string                  `json:"identifier"`
-	Type       UrlCredentialCreateType `json:"type"`
-}
-
-// UrlCredentialCreateType defines model for UrlCredentialCreate.Type.
-type UrlCredentialCreateType string
-
-// UrlCredentialType URL-based credential type fields
-type UrlCredentialType struct {
-	// Identifier URL of the credential (must be a valid URL)
-	Identifier string                `json:"identifier"`
-	Type       UrlCredentialTypeType `json:"type"`
-}
-
-// UrlCredentialTypeType defines model for UrlCredentialType.Type.
-type UrlCredentialTypeType string
 
 // UrlCredentialUpdate Schema for updating a URL credential
 type UrlCredentialUpdate struct {
@@ -956,6 +1129,566 @@ type CreateResourceJSONRequestBody = ResourceCreate
 
 // UpdateResourceJSONRequestBody defines body for UpdateResource for application/json ContentType.
 type UpdateResourceJSONRequestBody = ResourceUpdate
+
+// AsApplicationCredentialToken returns the union data inside the ApplicationCredential as a ApplicationCredentialToken
+func (t ApplicationCredential) AsApplicationCredentialToken() (ApplicationCredentialToken, error) {
+	var body ApplicationCredentialToken
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromApplicationCredentialToken overwrites any union data inside the ApplicationCredential as the provided ApplicationCredentialToken
+func (t *ApplicationCredential) FromApplicationCredentialToken(v ApplicationCredentialToken) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeApplicationCredentialToken performs a merge with any union data inside the ApplicationCredential, using the provided ApplicationCredentialToken
+func (t *ApplicationCredential) MergeApplicationCredentialToken(v ApplicationCredentialToken) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsApplicationCredentialPassword returns the union data inside the ApplicationCredential as a ApplicationCredentialPassword
+func (t ApplicationCredential) AsApplicationCredentialPassword() (ApplicationCredentialPassword, error) {
+	var body ApplicationCredentialPassword
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromApplicationCredentialPassword overwrites any union data inside the ApplicationCredential as the provided ApplicationCredentialPassword
+func (t *ApplicationCredential) FromApplicationCredentialPassword(v ApplicationCredentialPassword) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeApplicationCredentialPassword performs a merge with any union data inside the ApplicationCredential, using the provided ApplicationCredentialPassword
+func (t *ApplicationCredential) MergeApplicationCredentialPassword(v ApplicationCredentialPassword) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsApplicationCredentialPublicKey returns the union data inside the ApplicationCredential as a ApplicationCredentialPublicKey
+func (t ApplicationCredential) AsApplicationCredentialPublicKey() (ApplicationCredentialPublicKey, error) {
+	var body ApplicationCredentialPublicKey
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromApplicationCredentialPublicKey overwrites any union data inside the ApplicationCredential as the provided ApplicationCredentialPublicKey
+func (t *ApplicationCredential) FromApplicationCredentialPublicKey(v ApplicationCredentialPublicKey) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeApplicationCredentialPublicKey performs a merge with any union data inside the ApplicationCredential, using the provided ApplicationCredentialPublicKey
+func (t *ApplicationCredential) MergeApplicationCredentialPublicKey(v ApplicationCredentialPublicKey) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsApplicationCredentialUrl returns the union data inside the ApplicationCredential as a ApplicationCredentialUrl
+func (t ApplicationCredential) AsApplicationCredentialUrl() (ApplicationCredentialUrl, error) {
+	var body ApplicationCredentialUrl
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromApplicationCredentialUrl overwrites any union data inside the ApplicationCredential as the provided ApplicationCredentialUrl
+func (t *ApplicationCredential) FromApplicationCredentialUrl(v ApplicationCredentialUrl) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeApplicationCredentialUrl performs a merge with any union data inside the ApplicationCredential, using the provided ApplicationCredentialUrl
+func (t *ApplicationCredential) MergeApplicationCredentialUrl(v ApplicationCredentialUrl) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsApplicationCredentialPublic returns the union data inside the ApplicationCredential as a ApplicationCredentialPublic
+func (t ApplicationCredential) AsApplicationCredentialPublic() (ApplicationCredentialPublic, error) {
+	var body ApplicationCredentialPublic
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromApplicationCredentialPublic overwrites any union data inside the ApplicationCredential as the provided ApplicationCredentialPublic
+func (t *ApplicationCredential) FromApplicationCredentialPublic(v ApplicationCredentialPublic) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeApplicationCredentialPublic performs a merge with any union data inside the ApplicationCredential, using the provided ApplicationCredentialPublic
+func (t *ApplicationCredential) MergeApplicationCredentialPublic(v ApplicationCredentialPublic) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ApplicationCredential) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ApplicationCredential) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsApplicationCredentialCreateToken returns the union data inside the ApplicationCredentialCreate as a ApplicationCredentialCreateToken
+func (t ApplicationCredentialCreate) AsApplicationCredentialCreateToken() (ApplicationCredentialCreateToken, error) {
+	var body ApplicationCredentialCreateToken
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromApplicationCredentialCreateToken overwrites any union data inside the ApplicationCredentialCreate as the provided ApplicationCredentialCreateToken
+func (t *ApplicationCredentialCreate) FromApplicationCredentialCreateToken(v ApplicationCredentialCreateToken) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeApplicationCredentialCreateToken performs a merge with any union data inside the ApplicationCredentialCreate, using the provided ApplicationCredentialCreateToken
+func (t *ApplicationCredentialCreate) MergeApplicationCredentialCreateToken(v ApplicationCredentialCreateToken) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsApplicationCredentialCreatePassword returns the union data inside the ApplicationCredentialCreate as a ApplicationCredentialCreatePassword
+func (t ApplicationCredentialCreate) AsApplicationCredentialCreatePassword() (ApplicationCredentialCreatePassword, error) {
+	var body ApplicationCredentialCreatePassword
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromApplicationCredentialCreatePassword overwrites any union data inside the ApplicationCredentialCreate as the provided ApplicationCredentialCreatePassword
+func (t *ApplicationCredentialCreate) FromApplicationCredentialCreatePassword(v ApplicationCredentialCreatePassword) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeApplicationCredentialCreatePassword performs a merge with any union data inside the ApplicationCredentialCreate, using the provided ApplicationCredentialCreatePassword
+func (t *ApplicationCredentialCreate) MergeApplicationCredentialCreatePassword(v ApplicationCredentialCreatePassword) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsApplicationCredentialCreatePublicKey returns the union data inside the ApplicationCredentialCreate as a ApplicationCredentialCreatePublicKey
+func (t ApplicationCredentialCreate) AsApplicationCredentialCreatePublicKey() (ApplicationCredentialCreatePublicKey, error) {
+	var body ApplicationCredentialCreatePublicKey
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromApplicationCredentialCreatePublicKey overwrites any union data inside the ApplicationCredentialCreate as the provided ApplicationCredentialCreatePublicKey
+func (t *ApplicationCredentialCreate) FromApplicationCredentialCreatePublicKey(v ApplicationCredentialCreatePublicKey) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeApplicationCredentialCreatePublicKey performs a merge with any union data inside the ApplicationCredentialCreate, using the provided ApplicationCredentialCreatePublicKey
+func (t *ApplicationCredentialCreate) MergeApplicationCredentialCreatePublicKey(v ApplicationCredentialCreatePublicKey) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsApplicationCredentialCreateUrl returns the union data inside the ApplicationCredentialCreate as a ApplicationCredentialCreateUrl
+func (t ApplicationCredentialCreate) AsApplicationCredentialCreateUrl() (ApplicationCredentialCreateUrl, error) {
+	var body ApplicationCredentialCreateUrl
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromApplicationCredentialCreateUrl overwrites any union data inside the ApplicationCredentialCreate as the provided ApplicationCredentialCreateUrl
+func (t *ApplicationCredentialCreate) FromApplicationCredentialCreateUrl(v ApplicationCredentialCreateUrl) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeApplicationCredentialCreateUrl performs a merge with any union data inside the ApplicationCredentialCreate, using the provided ApplicationCredentialCreateUrl
+func (t *ApplicationCredentialCreate) MergeApplicationCredentialCreateUrl(v ApplicationCredentialCreateUrl) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsApplicationCredentialCreatePublic returns the union data inside the ApplicationCredentialCreate as a ApplicationCredentialCreatePublic
+func (t ApplicationCredentialCreate) AsApplicationCredentialCreatePublic() (ApplicationCredentialCreatePublic, error) {
+	var body ApplicationCredentialCreatePublic
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromApplicationCredentialCreatePublic overwrites any union data inside the ApplicationCredentialCreate as the provided ApplicationCredentialCreatePublic
+func (t *ApplicationCredentialCreate) FromApplicationCredentialCreatePublic(v ApplicationCredentialCreatePublic) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeApplicationCredentialCreatePublic performs a merge with any union data inside the ApplicationCredentialCreate, using the provided ApplicationCredentialCreatePublic
+func (t *ApplicationCredentialCreate) MergeApplicationCredentialCreatePublic(v ApplicationCredentialCreatePublic) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ApplicationCredentialCreate) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ApplicationCredentialCreate) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsApplicationCredentialToken returns the union data inside the ApplicationCredentialCreateResponse as a ApplicationCredentialToken
+func (t ApplicationCredentialCreateResponse) AsApplicationCredentialToken() (ApplicationCredentialToken, error) {
+	var body ApplicationCredentialToken
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromApplicationCredentialToken overwrites any union data inside the ApplicationCredentialCreateResponse as the provided ApplicationCredentialToken
+func (t *ApplicationCredentialCreateResponse) FromApplicationCredentialToken(v ApplicationCredentialToken) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeApplicationCredentialToken performs a merge with any union data inside the ApplicationCredentialCreateResponse, using the provided ApplicationCredentialToken
+func (t *ApplicationCredentialCreateResponse) MergeApplicationCredentialToken(v ApplicationCredentialToken) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsApplicationCredentialPassword returns the union data inside the ApplicationCredentialCreateResponse as a ApplicationCredentialPassword
+func (t ApplicationCredentialCreateResponse) AsApplicationCredentialPassword() (ApplicationCredentialPassword, error) {
+	var body ApplicationCredentialPassword
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromApplicationCredentialPassword overwrites any union data inside the ApplicationCredentialCreateResponse as the provided ApplicationCredentialPassword
+func (t *ApplicationCredentialCreateResponse) FromApplicationCredentialPassword(v ApplicationCredentialPassword) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeApplicationCredentialPassword performs a merge with any union data inside the ApplicationCredentialCreateResponse, using the provided ApplicationCredentialPassword
+func (t *ApplicationCredentialCreateResponse) MergeApplicationCredentialPassword(v ApplicationCredentialPassword) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsApplicationCredentialPublicKey returns the union data inside the ApplicationCredentialCreateResponse as a ApplicationCredentialPublicKey
+func (t ApplicationCredentialCreateResponse) AsApplicationCredentialPublicKey() (ApplicationCredentialPublicKey, error) {
+	var body ApplicationCredentialPublicKey
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromApplicationCredentialPublicKey overwrites any union data inside the ApplicationCredentialCreateResponse as the provided ApplicationCredentialPublicKey
+func (t *ApplicationCredentialCreateResponse) FromApplicationCredentialPublicKey(v ApplicationCredentialPublicKey) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeApplicationCredentialPublicKey performs a merge with any union data inside the ApplicationCredentialCreateResponse, using the provided ApplicationCredentialPublicKey
+func (t *ApplicationCredentialCreateResponse) MergeApplicationCredentialPublicKey(v ApplicationCredentialPublicKey) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsApplicationCredentialUrl returns the union data inside the ApplicationCredentialCreateResponse as a ApplicationCredentialUrl
+func (t ApplicationCredentialCreateResponse) AsApplicationCredentialUrl() (ApplicationCredentialUrl, error) {
+	var body ApplicationCredentialUrl
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromApplicationCredentialUrl overwrites any union data inside the ApplicationCredentialCreateResponse as the provided ApplicationCredentialUrl
+func (t *ApplicationCredentialCreateResponse) FromApplicationCredentialUrl(v ApplicationCredentialUrl) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeApplicationCredentialUrl performs a merge with any union data inside the ApplicationCredentialCreateResponse, using the provided ApplicationCredentialUrl
+func (t *ApplicationCredentialCreateResponse) MergeApplicationCredentialUrl(v ApplicationCredentialUrl) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsApplicationCredentialPublic returns the union data inside the ApplicationCredentialCreateResponse as a ApplicationCredentialPublic
+func (t ApplicationCredentialCreateResponse) AsApplicationCredentialPublic() (ApplicationCredentialPublic, error) {
+	var body ApplicationCredentialPublic
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromApplicationCredentialPublic overwrites any union data inside the ApplicationCredentialCreateResponse as the provided ApplicationCredentialPublic
+func (t *ApplicationCredentialCreateResponse) FromApplicationCredentialPublic(v ApplicationCredentialPublic) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeApplicationCredentialPublic performs a merge with any union data inside the ApplicationCredentialCreateResponse, using the provided ApplicationCredentialPublic
+func (t *ApplicationCredentialCreateResponse) MergeApplicationCredentialPublic(v ApplicationCredentialPublic) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ApplicationCredentialCreateResponse) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ApplicationCredentialCreateResponse) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsTokenCredentialUpdate returns the union data inside the ApplicationCredentialUpdate as a TokenCredentialUpdate
+func (t ApplicationCredentialUpdate) AsTokenCredentialUpdate() (TokenCredentialUpdate, error) {
+	var body TokenCredentialUpdate
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromTokenCredentialUpdate overwrites any union data inside the ApplicationCredentialUpdate as the provided TokenCredentialUpdate
+func (t *ApplicationCredentialUpdate) FromTokenCredentialUpdate(v TokenCredentialUpdate) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeTokenCredentialUpdate performs a merge with any union data inside the ApplicationCredentialUpdate, using the provided TokenCredentialUpdate
+func (t *ApplicationCredentialUpdate) MergeTokenCredentialUpdate(v TokenCredentialUpdate) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsPasswordCredentialUpdate returns the union data inside the ApplicationCredentialUpdate as a PasswordCredentialUpdate
+func (t ApplicationCredentialUpdate) AsPasswordCredentialUpdate() (PasswordCredentialUpdate, error) {
+	var body PasswordCredentialUpdate
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPasswordCredentialUpdate overwrites any union data inside the ApplicationCredentialUpdate as the provided PasswordCredentialUpdate
+func (t *ApplicationCredentialUpdate) FromPasswordCredentialUpdate(v PasswordCredentialUpdate) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePasswordCredentialUpdate performs a merge with any union data inside the ApplicationCredentialUpdate, using the provided PasswordCredentialUpdate
+func (t *ApplicationCredentialUpdate) MergePasswordCredentialUpdate(v PasswordCredentialUpdate) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsPublicKeyCredentialUpdate returns the union data inside the ApplicationCredentialUpdate as a PublicKeyCredentialUpdate
+func (t ApplicationCredentialUpdate) AsPublicKeyCredentialUpdate() (PublicKeyCredentialUpdate, error) {
+	var body PublicKeyCredentialUpdate
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPublicKeyCredentialUpdate overwrites any union data inside the ApplicationCredentialUpdate as the provided PublicKeyCredentialUpdate
+func (t *ApplicationCredentialUpdate) FromPublicKeyCredentialUpdate(v PublicKeyCredentialUpdate) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePublicKeyCredentialUpdate performs a merge with any union data inside the ApplicationCredentialUpdate, using the provided PublicKeyCredentialUpdate
+func (t *ApplicationCredentialUpdate) MergePublicKeyCredentialUpdate(v PublicKeyCredentialUpdate) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsUrlCredentialUpdate returns the union data inside the ApplicationCredentialUpdate as a UrlCredentialUpdate
+func (t ApplicationCredentialUpdate) AsUrlCredentialUpdate() (UrlCredentialUpdate, error) {
+	var body UrlCredentialUpdate
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromUrlCredentialUpdate overwrites any union data inside the ApplicationCredentialUpdate as the provided UrlCredentialUpdate
+func (t *ApplicationCredentialUpdate) FromUrlCredentialUpdate(v UrlCredentialUpdate) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeUrlCredentialUpdate performs a merge with any union data inside the ApplicationCredentialUpdate, using the provided UrlCredentialUpdate
+func (t *ApplicationCredentialUpdate) MergeUrlCredentialUpdate(v UrlCredentialUpdate) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsPublicCredentialUpdate returns the union data inside the ApplicationCredentialUpdate as a PublicCredentialUpdate
+func (t ApplicationCredentialUpdate) AsPublicCredentialUpdate() (PublicCredentialUpdate, error) {
+	var body PublicCredentialUpdate
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPublicCredentialUpdate overwrites any union data inside the ApplicationCredentialUpdate as the provided PublicCredentialUpdate
+func (t *ApplicationCredentialUpdate) FromPublicCredentialUpdate(v PublicCredentialUpdate) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePublicCredentialUpdate performs a merge with any union data inside the ApplicationCredentialUpdate, using the provided PublicCredentialUpdate
+func (t *ApplicationCredentialUpdate) MergePublicCredentialUpdate(v PublicCredentialUpdate) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ApplicationCredentialUpdate) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ApplicationCredentialUpdate) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -5678,99 +6411,100 @@ func ParseUpdateResourceResponse(rsp *http.Response) (*UpdateResourceResponse, e
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"bv4vAAD//25OMQSm2wAA",
+	"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",
+	"//aF91bN3gAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

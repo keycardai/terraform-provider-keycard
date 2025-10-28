@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -166,6 +167,58 @@ func updateApplicationModelFromAPIResponse(ctx context.Context, app *client.Appl
 	} else {
 		data.OAuth2 = types.ObjectNull(ApplicationOAuth2Model{}.AttributeTypes())
 	}
+
+	return diags
+}
+
+// updateApplicationClientSecretModelFromCreateResponse updates the model with data from the
+// ApplicationCredentialCreateResponse. This function is called only during Create to capture
+// the password (client_secret) which is only returned once.
+func updateApplicationClientSecretModelFromCreateResponse(cred *client.ApplicationCredentialCreateResponse, data *ApplicationClientSecretModel) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	// The response is a union type, we need to check which type we got
+	// For password credentials, we expect ApplicationCredentialPassword
+	passwordCred, err := cred.AsApplicationCredentialPassword()
+	if err != nil {
+		diags.AddError("API Error", fmt.Sprintf("Expected password credential response, got error: %s", err))
+		return diags
+	}
+
+	// Map all fields including the password (client_secret)
+	data.ID = types.StringValue(passwordCred.Id)
+	data.ZoneID = types.StringValue(passwordCred.ZoneId)
+	data.ApplicationID = types.StringValue(passwordCred.ApplicationId)
+	data.ClientID = types.StringValue(passwordCred.Identifier)
+
+	// Password is optional in the response (only returned on creation)
+	data.ClientSecret = types.StringPointerValue(passwordCred.Password)
+
+	return diags
+}
+
+// updateApplicationClientSecretModelFromAPIResponse updates the model with data from the
+// ApplicationCredential API response (from Read operations). This preserves the client_id
+// and client_secret from the existing state since the API doesn't return the password after creation.
+func updateApplicationClientSecretModelFromAPIResponse(cred *client.ApplicationCredential, data *ApplicationClientSecretModel) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	// The response is a union type, we need to check which type we got
+	// For password credentials, we expect ApplicationCredentialPassword
+	passwordCred, err := cred.AsApplicationCredentialPassword()
+	if err != nil {
+		diags.AddError("API Error", fmt.Sprintf("Expected password credential type, got error: %s", err))
+		return diags
+	}
+
+	// Update basic fields
+	data.ID = types.StringValue(passwordCred.Id)
+	data.ZoneID = types.StringValue(passwordCred.ZoneId)
+	data.ApplicationID = types.StringValue(passwordCred.ApplicationId)
+	data.ClientID = types.StringValue(passwordCred.Identifier)
+
+	// password is only ever returned on create, never on read so
+	// client_secret is preserved from existing state as it's write-only
 
 	return diags
 }
