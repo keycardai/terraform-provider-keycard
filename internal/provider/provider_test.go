@@ -19,7 +19,6 @@ var testAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServe
 func testAccPreCheck(t *testing.T) {
 	// Check that required environment variables are set
 	requiredEnvVars := []string{
-		"KEYCARD_ORGANIZATION_ID",
 		"KEYCARD_CLIENT_ID",
 		"KEYCARD_CLIENT_SECRET",
 		"KEYCARD_ENDPOINT",

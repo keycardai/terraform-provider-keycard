@@ -10,10 +10,9 @@ import (
 
 // Config holds the configuration parameters needed to create a Keycard API client.
 type Config struct {
-	ClientID       string
-	ClientSecret   string
-	OrganizationID string
-	Endpoint       string
+	ClientID     string
+	ClientSecret string
+	Endpoint     string
 }
 
 // NewAPIClient creates a fully configured Keycard API client with:
@@ -25,7 +24,7 @@ type Config struct {
 // to set up the API client.
 func NewAPIClient(ctx context.Context, config Config) (*ClientWithResponses, error) {
 	// Create OAuth2 token source with built-in retry support for token operations
-	tokenSource := NewTokenSource(config.ClientID, config.ClientSecret, config.OrganizationID, config.Endpoint)
+	tokenSource := NewTokenSource(config.ClientID, config.ClientSecret, config.Endpoint)
 
 	// Create OAuth2-authenticated HTTP client
 	// This client will automatically add Bearer tokens to all requests

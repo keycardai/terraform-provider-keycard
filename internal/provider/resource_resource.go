@@ -19,8 +19,10 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ resource.Resource = &ResourceResource{}
-var _ resource.ResourceWithImportState = &ResourceResource{}
+var (
+	_ resource.Resource                = &ResourceResource{}
+	_ resource.ResourceWithImportState = &ResourceResource{}
+)
 
 func NewResourceResource() resource.Resource {
 	return &ResourceResource{}
@@ -462,7 +464,6 @@ func (r *ResourceResource) ImportState(ctx context.Context, req resource.ImportS
 
 // updateResourceModelFromAPIResponse updates a ResourceModel from an API Resource response.
 func updateResourceModelFromAPIResponse(ctx context.Context, apiResource *client.Resource, data *ResourceModel) (diags diag.Diagnostics) {
-
 	// Set basic fields
 	data.ID = types.StringValue(apiResource.Id)
 	data.ZoneID = types.StringValue(apiResource.ZoneId)
