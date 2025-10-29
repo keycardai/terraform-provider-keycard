@@ -4,14 +4,17 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/datasourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ datasource.DataSource = &ProviderDataSource{}
+var _ datasource.DataSourceWithConfigValidators = &ProviderDataSource{}
 
 func NewProviderDataSource() datasource.DataSource {
 	return &ProviderDataSource{}
@@ -44,8 +47,9 @@ func (d *ProviderDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				MarkdownDescription: "Unique identifier of the provider.",
-				Required:            true,
+				MarkdownDescription: "Unique identifier of the provider. Either `id` or `identifier` must be provided, but not both.",
+				Optional:            true,
+				Computed:            true,
 			},
 			"zone_id": schema.StringAttribute{
 				MarkdownDescription: "The zone this provider belongs to.",
@@ -60,7 +64,8 @@ func (d *ProviderDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 				Computed:            true,
 			},
 			"identifier": schema.StringAttribute{
-				MarkdownDescription: "User-specified identifier, unique within the zone.",
+				MarkdownDescription: "User-specified identifier, unique within the zone. Either `id` or `identifier` must be provided, but not both.",
+				Optional:            true,
 				Computed:            true,
 			},
 			"client_id": schema.StringAttribute{
@@ -105,6 +110,15 @@ func (d *ProviderDataSource) Configure(ctx context.Context, req datasource.Confi
 	d.client = client
 }
 
+func (d *ProviderDataSource) ConfigValidators(ctx context.Context) []datasource.ConfigValidator {
+	return []datasource.ConfigValidator{
+		datasourcevalidator.ExactlyOneOf(
+			path.MatchRoot("id"),
+			path.MatchRoot("identifier"),
+		),
+	}
+}
+
 func (d *ProviderDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data ProviderDataSourceModel
 
@@ -115,36 +129,76 @@ func (d *ProviderDataSource) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
-	// Get the provider
-	getResp, err := d.client.GetProviderWithResponse(ctx, data.ZoneID.ValueString(), data.ID.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read provider, got error: %s", err))
-		return
-	}
+	var provider *client.Provider
 
-	if getResp.StatusCode() == 404 {
-		resp.Diagnostics.AddError(
-			"Provider Not Found",
-			fmt.Sprintf("Provider with ID %s not found in zone %s", data.ID.ValueString(), data.ZoneID.ValueString()),
-		)
-		return
-	}
+	if !data.ID.IsNull() {
+		// Lookup by ID
+		getResp, err := d.client.GetProviderWithResponse(ctx, data.ZoneID.ValueString(), data.ID.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read provider, got error: %s", err))
+			return
+		}
 
-	if getResp.StatusCode() != 200 {
-		resp.Diagnostics.AddError(
-			"API Error",
-			fmt.Sprintf("Unable to read provider, got status %d: %s", getResp.StatusCode(), string(getResp.Body)),
-		)
-		return
-	}
+		if getResp.StatusCode() == 404 {
+			resp.Diagnostics.AddError(
+				"Provider Not Found",
+				fmt.Sprintf("Provider with ID %s not found in zone %s", data.ID.ValueString(), data.ZoneID.ValueString()),
+			)
+			return
+		}
 
-	if getResp.JSON200 == nil {
-		resp.Diagnostics.AddError("API Error", "Unable to read provider, no response body")
-		return
+		if getResp.StatusCode() != 200 {
+			resp.Diagnostics.AddError(
+				"API Error",
+				fmt.Sprintf("Unable to read provider, got status %d: %s", getResp.StatusCode(), string(getResp.Body)),
+			)
+			return
+		}
+
+		if getResp.JSON200 == nil {
+			resp.Diagnostics.AddError("API Error", "Unable to read provider, no response body")
+			return
+		}
+
+		provider = getResp.JSON200
+	} else {
+		// Lookup by identifier
+		identifier := data.Identifier.ValueString()
+		listResp, err := d.client.ListProvidersWithResponse(ctx, data.ZoneID.ValueString(), &client.ListProvidersParams{
+			Identifier: &identifier,
+		})
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list providers: %s", err))
+			return
+		}
+
+		if listResp.JSON200 == nil {
+			resp.Diagnostics.AddError("API Error", "Received empty response from API")
+			return
+		}
+
+		resultCount := len(listResp.JSON200.Items)
+		if resultCount == 0 {
+			resp.Diagnostics.AddError(
+				"Provider Not Found",
+				fmt.Sprintf("No provider found with identifier '%s' in zone '%s'", identifier, data.ZoneID.ValueString()),
+			)
+			return
+		}
+
+		if resultCount > 1 {
+			resp.Diagnostics.AddError(
+				"Multiple Providers Found",
+				fmt.Sprintf("Expected exactly 1 provider with identifier '%s' in zone '%s', but found %d. This indicates a data integrity issue.",
+					identifier, data.ZoneID.ValueString(), resultCount),
+			)
+			return
+		}
+
+		provider = &listResp.JSON200.Items[0]
 	}
 
 	// Update the model with the response data
-	provider := getResp.JSON200
 	resp.Diagnostics.Append(updateProviderDataSourceModelFromAPIResponse(ctx, provider, &data)...)
 	if resp.Diagnostics.HasError() {
 		return

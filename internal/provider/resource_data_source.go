@@ -4,14 +4,17 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/datasourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ datasource.DataSource = &ResourceDataSource{}
+var _ datasource.DataSourceWithConfigValidators = &ResourceDataSource{}
 
 func NewResourceDataSource() datasource.DataSource {
 	return &ResourceDataSource{}
@@ -32,8 +35,9 @@ func (d *ResourceDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				MarkdownDescription: "Unique identifier of the resource.",
-				Required:            true,
+				MarkdownDescription: "Unique identifier of the resource. Either `id` or `identifier` must be provided, but not both.",
+				Optional:            true,
+				Computed:            true,
 			},
 			"zone_id": schema.StringAttribute{
 				MarkdownDescription: "The zone this resource belongs to.",
@@ -48,7 +52,8 @@ func (d *ResourceDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 				Computed:            true,
 			},
 			"identifier": schema.StringAttribute{
-				MarkdownDescription: "Unique identifier for the resource, typically its URL or URN.",
+				MarkdownDescription: "User-specified identifier for the resource, typically its URL or URN. Either `id` or `identifier` must be provided, but not both.",
+				Optional:            true,
 				Computed:            true,
 			},
 			"credential_provider_id": schema.StringAttribute{
@@ -104,6 +109,15 @@ func (d *ResourceDataSource) Configure(ctx context.Context, req datasource.Confi
 	d.client = client
 }
 
+func (d *ResourceDataSource) ConfigValidators(ctx context.Context) []datasource.ConfigValidator {
+	return []datasource.ConfigValidator{
+		datasourcevalidator.ExactlyOneOf(
+			path.MatchRoot("id"),
+			path.MatchRoot("identifier"),
+		),
+	}
+}
+
 func (d *ResourceDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data ResourceModel
 
@@ -114,36 +128,77 @@ func (d *ResourceDataSource) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
-	// Get the resource
-	getResp, err := d.client.GetResourceWithResponse(ctx, data.ZoneID.ValueString(), data.ID.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read resource, got error: %s", err))
-		return
-	}
+	var resource *client.Resource
 
-	if getResp.StatusCode() == 404 {
-		resp.Diagnostics.AddError(
-			"Resource Not Found",
-			fmt.Sprintf("Resource with ID %s not found in zone %s", data.ID.ValueString(), data.ZoneID.ValueString()),
-		)
-		return
-	}
+	if !data.ID.IsNull() {
+		// Lookup by ID
+		getResp, err := d.client.GetResourceWithResponse(ctx, data.ZoneID.ValueString(), data.ID.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read resource, got error: %s", err))
+			return
+		}
 
-	if getResp.StatusCode() != 200 {
-		resp.Diagnostics.AddError(
-			"API Error",
-			fmt.Sprintf("Unable to read resource, got status %d: %s", getResp.StatusCode(), string(getResp.Body)),
-		)
-		return
-	}
+		if getResp.StatusCode() == 404 {
+			resp.Diagnostics.AddError(
+				"Resource Not Found",
+				fmt.Sprintf("Resource with ID %s not found in zone %s", data.ID.ValueString(), data.ZoneID.ValueString()),
+			)
+			return
+		}
 
-	if getResp.JSON200 == nil {
-		resp.Diagnostics.AddError("API Error", "Unable to read resource, no response body")
-		return
+		if getResp.StatusCode() != 200 {
+			resp.Diagnostics.AddError(
+				"API Error",
+				fmt.Sprintf("Unable to read resource, got status %d: %s", getResp.StatusCode(), string(getResp.Body)),
+			)
+			return
+		}
+
+		if getResp.JSON200 == nil {
+			resp.Diagnostics.AddError("API Error", "Unable to read resource, no response body")
+			return
+		}
+
+		resource = getResp.JSON200
+	} else {
+		// Lookup by identifier
+		identifier := data.Identifier.ValueString()
+		listResp, err := d.client.ListResourcesWithResponse(ctx, data.ZoneID.ValueString(), &client.ListResourcesParams{
+			Identifier: &identifier,
+		})
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list resources: %s", err))
+			return
+		}
+
+		if listResp.JSON200 == nil {
+			resp.Diagnostics.AddError("API Error", "Received empty response from API")
+			return
+		}
+
+		resultCount := len(listResp.JSON200.Items)
+		if resultCount == 0 {
+			resp.Diagnostics.AddError(
+				"Resource Not Found",
+				fmt.Sprintf("No resource found with identifier '%s' in zone '%s'", identifier, data.ZoneID.ValueString()),
+			)
+			return
+		}
+
+		if resultCount > 1 {
+			resp.Diagnostics.AddError(
+				"Multiple Resources Found",
+				fmt.Sprintf("Expected exactly 1 resource with identifier '%s' in zone '%s', but found %d. This indicates a data integrity issue.",
+					identifier, data.ZoneID.ValueString(), resultCount),
+			)
+			return
+		}
+
+		resource = &listResp.JSON200.Items[0]
 	}
 
 	// Update the model with the response data
-	resp.Diagnostics.Append(updateResourceModelFromAPIResponse(ctx, getResp.JSON200, &data)...)
+	resp.Diagnostics.Append(updateResourceModelFromAPIResponse(ctx, resource, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}

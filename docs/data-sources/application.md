@@ -14,30 +14,36 @@ Reads a Keycard application. An application is a software system with an associa
 
 ```terraform
 # Fetch an existing application by zone_id and id
-data "keycard_application" "example" {
+data "keycard_application" "by_id" {
   zone_id = "etx6ju28wu5ibs3shgxqwwwpw0"
   id      = "app123456789"
 }
 
+# Fetch an existing application by zone_id and identifier
+data "keycard_application" "by_identifier" {
+  zone_id    = "etx6ju28wu5ibs3shgxqwwwpw0"
+  identifier = "https://app.example.com"
+}
+
 # Output the application details
 output "application_name" {
-  value = data.keycard_application.example.name
+  value = data.keycard_application.by_id.name
 }
 
 output "application_identifier" {
-  value = data.keycard_application.example.identifier
+  value = data.keycard_application.by_id.identifier
 }
 
 output "application_description" {
-  value = data.keycard_application.example.description
+  value = data.keycard_application.by_id.description
 }
 
 output "application_metadata" {
-  value = data.keycard_application.example.metadata
+  value = data.keycard_application.by_id.metadata
 }
 
 output "application_oauth2_redirect_uris" {
-  value = data.keycard_application.example.oauth2.redirect_uris
+  value = data.keycard_application.by_id.oauth2.redirect_uris
 }
 
 # Use with an application resource
@@ -63,9 +69,16 @@ resource "keycard_application" "web_app" {
   }
 }
 
-data "keycard_application" "lookup" {
+# Lookup by ID
+data "keycard_application" "lookup_by_id" {
   zone_id = keycard_application.web_app.zone_id
   id      = keycard_application.web_app.id
+}
+
+# Lookup by identifier
+data "keycard_application" "lookup_by_identifier" {
+  zone_id    = keycard_application.web_app.zone_id
+  identifier = keycard_application.web_app.identifier
 }
 ```
 
@@ -74,13 +87,16 @@ data "keycard_application" "lookup" {
 
 ### Required
 
-- `id` (String) Unique identifier of the application.
 - `zone_id` (String) The zone this application belongs to.
+
+### Optional
+
+- `id` (String) Unique identifier of the application. Either `id` or `identifier` must be provided, but not both.
+- `identifier` (String) User-specified identifier for the application, typically its URL or URN. Must be unique within the zone. Either `id` or `identifier` must be provided, but not both.
 
 ### Read-Only
 
 - `description` (String) Optional description of the application's purpose. May be empty.
-- `identifier` (String) Unique identifier for the application, typically its URL or URN. Must be unique within the zone.
 - `metadata` (Attributes) Metadata associated with the application. May be empty. (see [below for nested schema](#nestedatt--metadata))
 - `name` (String) Human-readable name for the application.
 - `oauth2` (Attributes) OAuth2 configuration for the application. May be empty. (see [below for nested schema](#nestedatt--oauth2))
