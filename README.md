@@ -24,9 +24,8 @@ terraform {
 }
 
 provider "keycard" {
-  organization_id = var.keycard_organization_id
-  client_id       = var.keycard_client_id
-  client_secret   = var.keycard_client_secret
+  client_id     = var.keycard_client_id
+  client_secret = var.keycard_client_secret
 }
 ```
 
@@ -89,17 +88,15 @@ The provider requires OAuth2 client credentials for authentication with the Keyc
 
 ```hcl
 provider "keycard" {
-  organization_id = "your-org-id"
-  client_id       = "your-client-id"
-  client_secret   = "your-client-secret"
-  endpoint        = "https://api.keycard.ai"  # Optional, defaults to production API
+  client_id     = "your-client-id"
+  client_secret = "your-client-secret"
+  endpoint      = "https://api.keycard.ai"  # Optional, defaults to production API
 }
 ```
 
 ### 2. Environment Variables (recommended)
 
 ```bash
-export KEYCARD_ORGANIZATION_ID="your-org-id"
 export KEYCARD_CLIENT_ID="your-client-id"
 export KEYCARD_CLIENT_SECRET="your-client-secret"
 export KEYCARD_ENDPOINT="https://api.keycard.ai"  # Optional
@@ -108,11 +105,6 @@ export KEYCARD_ENDPOINT="https://api.keycard.ai"  # Optional
 ### 3. Terraform Variables
 
 ```hcl
-variable "keycard_organization_id" {
-  type      = string
-  sensitive = true
-}
-
 variable "keycard_client_id" {
   type      = string
   sensitive = true
@@ -124,9 +116,8 @@ variable "keycard_client_secret" {
 }
 
 provider "keycard" {
-  organization_id = var.keycard_organization_id
-  client_id       = var.keycard_client_id
-  client_secret   = var.keycard_client_secret
+  client_id     = var.keycard_client_id
+  client_secret = var.keycard_client_secret
 }
 ```
 

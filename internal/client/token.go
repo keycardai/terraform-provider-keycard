@@ -13,8 +13,8 @@ import (
 // NewTokenSource creates an OAuth2 token source for Keycard API authentication.
 // The token source automatically handles token caching and refresh, with retry
 // logic for 429 (rate limit) and 5xx errors on token fetch operations.
-func NewTokenSource(clientID, clientSecret, organizationID, endpoint string) oauth2.TokenSource {
-	tokenURL := fmt.Sprintf("%s/organizations/%s/service-account-token", endpoint, organizationID)
+func NewTokenSource(clientID, clientSecret, endpoint string) oauth2.TokenSource {
+	tokenURL := fmt.Sprintf("%s/service-account-token", endpoint)
 
 	// Create a retryable HTTP client that will handle 429 and 5xx errors
 	// when fetching and refreshing tokens

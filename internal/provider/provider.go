@@ -18,9 +18,11 @@ import (
 const defaultEndpoint = "https://api.keycard.ai"
 
 // Ensure ScaffoldingProvider satisfies various provider interfaces.
-var _ provider.Provider = &ScaffoldingProvider{}
-var _ provider.ProviderWithFunctions = &ScaffoldingProvider{}
-var _ provider.ProviderWithEphemeralResources = &ScaffoldingProvider{}
+var (
+	_ provider.Provider                       = &ScaffoldingProvider{}
+	_ provider.ProviderWithFunctions          = &ScaffoldingProvider{}
+	_ provider.ProviderWithEphemeralResources = &ScaffoldingProvider{}
+)
 
 // ScaffoldingProvider defines the provider implementation.
 type ScaffoldingProvider struct {
@@ -32,10 +34,9 @@ type ScaffoldingProvider struct {
 
 // KeycardProviderModel describes the provider data model.
 type KeycardProviderModel struct {
-	OrganizationID types.String `tfsdk:"organization_id"`
-	ClientID       types.String `tfsdk:"client_id"`
-	ClientSecret   types.String `tfsdk:"client_secret"`
-	Endpoint       types.String `tfsdk:"endpoint"`
+	ClientID     types.String `tfsdk:"client_id"`
+	ClientSecret types.String `tfsdk:"client_secret"`
+	Endpoint     types.String `tfsdk:"endpoint"`
 }
 
 func (p *ScaffoldingProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -48,10 +49,6 @@ func (p *ScaffoldingProvider) Schema(ctx context.Context, req provider.SchemaReq
 		MarkdownDescription: "The Keycard provider is used to interact with Keycard resources. " +
 			"The provider requires OAuth2 client credentials authentication to be configured.",
 		Attributes: map[string]schema.Attribute{
-			"organization_id": schema.StringAttribute{
-				MarkdownDescription: "The Keycard organization ID. Can also be set via the `KEYCARD_ORGANIZATION_ID` environment variable.",
-				Optional:            true,
-			},
 			"client_id": schema.StringAttribute{
 				MarkdownDescription: "The OAuth2 client ID for authentication. Can also be set via the `KEYCARD_CLIENT_ID` environment variable.",
 				Optional:            true,
@@ -79,11 +76,6 @@ func (p *ScaffoldingProvider) Configure(ctx context.Context, req provider.Config
 	}
 
 	// Read configuration values with environment variable fallback
-	organizationID := data.OrganizationID.ValueString()
-	if organizationID == "" {
-		organizationID = os.Getenv("KEYCARD_ORGANIZATION_ID")
-	}
-
 	clientID := data.ClientID.ValueString()
 	if clientID == "" {
 		clientID = os.Getenv("KEYCARD_CLIENT_ID")
@@ -103,15 +95,6 @@ func (p *ScaffoldingProvider) Configure(ctx context.Context, req provider.Config
 	}
 
 	// Validate required parameters
-	if organizationID == "" {
-		resp.Diagnostics.AddError(
-			"Missing Organization ID",
-			"The provider cannot create the Keycard API client as there is a missing or empty value for the organization ID. "+
-				"Set the organization_id value in the configuration or use the KEYCARD_ORGANIZATION_ID environment variable. "+
-				"If either is already set, ensure the value is not empty.",
-		)
-	}
-
 	if clientID == "" {
 		resp.Diagnostics.AddError(
 			"Missing Client ID",
@@ -132,10 +115,9 @@ func (p *ScaffoldingProvider) Configure(ctx context.Context, req provider.Config
 
 	// Create fully configured API client with OAuth2, retries, and logging
 	apiClient, err := client.NewAPIClient(ctx, client.Config{
-		ClientID:       clientID,
-		ClientSecret:   clientSecret,
-		OrganizationID: organizationID,
-		Endpoint:       endpoint,
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		Endpoint:     endpoint,
 	})
 	if err != nil {
 		resp.Diagnostics.AddError(
