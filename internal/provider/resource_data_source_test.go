@@ -235,6 +235,92 @@ func TestAccResourceDataSource_notFound(t *testing.T) {
 	})
 }
 
+func TestAccResourceDataSource_byIdentifier(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+	providerName := acctest.RandomWithPrefix("tftest-provider")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create a resource and fetch it by identifier
+			{
+				Config: testAccResourceDataSourceConfig_byIdentifier(zoneName, providerName, rName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					// Verify data source attributes match the resource
+					resource.TestCheckResourceAttrPair(
+						"data.keycard_resource.test", "id",
+						"keycard_resource.test", "id",
+					),
+					resource.TestCheckResourceAttrPair(
+						"data.keycard_resource.test", "zone_id",
+						"keycard_resource.test", "zone_id",
+					),
+					resource.TestCheckResourceAttrPair(
+						"data.keycard_resource.test", "name",
+						"keycard_resource.test", "name",
+					),
+					resource.TestCheckResourceAttrPair(
+						"data.keycard_resource.test", "identifier",
+						"keycard_resource.test", "identifier",
+					),
+					resource.TestCheckResourceAttr("data.keycard_resource.test", "name", rName),
+					resource.TestCheckResourceAttr("data.keycard_resource.test", "identifier", "https://"+rName+".example.com"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceDataSource_byIdentifier_notFound(t *testing.T) {
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Attempt to fetch a resource by identifier that doesn't exist
+			{
+				Config:      testAccResourceDataSourceConfig_byIdentifier_notFound(zoneName),
+				ExpectError: regexp.MustCompile("Resource Not Found"),
+			},
+		},
+	})
+}
+
+func TestAccResourceDataSource_validation_bothIdAndIdentifier(t *testing.T) {
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Attempt to provide both id and identifier
+			{
+				Config:      testAccResourceDataSourceConfig_bothIdAndIdentifier(zoneName),
+				ExpectError: regexp.MustCompile("Invalid Attribute Combination"),
+			},
+		},
+	})
+}
+
+func TestAccResourceDataSource_validation_neitherIdNorIdentifier(t *testing.T) {
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Attempt to provide neither id nor identifier
+			{
+				Config:      testAccResourceDataSourceConfig_neitherIdNorIdentifier(zoneName),
+				ExpectError: regexp.MustCompile("Missing Attribute Configuration"),
+			},
+		},
+	})
+}
+
 func testAccResourceDataSourceConfig_basic(zoneName, providerName, resourceName string) string {
 	return fmt.Sprintf(`
 resource "keycard_zone" "test" {
@@ -432,6 +518,71 @@ resource "keycard_zone" "test" {
 data "keycard_resource" "test" {
   zone_id = keycard_zone.test.id
   id      = "non-existent-resource-id-12345"
+}
+`, zoneName)
+}
+
+func testAccResourceDataSourceConfig_byIdentifier(zoneName, providerName, resourceName string) string {
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+}
+
+resource "keycard_provider" "test" {
+  name       = %[2]q
+  identifier = "https://%[2]s.example.com"
+  zone_id    = keycard_zone.test.id
+}
+
+resource "keycard_resource" "test" {
+  name                   = %[3]q
+  identifier             = "https://%[3]s.example.com"
+  zone_id                = keycard_zone.test.id
+  credential_provider_id = keycard_provider.test.id
+}
+
+data "keycard_resource" "test" {
+  zone_id    = keycard_resource.test.zone_id
+  identifier = keycard_resource.test.identifier
+}
+`, zoneName, providerName, resourceName)
+}
+
+func testAccResourceDataSourceConfig_byIdentifier_notFound(zoneName string) string {
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+}
+
+data "keycard_resource" "test" {
+  zone_id    = keycard_zone.test.id
+  identifier = "https://non-existent-resource.example.com"
+}
+`, zoneName)
+}
+
+func testAccResourceDataSourceConfig_bothIdAndIdentifier(zoneName string) string {
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+}
+
+data "keycard_resource" "test" {
+  zone_id    = keycard_zone.test.id
+  id         = "some-id"
+  identifier = "https://some-resource.example.com"
+}
+`, zoneName)
+}
+
+func testAccResourceDataSourceConfig_neitherIdNorIdentifier(zoneName string) string {
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+}
+
+data "keycard_resource" "test" {
+  zone_id = keycard_zone.test.id
 }
 `, zoneName)
 }
