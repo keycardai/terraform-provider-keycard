@@ -90,7 +90,7 @@ The provider requires OAuth2 client credentials for authentication with the Keyc
 provider "keycard" {
   client_id     = "your-client-id"
   client_secret = "your-client-secret"
-  endpoint      = "https://api.keycard.ai"  # Optional, defaults to production API
+  endpoint      = "https://api.keycard.ai"  # Optional
 }
 ```
 

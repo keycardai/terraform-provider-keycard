@@ -59,7 +59,7 @@ func (p *ScaffoldingProvider) Schema(ctx context.Context, req provider.SchemaReq
 				Sensitive:           true,
 			},
 			"endpoint": schema.StringAttribute{
-				MarkdownDescription: "The Keycard API endpoint. Can also be set via the `KEYCARD_ENDPOINT` environment variable. Defaults to production API.",
+				MarkdownDescription: "The Keycard API endpoint. Can also be set via the `KEYCARD_ENDPOINT` environment variable. Defaults to https://api.keycard.ai.",
 				Optional:            true,
 			},
 		},

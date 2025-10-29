@@ -15,8 +15,7 @@ The Keycard provider is used to interact with Keycard resources. The provider re
 provider "keycard" {
   client_id     = "your-client-id"
   client_secret = "your-client-secret"
-  # Optional: Configure the keycard API to use. defaults to https://api.keycard.ai.
-  endpoint      = "https://api.keycard.ai"
+  endpoint      = "https://api.keycard.ai" # Optional, defaults to production API
 }
 ```
 
@@ -27,4 +26,4 @@ provider "keycard" {
 
 - `client_id` (String) The OAuth2 client ID for authentication. Can also be set via the `KEYCARD_CLIENT_ID` environment variable.
 - `client_secret` (String, Sensitive) The OAuth2 client secret for authentication. Can also be set via the `KEYCARD_CLIENT_SECRET` environment variable.
-- `endpoint` (String) The Keycard API endpoint. Can also be set via the `KEYCARD_ENDPOINT` environment variable. Defaults to production API.
+- `endpoint` (String) The Keycard API endpoint. Can also be set via the `KEYCARD_ENDPOINT` environment variable. Defaults to https://api.keycard.ai.
