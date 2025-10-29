@@ -13,20 +13,20 @@ Manages a Keycard zone. Zones are isolated environments for organizing IAM resou
 ## Example Usage
 
 ```terraform
-# Basic zone configuration with just a name
-resource "keycard_zone" "basic" {
-  name = "my-zone"
+# Basic zone configuration
+resource "keycard_zone" "development" {
+  name = "Development"
 }
 
-# Zone with description
-resource "keycard_zone" "with_description" {
-  name        = "production-zone"
-  description = "Production environment zone for customer-facing resources"
+# Production zone with description
+resource "keycard_zone" "production" {
+  name        = "Production"
+  description = "Production environment for customer-facing applications"
 }
 
 # Zone with custom OAuth2 configuration
-resource "keycard_zone" "with_oauth2" {
-  name        = "custom-oauth2-zone"
+resource "keycard_zone" "custom" {
+  name        = "Custom OAuth2"
   description = "Zone with customized OAuth2 settings"
 
   oauth2 {
@@ -35,15 +35,12 @@ resource "keycard_zone" "with_oauth2" {
   }
 }
 
-# The zone resource provides computed OAuth2 protocol URIs
-output "oauth2_issuer" {
-  description = "OAuth 2.0 issuer URI for the zone"
-  value       = keycard_zone.with_oauth2.oauth2.issuer_uri
-}
-
-output "oauth2_redirect_uri" {
-  description = "OAuth 2.0 redirect URI for the zone"
-  value       = keycard_zone.with_oauth2.oauth2.redirect_uri
+# Using zone OAuth2 redirect URI with external OAuth providers
+# The zone provides a redirect_uri that can be used when configuring OAuth apps
+resource "okta_app_oauth" "example" {
+  label         = "My Application"
+  type          = "web"
+  redirect_uris = [keycard_zone.production.oauth2.redirect_uri]
 }
 ```
 

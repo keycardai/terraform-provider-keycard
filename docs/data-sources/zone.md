@@ -13,36 +13,21 @@ Fetches information about an existing Keycard zone by ID.
 ## Example Usage
 
 ```terraform
-# Fetch an existing zone by ID
-data "keycard_zone" "example" {
-  id = "etx6ju28wu5ibs3shgxqwwwpw0"
+# Look up an existing zone by ID
+# Useful for referencing zones created outside Terraform
+data "keycard_zone" "production" {
+  id = "my-zone-id"
 }
 
-# Output the zone details
-output "zone_name" {
-  value = data.keycard_zone.example.name
+# Use zone OAuth2 settings when configuring external OAuth applications
+output "zone_redirect_uri" {
+  description = "Redirect URI to use when configuring external OAuth apps"
+  value       = data.keycard_zone.production.oauth2.redirect_uri
 }
 
-output "zone_description" {
-  value = data.keycard_zone.example.description
-}
-
-output "zone_oauth2_settings" {
-  value = {
-    pkce_required = data.keycard_zone.example.oauth2.pkce_required
-    dcr_enabled   = data.keycard_zone.example.oauth2.dcr_enabled
-    issuer_uri    = data.keycard_zone.example.oauth2.issuer_uri
-    redirect_uri  = data.keycard_zone.example.oauth2.redirect_uri
-  }
-}
-
-# Use with a zone resource
-resource "keycard_zone" "my_zone" {
-  name = "my-zone"
-}
-
-data "keycard_zone" "lookup" {
-  id = keycard_zone.my_zone.id
+output "zone_issuer_uri" {
+  description = "OAuth2 issuer URI for the zone"
+  value       = data.keycard_zone.production.oauth2.issuer_uri
 }
 ```
 
