@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/datasourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -13,7 +14,7 @@ import (
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ datasource.DataSource = &ApplicationDataSource{}
-var _ datasource.DataSourceWithValidateConfig = &ApplicationDataSource{}
+var _ datasource.DataSourceWithConfigValidators = &ApplicationDataSource{}
 
 func NewApplicationDataSource() datasource.DataSource {
 	return &ApplicationDataSource{}
@@ -100,32 +101,12 @@ func (d *ApplicationDataSource) Configure(ctx context.Context, req datasource.Co
 	d.client = client
 }
 
-func (d *ApplicationDataSource) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
-	var data ApplicationModel
-
-	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Validate exactly one of id or identifier is provided
-	if data.ID.IsNull() && data.Identifier.IsNull() {
-		resp.Diagnostics.AddAttributeError(
-			path.Root("id"),
-			"Missing Required Attribute",
-			"Either 'id' or 'identifier' must be provided",
-		)
-		return
-	}
-
-	if !data.ID.IsNull() && !data.Identifier.IsNull() {
-		resp.Diagnostics.AddAttributeError(
-			path.Root("id"),
-			"Conflicting Attributes",
-			"Cannot provide both 'id' and 'identifier'",
-		)
-		return
+func (d *ApplicationDataSource) ConfigValidators(ctx context.Context) []datasource.ConfigValidator {
+	return []datasource.ConfigValidator{
+		datasourcevalidator.ExactlyOneOf(
+			path.MatchRoot("id"),
+			path.MatchRoot("identifier"),
+		),
 	}
 }
 
