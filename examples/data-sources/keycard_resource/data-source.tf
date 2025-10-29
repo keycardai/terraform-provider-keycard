@@ -1,36 +1,42 @@
 # Fetch an existing resource by zone_id and id
-data "keycard_resource" "example" {
+data "keycard_resource" "by_id" {
   zone_id = "etx6ju28wu5ibs3shgxqwwwpw0"
   id      = "res123456789"
 }
 
+# Fetch an existing resource by zone_id and identifier
+data "keycard_resource" "by_identifier" {
+  zone_id    = "etx6ju28wu5ibs3shgxqwwwpw0"
+  identifier = "https://api.example.com"
+}
+
 # Output the resource details
 output "resource_name" {
-  value = data.keycard_resource.example.name
+  value = data.keycard_resource.by_id.name
 }
 
 output "resource_identifier" {
-  value = data.keycard_resource.example.identifier
+  value = data.keycard_resource.by_id.identifier
 }
 
 output "resource_description" {
-  value = data.keycard_resource.example.description
+  value = data.keycard_resource.by_id.description
 }
 
 output "resource_metadata" {
-  value = data.keycard_resource.example.metadata
+  value = data.keycard_resource.by_id.metadata
 }
 
 output "resource_oauth2_scopes" {
-  value = data.keycard_resource.example.oauth2.scopes
+  value = data.keycard_resource.by_id.oauth2.scopes
 }
 
 output "resource_credential_provider_id" {
-  value = data.keycard_resource.example.credential_provider_id
+  value = data.keycard_resource.by_id.credential_provider_id
 }
 
 output "resource_application_id" {
-  value = data.keycard_resource.example.application_id
+  value = data.keycard_resource.by_id.application_id
 }
 
 # Use with a resource resource
@@ -68,7 +74,13 @@ resource "keycard_resource" "api" {
 }
 
 # Lookup the resource by ID
-data "keycard_resource" "lookup" {
+data "keycard_resource" "lookup_by_id" {
   zone_id = keycard_resource.api.zone_id
   id      = keycard_resource.api.id
+}
+
+# Lookup the resource by identifier
+data "keycard_resource" "lookup_by_identifier" {
+  zone_id    = keycard_resource.api.zone_id
+  identifier = keycard_resource.api.identifier
 }
