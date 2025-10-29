@@ -30,8 +30,8 @@ func NewAPIClient(ctx context.Context, config Config) (*ClientWithResponses, err
 	// This client will automatically add Bearer tokens to all requests
 	oauthClient := oauth2.NewClient(ctx, tokenSource)
 
-	// TODO: determine what this should actually be once we can determine where the
-	// acceptance tests are failing.
+	// 5 second timeout for API operations - balances responsiveness with reliability.
+	// Retry logic at the transport level handles transient failures and rate limits.
 	oauthClient.Timeout = 5 * time.Second
 
 	// Wrap with our logging client to capture request/response details
