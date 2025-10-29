@@ -173,7 +173,6 @@ func (p *ScaffoldingProvider) DataSources(ctx context.Context) []func() datasour
 		NewZoneDataSource,
 		NewProviderDataSource,
 		NewZoneUserIdentityConfigDataSource,
-		NewZoneDirectoryDataSource,
 		NewApplicationDataSource,
 		NewApplicationWorkloadIdentityDataSource,
 		NewResourceDataSource,
