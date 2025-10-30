@@ -1,16 +1,12 @@
-# Fetch an existing workload identity credential
-data "keycard_application_workload_identity" "example" {
-  zone_id = "zone-abc123"
-  id      = "cred-xyz789"
+# Look up an existing workload identity by zone_id and id
+# Useful for referencing workload identities credentials created outside Terraform
+data "keycard_application_workload_identity" "okta_mcp" {
+  zone_id = keycard_zone.production.id
+  id      = var.keycard_workload_identity_id
 }
 
-# Use the data source outputs
-output "workload_identity_subject" {
-  value       = data.keycard_application_workload_identity.example.subject
-  description = "The subject constraint for this workload identity"
-}
-
-output "workload_identity_provider" {
-  value       = data.keycard_application_workload_identity.example.provider_id
-  description = "The provider that validates tokens"
+# Use the data source to verify configuration
+output "mcp_service_account_subject" {
+  value       = data.keycard_application_workload_identity.okta_mcp.subject
+  description = "Kubernetes service account subject for Okta MCP server"
 }

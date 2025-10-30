@@ -13,73 +13,57 @@ Manages a Keycard application. An application is a software system with an assoc
 ## Example Usage
 
 ```terraform
-# Create a zone for the application
-resource "keycard_zone" "example" {
-  name        = "my-zone"
-  description = "Example zone for applications"
+# Example zone to create providers in
+resource "keycard_zone" "dev" {
+  name = "Development"
 }
 
-# Basic application with minimal configuration
-resource "keycard_application" "basic" {
-  name       = "My Application"
-  identifier = "https://myapp.example.com"
-  zone_id    = keycard_zone.example.id
+# Google MCP Server application
+# MCP servers typically access multiple APIs on behalf of users
+resource "keycard_application" "google_mcp_server" {
+  name       = "Google MCP Server"
+  identifier = "https://google-mcp.example.com"
+  zone_id    = keycard_zone.dev.id
 }
 
-# Application with description and metadata
-resource "keycard_application" "with_metadata" {
-  name        = "Production Application"
-  description = "Production application accessing protected APIs"
-  identifier  = "https://prod-app.example.com"
-  zone_id     = keycard_zone.example.id
-
-  metadata {
-    docs_url = "https://docs.example.com/prod-app"
-  }
-}
-
-# Application with OAuth2 redirect URIs
-resource "keycard_application" "with_oauth2" {
-  name        = "Web Application"
-  description = "Web application with OAuth2 authorization code flow"
-  identifier  = "https://webapp.example.com"
-  zone_id     = keycard_zone.example.id
+# Okta MCP Server with OAuth2 redirect URIs
+# Web-based MCP servers may need OAuth2 callbacks
+resource "keycard_application" "okta_mcp_server" {
+  name        = "Okta MCP Server"
+  identifier  = "https://okta-mcp.example.com"
+  zone_id     = keycard_zone.dev.id
+  description = "MCP server for Okta API access"
 
   oauth2 {
     redirect_uris = [
-      "https://webapp.example.com/callback",
-      "https://webapp.example.com/auth/callback"
+      "https://okta-mcp.example.com/oauth/callback"
     ]
   }
 }
 
-# Complete application example with all optional fields
-resource "keycard_application" "complete" {
-  name        = "Complete Application"
-  description = "Application demonstrating all available configuration options"
-  identifier  = "https://complete.example.com"
-  zone_id     = keycard_zone.example.id
+# Backend service application
+# Typically accesses resources using service credentials
+resource "keycard_application" "backend_service" {
+  name        = "Backend Service"
+  identifier  = "https://backend.example.com"
+  zone_id     = keycard_zone.dev.id
+  description = "Internal backend service"
+}
 
-  metadata {
-    docs_url = "https://docs.example.com/complete-app"
-  }
+# Mobile application with multiple redirect URIs
+# Mobile apps often need custom URI schemes and web callbacks
+resource "keycard_application" "mobile_app" {
+  name        = "Mobile Application"
+  identifier  = "com.example.mobile"
+  zone_id     = keycard_zone.dev.id
+  description = "iOS and Android mobile application"
 
   oauth2 {
     redirect_uris = [
-      "https://complete.example.com/callback"
+      "com.example.mobile://oauth/callback",
+      "https://app.example.com/mobile/callback"
     ]
   }
-}
-
-# Output application details
-output "basic_app_id" {
-  description = "ID of the basic application"
-  value       = keycard_application.basic.id
-}
-
-output "oauth2_app_id" {
-  description = "ID of the OAuth2 application"
-  value       = keycard_application.with_oauth2.id
 }
 ```
 

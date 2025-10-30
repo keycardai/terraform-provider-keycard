@@ -16,30 +16,24 @@ Configures the user identity provider for a Keycard zone. This resource manages 
 ## Example Usage
 
 ```terraform
-# Create a zone
-resource "keycard_zone" "example" {
-  name        = "Example Zone"
-  description = "An example zone for demonstrating user identity provider configuration"
+# Example zone to configure
+resource "keycard_zone" "dev" {
+  name = "Development"
 }
 
-# Create a provider for user authentication
+# Okta Oauth Provider for user logins
 resource "keycard_provider" "okta" {
-  zone_id       = keycard_zone.example.id
+  zone_id       = keycard_zone.dev.id
   name          = "Okta"
-  description   = "Okta provider for user authentication"
-  identifier    = "https://dev-123456.okta.com"
-  client_id     = "okta-client-id"
-  client_secret = "okta-client-secret"
-
-  oauth2 = {
-    authorization_endpoint = "https://dev-123456.okta.com/oauth2/v1/authorize"
-    token_endpoint         = "https://dev-123456.okta.com/oauth2/v1/token"
-  }
+  identifier    = "https://integrator-5548280.okta.com"
+  client_id     = var.okta_oauth_client_id
+  client_secret = var.okta_oauth_client_secret
 }
 
-# Configure the zone to use this provider for user authentication
-resource "keycard_zone_user_identity_config" "example" {
-  zone_id     = keycard_zone.example.id
+# Configure the zone to use Okta as the user identity provider
+# Users will authenticate through Okta when accessing resources in this zone
+resource "keycard_zone_user_identity_config" "production" {
+  zone_id     = keycard_zone.dev.id
   provider_id = keycard_provider.okta.id
 }
 ```

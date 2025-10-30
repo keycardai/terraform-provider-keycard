@@ -17,15 +17,15 @@ import (
 // Default endpoint to production API.
 const defaultEndpoint = "https://api.keycard.ai"
 
-// Ensure ScaffoldingProvider satisfies various provider interfaces.
+// Ensure KeycardProvider satisfies various provider interfaces.
 var (
-	_ provider.Provider                       = &ScaffoldingProvider{}
-	_ provider.ProviderWithFunctions          = &ScaffoldingProvider{}
-	_ provider.ProviderWithEphemeralResources = &ScaffoldingProvider{}
+	_ provider.Provider                       = &KeycardProvider{}
+	_ provider.ProviderWithFunctions          = &KeycardProvider{}
+	_ provider.ProviderWithEphemeralResources = &KeycardProvider{}
 )
 
-// ScaffoldingProvider defines the provider implementation.
-type ScaffoldingProvider struct {
+// KeycardProvider defines the provider implementation.
+type KeycardProvider struct {
 	// version is set to the provider version on release, "dev" when the
 	// provider is built and ran locally, and "test" when running acceptance
 	// testing.
@@ -39,12 +39,12 @@ type KeycardProviderModel struct {
 	Endpoint     types.String `tfsdk:"endpoint"`
 }
 
-func (p *ScaffoldingProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
+func (p *KeycardProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
 	resp.TypeName = "keycard"
 	resp.Version = p.version
 }
 
-func (p *ScaffoldingProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
+func (p *KeycardProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "The Keycard provider is used to interact with Keycard resources. " +
 			"The provider requires OAuth2 client credentials authentication to be configured.",
@@ -66,7 +66,7 @@ func (p *ScaffoldingProvider) Schema(ctx context.Context, req provider.SchemaReq
 	}
 }
 
-func (p *ScaffoldingProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+func (p *KeycardProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
 	var data KeycardProviderModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -133,7 +133,7 @@ func (p *ScaffoldingProvider) Configure(ctx context.Context, req provider.Config
 	resp.ResourceData = apiClient
 }
 
-func (p *ScaffoldingProvider) Resources(ctx context.Context) []func() resource.Resource {
+func (p *KeycardProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewZoneResource,
 		NewProviderResource,
@@ -146,11 +146,11 @@ func (p *ScaffoldingProvider) Resources(ctx context.Context) []func() resource.R
 	}
 }
 
-func (p *ScaffoldingProvider) EphemeralResources(ctx context.Context) []func() ephemeral.EphemeralResource {
+func (p *KeycardProvider) EphemeralResources(ctx context.Context) []func() ephemeral.EphemeralResource {
 	return []func() ephemeral.EphemeralResource{}
 }
 
-func (p *ScaffoldingProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
+func (p *KeycardProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewZoneDataSource,
 		NewProviderDataSource,
@@ -161,13 +161,13 @@ func (p *ScaffoldingProvider) DataSources(ctx context.Context) []func() datasour
 	}
 }
 
-func (p *ScaffoldingProvider) Functions(ctx context.Context) []func() function.Function {
+func (p *KeycardProvider) Functions(ctx context.Context) []func() function.Function {
 	return []func() function.Function{}
 }
 
 func New(version string) func() provider.Provider {
 	return func() provider.Provider {
-		return &ScaffoldingProvider{
+		return &KeycardProvider{
 			version: version,
 		}
 	}

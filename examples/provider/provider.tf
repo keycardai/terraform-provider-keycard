@@ -1,5 +1,13 @@
+terraform {
+  required_providers {
+    keycard = {
+      source  = "keycardai/keycard"
+      version = "~> 0.1"
+    }
+  }
+}
+
 provider "keycard" {
-  client_id     = "your-client-id"
-  client_secret = "your-client-secret"
-  endpoint      = "https://api.keycard.ai" # Optional, defaults to production API
+  client_id     = var.keycard_client_id
+  client_secret = var.keycard_client_secret
 }

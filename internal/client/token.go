@@ -25,7 +25,8 @@ func NewTokenSource(clientID, clientSecret, endpoint string) oauth2.TokenSource 
 
 	// Convert to standard HTTP client
 	standardHTTPClient := retryClient.StandardClient()
-	// TODO: determine what this should actually be
+	// 5 second timeout for token operations - sufficient for OAuth2 token exchange
+	// while preventing long hangs. Retry logic handles transient failures.
 	standardHTTPClient.Timeout = 5 * time.Second
 
 	// Add the HTTP client to the context for OAuth2 to use
