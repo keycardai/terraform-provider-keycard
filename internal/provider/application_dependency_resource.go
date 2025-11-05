@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -34,6 +35,7 @@ type ApplicationDependencyModel struct {
 	ZoneID        types.String `tfsdk:"zone_id"`
 	ApplicationID types.String `tfsdk:"application_id"`
 	ResourceID    types.String `tfsdk:"resource_id"`
+	WhenAccessing types.List   `tfsdk:"when_accessing"`
 }
 
 func (r *ApplicationDependencyResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -64,6 +66,14 @@ func (r *ApplicationDependencyResource) Schema(ctx context.Context, req resource
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"when_accessing": schema.ListAttribute{
+				MarkdownDescription: "Optional list of resource identifiers. When specified, the dependency is only active when the application is accessing these specific resources.",
+				ElementType:         types.StringType,
+				Optional:            true,
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
 				},
 			},
 		},
@@ -100,13 +110,26 @@ func (r *ApplicationDependencyResource) Create(ctx context.Context, req resource
 		return
 	}
 
+	// Prepare the when_accessing parameter
+	var params *client.AddApplicationDependencyParams
+	if !data.WhenAccessing.IsNull() && !data.WhenAccessing.IsUnknown() {
+		var whenAccessingSlice []string
+		resp.Diagnostics.Append(data.WhenAccessing.ElementsAs(ctx, &whenAccessingSlice, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		params = &client.AddApplicationDependencyParams{
+			WhenAccessing: &whenAccessingSlice,
+		}
+	}
+
 	// Add the application dependency
 	createResp, err := r.client.AddApplicationDependencyWithResponse(
 		ctx,
 		data.ZoneID.ValueString(),
 		data.ApplicationID.ValueString(),
 		data.ResourceID.ValueString(),
-		nil,
+		params,
 	)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create application dependency, got error: %s", err))
