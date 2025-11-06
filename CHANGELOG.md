@@ -1,3 +1,13 @@
+## 0.1.1
+
+Fixes for Okta integration guide documentation.
+
+DOCUMENTATION:
+
+* Revised Okta integration guide with complete variables declarations
+* Removed broken links from Okta integration guide
+* Added missing MCP server resource to Okta integration guide
+
 ## 0.1.0
 
 Initial release of the Terraform Keycard Provider.
