@@ -179,6 +179,67 @@ make fmt
 make lint
 ```
 
+## Releasing
+
+The provider uses an automated release process powered by [GoReleaser](https://goreleaser.com/) and GitHub Actions. When a version tag is pushed, GitHub Actions automatically builds, signs, and publishes the release.
+
+### Prerequisites
+
+Before creating a release, ensure the following GitHub secrets are configured in the repository:
+
+- `GPG_PRIVATE_KEY` - GPG private key for signing release artifacts
+- `PASSPHRASE` - Passphrase for the GPG private key
+- `GITHUB_TOKEN` - Automatically provided by GitHub Actions
+
+### Release Steps
+
+1. **Update the Changelog**
+
+   Edit [`CHANGELOG.md`](./CHANGELOG.md) to document all changes in the new version. Follow the existing format with sections for FEATURES, RESOURCES, DATA SOURCES, and DOCUMENTATION.
+
+   ```markdown
+   ## [x.y.z] - YYYY-MM-DD
+
+   ### FEATURES
+   - New feature description
+
+   ### RESOURCES
+   - Resource changes
+
+   ### DATA SOURCES
+   - Data source changes
+   ```
+
+2. **Create and Push a Version Tag**
+
+   Create a git tag following semantic versioning (e.g., `v1.0.0`, `v0.2.1`):
+
+   ```bash
+   # Create an annotated tag
+   git tag -a v0.2.0 -m "Release v0.2.0"
+
+   # Push the tag to GitHub
+   git push origin v0.2.0
+   ```
+
+3. **Monitor the Release**
+
+   GitHub Actions will automatically:
+   - Build binaries for multiple platforms (Linux, macOS, Windows, FreeBSD)
+   - Build for multiple architectures (amd64, 386, arm, arm64)
+   - Generate SHA256 checksums
+   - Sign checksums with GPG
+   - Create a GitHub release with all artifacts
+   - Include `terraform-registry-manifest.json` for registry compatibility
+
+   Monitor the release workflow at: `https://github.com/keycardai/terraform-provider-keycard/actions`
+
+### Terraform Registry
+
+After a successful GitHub release, the Terraform Registry should automatically detect and publish the new version. This typically happens within a few minutes of the release being created.
+
+Verify the new version appears at: `https://registry.terraform.io/providers/keycardai/keycard/latest`
+
 ## Contributing
 
 This provider is maintained internally by the Keycard team. **We do not accept external contributions at this time.**
