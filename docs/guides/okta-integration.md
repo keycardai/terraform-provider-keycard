@@ -26,16 +26,61 @@ keycard_client_id     = "your-keycard-client-id"
 keycard_client_secret = "your-keycard-client-secret"
 
 # Okta credentials
-okta_org_name  = "dev-12345"  # Your Okta organization name
+okta_org_name  = "dev-12345.okta.com"
 okta_api_token = "your-okta-api-token"
 
-# Optional: Customize these if needed
-okta_custom_scope             = "api:access"
-application_identifier        = "https://api.example.com"
-okta_protected_resource_url   = "https://api.example.com/protected"
+# URL of the API protected by Okta
+okta_protected_resource_url = "http://localhost:8000/api"
+
+# Example custom scope for accessing the API protected by Okta
+okta_custom_scope           = "api:access"
+
+# MCP server URL that will call the Okta protected API
+mcp_server_url              = "http://localhost:3000/"
+```
+
+Create a `variables.tf` file with the following variable declarations:
+
+```hcl
+variable "keycard_client_id" {
+  type        = string
+  description = "The client ID for the Keycard API"
+}
+
+variable "keycard_client_secret" {
+  type        = string
+  description = "The client secret for the Keycard API"
+}
+
+variable "okta_api_token" {
+  type        = string
+  description = "The API token for the Okta API"
+}
+
+variable "okta_org_name" {
+  type        = string
+  description = "The organization name for the Okta API"
+}
+
+variable "okta_protected_resource_url" {
+  type        = string
+  description = "The URL for the Okta protected resource"
+}
+
+variable "okta_custom_scope" {
+  type        = string
+  description = "The custom scope for the Okta protected resource"
+}
+
+variable "mcp_server_url" {
+  type        = string
+  description = "MCP server URL"
+}
 ```
 
 ### 2. Apply Terraform
+
+Add a `main.tf` file with the following configuration:
 
 ```hcl
 terraform {
@@ -73,7 +118,7 @@ data "okta_org_metadata" "default" {}
 
 # Create OAuth app in Okta for user authentication
 resource "okta_app_oauth" "keycard_idp" {
-  label               = "Keycard User Authentication"
+  label               = "Keycard Demo IDP"
   type                = "web"
   redirect_uris       = [keycard_zone.okta_demo.oauth2.redirect_uri]
   implicit_assignment = true
@@ -118,6 +163,15 @@ resource "okta_auth_server_policy" "keycard" {
   client_whitelist = [okta_app_oauth.keycard_credentials.client_id]
 }
 
+# Create custom API scope in Okta
+resource "okta_auth_server_scope" "custom_scope" {
+  auth_server_id   = data.okta_auth_server.default.id
+  name             = var.okta_custom_scope
+  description      = "Example custom scope"
+  consent          = "IMPLICIT"
+  metadata_publish = "ALL_CLIENTS"
+}
+
 # Create policy rule to allow required grant types
 resource "okta_auth_server_policy_rule" "keycard" {
   auth_server_id       = data.okta_auth_server.default.id
@@ -125,8 +179,8 @@ resource "okta_auth_server_policy_rule" "keycard" {
   status               = "ACTIVE"
   name                 = "Allow Keycard Access"
   priority             = 1
-  grant_type_whitelist = ["authorization_code", "client_credentials"]
-  scope_whitelist      = [var.okta_custom_scope]
+  grant_type_whitelist = [ "authorization_code", "client_credentials"]
+  scope_whitelist      = [okta_auth_server_scope.custom_scope.name]
   group_whitelist      = ["EVERYONE"]
 }
 
@@ -152,27 +206,42 @@ resource "keycard_resource" "okta_api" {
 }
 
 # Step 5: Create an Application
-resource "keycard_application" "api_server" {
-  name        = "API Server"
-  identifier  = var.application_identifier
+resource "keycard_application" "mcp_server" {
+  name        = "MCP Server"
+  identifier  = var.mcp_server_url
   zone_id     = keycard_zone.okta_demo.id
-  description = "Backend API server accessing Okta-protected resources"
+  description = "MCP server accessing Okta-protected resources"
+}
+
+# Fetch the STS provider for the Zone
+data "keycard_provider" "default" {
+    zone_id = keycard_zone.okta_demo.id
+    identifier = keycard_zone.okta_demo.oauth2.issuer_uri
+}
+
+# Create a resource for the MCP server using the Zone STS provider
+resource "keycard_resource" "mcp_server" {
+  name                   = "MCP Server"
+  identifier             = var.mcp_server_url
+  zone_id                = keycard_zone.okta_demo.id
+  credential_provider_id = data.keycard_provider.default.id
+  application_id         = keycard_application.mcp_server.id
 }
 
 # Generate client credentials for the application
-resource "keycard_application_client_secret" "api_server" {
+resource "keycard_application_client_secret" "mcp_server" {
   zone_id        = keycard_zone.okta_demo.id
-  application_id = keycard_application.api_server.id
+  application_id = keycard_application.mcp_server.id
 }
 
 # Grant the application access to the protected resource
-resource "keycard_application_dependency" "api_server_okta" {
+resource "keycard_application_dependency" "mcp_server_okta" {
   zone_id        = keycard_zone.okta_demo.id
-  application_id = keycard_application.api_server.id
+  application_id = keycard_application.mcp_server.id
   resource_id    = keycard_resource.okta_api.id
 }
 
-# Outputs
+# Outputs for configuring the MCP server
 output "zone_oauth2_redirect_uri" {
   description = "OAuth2 redirect URI - use when configuring OAuth apps"
   value       = keycard_zone.okta_demo.oauth2.redirect_uri
@@ -185,16 +254,18 @@ output "zone_oauth2_issuer_uri" {
 
 output "application_client_id" {
   description = "Client ID for the API server application"
-  value       = keycard_application_client_secret.api_server.client_id
+  value       = keycard_application_client_secret.mcp_server.client_id
   sensitive   = true
 }
 
 output "application_client_secret" {
   description = "Client secret for the API server application"
-  value       = keycard_application_client_secret.api_server.client_secret
+  value       = keycard_application_client_secret.mcp_server.client_secret
   sensitive   = true
 }
 ```
+
+Run `terraform apply -var-file=terraform.tfvars` to deploy this example.
 
 ## What Gets Created
 
@@ -240,7 +311,7 @@ To add additional Okta-protected resources:
 resource "keycard_resource" "another_api" {
   name                   = "Another API"
   identifier             = "https://another-api.example.com"
-  zone_id                = keycard_zone.production.id
+  zone_id                = keycard_zone.okta_example.id
   credential_provider_id = keycard_provider.okta_credentials.id
 
   oauth2 = {
@@ -249,8 +320,8 @@ resource "keycard_resource" "another_api" {
 }
 
 resource "keycard_application_dependency" "api_server_another" {
-  zone_id        = keycard_zone.production.id
-  application_id = keycard_application.api_server.id
+  zone_id        = keycard_zone.okta_example.id
+  application_id = keycard_application.mcp_server.id
   resource_id    = keycard_resource.another_api.id
 }
 ```
@@ -262,15 +333,15 @@ For Kubernetes-based applications, add workload identity:
 ```hcl
 # First, create an EKS provider
 resource "keycard_provider" "eks" {
-  zone_id    = keycard_zone.production.id
+  zone_id    = keycard_zone.okta_demo.id
   name       = "EKS Cluster"
   identifier = "https://oidc.eks.us-east-1.amazonaws.com/id/YOUR-CLUSTER-ID"
 }
 
 # Then configure workload identity
 resource "keycard_application_workload_identity" "api_server_k8s" {
-  zone_id        = keycard_zone.production.id
-  application_id = keycard_application.api_server.id
+  zone_id        = keycard_zone.okta_demo.id
+  application_id = keycard_application.mcp_server.id
   provider_id    = keycard_provider.eks.id
   subject        = "system:serviceaccount:production:api-server-sa"
 }
@@ -293,13 +364,6 @@ If you see errors about OAuth apps not being found, ensure:
 - The OAuth apps were created successfully in Okta
 - You're using the correct Okta organization name
 
-### Authorization Policy Errors
-
-If authorization fails:
-- Verify the custom scope exists in your Okta auth server
-- Check that the policy rule allows the required grant types
-- Ensure the client is whitelisted in the policy
-
 ## Clean Up
 
 To remove all created resources:
@@ -307,12 +371,3 @@ To remove all created resources:
 ```bash
 terraform destroy
 ```
-
-This will remove all Keycard and Okta resources created by this configuration.
-
-## Next Steps
-
-- Explore [Application Resources](../../resources/keycard_application/resource.tf)
-- Learn about [Resource Configuration](../../resources/keycard_resource/resource.tf)
-- Set up [Workload Identity](../../resources/keycard_application_workload_identity/resource.tf)
-- Configure [Multiple Providers](../../resources/keycard_provider/resource.tf)
