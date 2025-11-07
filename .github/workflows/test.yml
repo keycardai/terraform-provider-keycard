@@ -85,6 +85,8 @@ jobs:
           KEYCARD_CLIENT_ID: ${{ secrets.KEYCARD_CLIENT_ID }}
           KEYCARD_CLIENT_SECRET: ${{ secrets.KEYCARD_CLIENT_SECRET }}
           KEYCARD_ENDPOINT: ${{ secrets.KEYCARD_ENDPOINT }}
+          KEYCARD_TEST_KMS_KEY_1: ${{ secrets.KEYCARD_TEST_KMS_KEY_1 }}
+          KEYCARD_TEST_KMS_KEY_2: ${{ secrets.KEYCARD_TEST_KMS_KEY_2 }}
         run: go test -v -cover -timeout 300s -parallel=5 ./internal/provider/
         timeout-minutes: 10
       - name: Upload Terraform test logs
