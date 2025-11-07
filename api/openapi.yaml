@@ -366,6 +366,11 @@ paths:
       summary: List application dependencies
       description: Returns resource dependencies for an application
       parameters:
+        - name: when_accessing
+          in: query
+          required: false
+          schema:
+            type: string
         - name: cursor
           in: query
           required: false
@@ -422,6 +427,13 @@ paths:
       summary: Add application dependency
       description: Adds a resource dependency to an application
       parameters:
+        - name: when_accessing
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
         - name: zoneId
           in: path
           required: true
@@ -847,7 +859,7 @@ paths:
             enum:
               - external
               - keycard-vault
-              - keycard-directory
+              - keycard-sts
         - name: cursor
           in: query
           required: false
@@ -1041,7 +1053,6 @@ paths:
           required: false
           schema:
             type: string
-            format: uuid
         - name: slug
           in: query
           required: false
@@ -1372,6 +1383,22 @@ components:
           $ref: '#/components/schemas/ZoneOAuth2ProtocolUpdate'
       nullable: true
       title: Zone Protocol Update
+    EncryptionKeyAwsKmsConfig:
+      description: 'AWS KMS configuration for zone encryption. When not specified, the default Keycard Cloud encryption key will be used.'
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - aws
+        arn:
+          description: AWS KMS Key ARN for encrypting the zone's data
+          type: string
+          minLength: 1
+      required:
+        - type
+        - arn
+      title: AWS KMS Encryption Key Configuration
     ProviderOAuth2Protocol:
       description: OAuth 2.0 protocol configuration
       type: object
@@ -1720,7 +1747,7 @@ components:
           enum:
             - external
             - keycard-vault
-            - keycard-directory
+            - keycard-sts
         client_id:
           description: OAuth 2.0 client identifier
           type: string
@@ -2117,13 +2144,6 @@ components:
           maxLength: 63
           minLength: 1
           pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
-        provider_id:
-          description: ID of the provider issuing tokens verified by this credential
-          type: string
-        provider:
-          description: 'Deprecated: Nested provider object. Use provider_id to fetch provider separately. When this credential appears nested in another API response, this field will be undefined.'
-          $ref: '#/components/schemas/Provider'
-          deprecated: true
         application_id:
           description: ID of the application this credential belongs to
           type: string
@@ -2144,7 +2164,6 @@ components:
         - organization_id
         - zone_id
         - slug
-        - provider_id
         - application_id
         - created_at
         - updated_at
@@ -2159,6 +2178,13 @@ components:
               type: string
               enum:
                 - token
+            provider_id:
+              description: ID of the provider issuing tokens verified by this credential
+              type: string
+            provider:
+              description: 'Deprecated: Nested provider object. Use provider_id to fetch provider separately. When this credential appears nested in another API response, this field will be undefined.'
+              $ref: '#/components/schemas/Provider'
+              deprecated: true
             identifier:
               description: 'Identifier for this credential. For token type, this equals the subject value, or ''*'' when subject is not specified.'
               type: string
@@ -2168,6 +2194,7 @@ components:
               nullable: true
           required:
             - type
+            - provider_id
             - identifier
       title: Application Credential Token
     ApplicationCredentialPassword:
@@ -2313,6 +2340,10 @@ components:
           type: string
           enum:
             - url
+        identifier:
+          description: URL of the credential (must be a valid URL)
+          type: string
+          format: uri
       title: URL Credential Update
     PublicCredentialUpdate:
       description: Schema for updating a public credential
@@ -2380,6 +2411,8 @@ components:
           required:
             - oauth2
             - openid
+        encryption_key:
+          $ref: '#/components/schemas/EncryptionKeyAwsKmsConfig'
         created_at:
           description: Entity creation timestamp
           type: string
@@ -2418,6 +2451,8 @@ components:
           maxLength: 255
         protocols:
           $ref: '#/components/schemas/ZoneProtocolCreate'
+        encryption_key:
+          $ref: '#/components/schemas/EncryptionKeyAwsKmsConfig'
       required:
         - name
       title: Zone Create
