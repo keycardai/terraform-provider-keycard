@@ -172,3 +172,71 @@ data "keycard_zone" "test" {
 }
 `
 }
+
+func TestAccZoneDataSource_withEncryptionKey(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	kmsArn := "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create a zone with encryption_key and fetch it
+			{
+				Config: testAccZoneDataSourceConfig_withEncryptionKey(rName, kmsArn),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrPair(
+						"data.keycard_zone.test", "id",
+						"keycard_zone.test", "id",
+					),
+					resource.TestCheckResourceAttrPair(
+						"data.keycard_zone.test", "encryption_key.aws.arn",
+						"keycard_zone.test", "encryption_key.aws.arn",
+					),
+					resource.TestCheckResourceAttr("data.keycard_zone.test", "encryption_key.aws.arn", kmsArn),
+				),
+			},
+		},
+	})
+}
+
+func TestAccZoneDataSource_withoutEncryptionKey(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create a zone without encryption_key and fetch it
+			{
+				Config: testAccZoneDataSourceConfig_basic(rName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrPair(
+						"data.keycard_zone.test", "id",
+						"keycard_zone.test", "id",
+					),
+					// Verify encryption_key is not set in data source
+					resource.TestCheckNoResourceAttr("data.keycard_zone.test", "encryption_key.aws.arn"),
+				),
+			},
+		},
+	})
+}
+
+func testAccZoneDataSourceConfig_withEncryptionKey(name, kmsArn string) string {
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+
+  encryption_key = {
+    aws = {
+      arn = %[2]q
+    }
+  }
+}
+
+data "keycard_zone" "test" {
+  id = keycard_zone.test.id
+}
+`, name, kmsArn)
+}

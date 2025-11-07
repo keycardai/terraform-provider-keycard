@@ -261,3 +261,109 @@ resource "keycard_zone" "test" {
 }
 `, name, pkceRequired, dcrEnabled)
 }
+
+func TestAccZoneResource_withEncryptionKey(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	kmsArn := "alias/test-key"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create with encryption_key
+			{
+				Config: testAccZoneResourceConfig_withEncryptionKey(rName, kmsArn),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
+					resource.TestCheckResourceAttr("keycard_zone.test", "encryption_key.aws.arn", kmsArn),
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "id"),
+				),
+			},
+			// ImportState testing
+			{
+				ResourceName:      "keycard_zone.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccZoneResource_encryptionKeyForceReplace(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	kmsArn1 := "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
+	kmsArn2 := "arn:aws:kms:us-west-2:123456789012:key/87654321-4321-4321-4321-210987654321"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create with first encryption_key
+			{
+				Config: testAccZoneResourceConfig_withEncryptionKey(rName, kmsArn1),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
+					resource.TestCheckResourceAttr("keycard_zone.test", "encryption_key.aws.arn", kmsArn1),
+				),
+			},
+			// Change encryption_key ARN - should force replacement
+			{
+				Config: testAccZoneResourceConfig_withEncryptionKey(rName, kmsArn2),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
+					resource.TestCheckResourceAttr("keycard_zone.test", "encryption_key.aws.arn", kmsArn2),
+				),
+			},
+		},
+	})
+}
+
+func TestAccZoneResource_encryptionKeyAddRemove(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	kmsArn := "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create without encryption_key
+			{
+				Config: testAccZoneResourceConfig_basic(rName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
+					resource.TestCheckNoResourceAttr("keycard_zone.test", "encryption_key.aws.arn"),
+				),
+			},
+			// Add encryption_key - should force replacement
+			{
+				Config: testAccZoneResourceConfig_withEncryptionKey(rName, kmsArn),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
+					resource.TestCheckResourceAttr("keycard_zone.test", "encryption_key.aws.arn", kmsArn),
+				),
+			},
+			// Remove encryption_key - should force replacement
+			{
+				Config: testAccZoneResourceConfig_basic(rName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
+					resource.TestCheckNoResourceAttr("keycard_zone.test", "encryption_key.aws.arn"),
+				),
+			},
+		},
+	})
+}
+
+func testAccZoneResourceConfig_withEncryptionKey(name, kmsArn string) string {
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+
+  encryption_key = {
+    aws = {
+      arn = %[2]q
+    }
+  }
+}
+`, name, kmsArn)
+}

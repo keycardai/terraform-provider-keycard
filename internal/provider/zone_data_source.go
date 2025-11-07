@@ -64,6 +64,22 @@ func (d *ZoneDataSource) Schema(ctx context.Context, req datasource.SchemaReques
 					},
 				},
 			},
+			"encryption_key": schema.SingleNestedAttribute{
+				MarkdownDescription: "Encryption key configuration for the zone.",
+				Computed:            true,
+				Attributes: map[string]schema.Attribute{
+					"aws": schema.SingleNestedAttribute{
+						MarkdownDescription: "AWS KMS configuration for encryption.",
+						Computed:            true,
+						Attributes: map[string]schema.Attribute{
+							"arn": schema.StringAttribute{
+								MarkdownDescription: "ARN of the AWS KMS key used for encryption.",
+								Computed:            true,
+							},
+						},
+					},
+				},
+			},
 		},
 	}
 }
