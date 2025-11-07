@@ -41,8 +41,25 @@ output "zone_issuer_uri" {
 ### Read-Only
 
 - `description` (String) Optional description of the zone's purpose. May be empty.
+- `encryption_key` (Attributes) Encryption key configuration for the zone. (see [below for nested schema](#nestedatt--encryption_key))
 - `name` (String) Human-readable name for the zone.
 - `oauth2` (Attributes) OAuth2 configuration for the zone. (see [below for nested schema](#nestedatt--oauth2))
+
+<a id="nestedatt--encryption_key"></a>
+### Nested Schema for `encryption_key`
+
+Read-Only:
+
+- `aws` (Attributes) AWS KMS configuration for encryption. (see [below for nested schema](#nestedatt--encryption_key--aws))
+
+<a id="nestedatt--encryption_key--aws"></a>
+### Nested Schema for `encryption_key.aws`
+
+Read-Only:
+
+- `arn` (String) ARN of the AWS KMS key used for encryption.
+
+
 
 <a id="nestedatt--oauth2"></a>
 ### Nested Schema for `oauth2`
