@@ -2,6 +2,7 @@ package provider
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
@@ -262,37 +263,10 @@ resource "keycard_zone" "test" {
 `, name, pkceRequired, dcrEnabled)
 }
 
-func TestAccZoneResource_withEncryptionKey(t *testing.T) {
-	rName := acctest.RandomWithPrefix("tftest")
-	kmsArn := "alias/test-key"
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		Steps: []resource.TestStep{
-			// Create with encryption_key
-			{
-				Config: testAccZoneResourceConfig_withEncryptionKey(rName, kmsArn),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
-					resource.TestCheckResourceAttr("keycard_zone.test", "encryption_key.aws.arn", kmsArn),
-					resource.TestCheckResourceAttrSet("keycard_zone.test", "id"),
-				),
-			},
-			// ImportState testing
-			{
-				ResourceName:      "keycard_zone.test",
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-	})
-}
-
 func TestAccZoneResource_encryptionKeyForceReplace(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	kmsArn1 := "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
-	kmsArn2 := "arn:aws:kms:us-west-2:123456789012:key/87654321-4321-4321-4321-210987654321"
+	kmsArn1 := os.Getenv("KEYCARD_TEST_KMS_KEY_1")
+	kmsArn2 := os.Getenv("KEYCARD_TEST_KMS_KEY_2")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -320,7 +294,7 @@ func TestAccZoneResource_encryptionKeyForceReplace(t *testing.T) {
 
 func TestAccZoneResource_encryptionKeyAddRemove(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	kmsArn := "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
+	kmsArn := os.Getenv("KEYCARD_TEST_KMS_KEY_1")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },

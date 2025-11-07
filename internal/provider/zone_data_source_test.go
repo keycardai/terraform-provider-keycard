@@ -2,6 +2,7 @@ package provider
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"testing"
 
@@ -175,7 +176,7 @@ data "keycard_zone" "test" {
 
 func TestAccZoneDataSource_withEncryptionKey(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	kmsArn := "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
+	kmsArn := os.Getenv("KEYCARD_TEST_KMS_KEY_1")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
