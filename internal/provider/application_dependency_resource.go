@@ -106,6 +106,7 @@ func (r *ApplicationDependencyResource) Create(ctx context.Context, req resource
 		data.ZoneID.ValueString(),
 		data.ApplicationID.ValueString(),
 		data.ResourceID.ValueString(),
+		nil,
 	)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create application dependency, got error: %s", err))

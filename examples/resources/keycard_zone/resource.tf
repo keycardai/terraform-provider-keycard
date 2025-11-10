@@ -20,6 +20,24 @@ resource "keycard_zone" "custom" {
   }
 }
 
+# Zone with customer-managed encryption key (AWS KMS)
+# WARNING: The encryption_key attribute cannot be changed after zone creation.
+# Adding, removing, or modifying the encryption_key will force replacement of
+# the zone, which destroys and recreates it. Plan carefully before applying changes.
+#
+# Best practice: Specify the encryption_key at zone creation time to ensure
+# all zone data is encrypted with your KMS key from the start.
+resource "keycard_zone" "encrypted" {
+  name        = "Encrypted Zone"
+  description = "Zone with data encrypted using AWS KMS"
+
+  encryption_key {
+    aws {
+      arn = "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
+    }
+  }
+}
+
 # Using zone OAuth2 redirect URI with external OAuth providers
 # The zone provides a redirect_uri that can be used when configuring OAuth apps
 resource "okta_app_oauth" "example" {

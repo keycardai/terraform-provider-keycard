@@ -37,10 +37,11 @@ type ZoneResource struct {
 
 // ZoneResourceModel describes the resource data model.
 type ZoneResourceModel struct {
-	ID          types.String `tfsdk:"id"`
-	Name        types.String `tfsdk:"name"`
-	Description types.String `tfsdk:"description"`
-	OAuth2      types.Object `tfsdk:"oauth2"`
+	ID            types.String `tfsdk:"id"`
+	Name          types.String `tfsdk:"name"`
+	Description   types.String `tfsdk:"description"`
+	OAuth2        types.Object `tfsdk:"oauth2"`
+	EncryptionKey types.Object `tfsdk:"encryption_key"`
 }
 
 // OAuth2Model describes the nested oauth2 block data model.
@@ -57,6 +58,28 @@ func (m OAuth2Model) AttributeTypes() map[string]attr.Type {
 		"dcr_enabled":   types.BoolType,
 		"issuer_uri":    types.StringType,
 		"redirect_uri":  types.StringType,
+	}
+}
+
+// EncryptionKeyConfigModel describes the encryption_key nested block data model.
+type EncryptionKeyConfigModel struct {
+	Aws types.Object `tfsdk:"aws"`
+}
+
+func (m EncryptionKeyConfigModel) AttributeTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"aws": types.ObjectType{AttrTypes: EncryptionKeyAwsKmsConfigModel{}.AttributeTypes()},
+	}
+}
+
+// EncryptionKeyAwsKmsConfigModel describes the encryption_key.aws nested block data model.
+type EncryptionKeyAwsKmsConfigModel struct {
+	Arn types.String `tfsdk:"arn"`
+}
+
+func (m EncryptionKeyAwsKmsConfigModel) AttributeTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"arn": types.StringType,
 	}
 }
 
@@ -126,6 +149,29 @@ func (r *ZoneResource) Schema(ctx context.Context, req resource.SchemaRequest, r
 					objectplanmodifier.UseStateForUnknown(),
 				},
 			},
+			"encryption_key": schema.SingleNestedAttribute{
+				MarkdownDescription: "Customer managed encryption key for the zone. When not specified, uses the default Keycard Cloud encryption key. Changing this value will force replacement of the zone.",
+				Optional:            true,
+				Attributes: map[string]schema.Attribute{
+					"aws": schema.SingleNestedAttribute{
+						MarkdownDescription: "AWS KMS configuration for encryption.",
+						Required:            true,
+						Attributes: map[string]schema.Attribute{
+							"arn": schema.StringAttribute{
+								MarkdownDescription: "ARN of the AWS KMS key to use for encryption.",
+								Required:            true,
+								PlanModifiers: []planmodifier.String{
+									stringplanmodifier.RequiresReplace(),
+								},
+							},
+						},
+					},
+				},
+				PlanModifiers: []planmodifier.Object{
+					objectplanmodifier.RequiresReplace(),
+					objectplanmodifier.UseStateForUnknown(),
+				},
+			},
 		},
 	}
 }
@@ -171,6 +217,30 @@ func updateZoneModelFromAPIResponse(ctx context.Context, zone *client.Zone, data
 	diags.Append(objDiags...)
 	data.OAuth2 = oauth2Obj
 
+	// Handle encryption_key if present in API response
+	if zone.EncryptionKey != nil {
+		// Transform from API format {type: "aws", arn: "..."} to Terraform format {aws: {arn: "..."}}
+		if zone.EncryptionKey.Type == "aws" {
+			awsKmsData := EncryptionKeyAwsKmsConfigModel{
+				Arn: types.StringValue(zone.EncryptionKey.Arn),
+			}
+
+			awsKmsObj, awsObjDiags := types.ObjectValueFrom(ctx, awsKmsData.AttributeTypes(), awsKmsData)
+			diags.Append(awsObjDiags...)
+
+			encryptionKeyData := EncryptionKeyConfigModel{
+				Aws: awsKmsObj,
+			}
+
+			encryptionKeyObj, encObjDiags := types.ObjectValueFrom(ctx, encryptionKeyData.AttributeTypes(), encryptionKeyData)
+			diags.Append(encObjDiags...)
+			data.EncryptionKey = encryptionKeyObj
+		}
+	} else {
+		// No encryption_key in API response
+		data.EncryptionKey = types.ObjectNull(EncryptionKeyConfigModel{}.AttributeTypes())
+	}
+
 	return diags
 }
 
@@ -214,6 +284,32 @@ func (r *ZoneResource) Create(ctx context.Context, req resource.CreateRequest, r
 
 		if !oauth2Data.DcrEnabled.IsNull() && !oauth2Data.DcrEnabled.IsUnknown() {
 			createReq.Protocols.Oauth2.DcrEnabled = oauth2Data.DcrEnabled.ValueBoolPointer()
+		}
+	}
+
+	// Set encryption_key configuration if provided
+	if !data.EncryptionKey.IsNull() && !data.EncryptionKey.IsUnknown() {
+		var encryptionKeyData EncryptionKeyConfigModel
+		diags := data.EncryptionKey.As(ctx, &encryptionKeyData, basetypes.ObjectAsOptions{})
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		// Extract the AWS KMS configuration
+		if !encryptionKeyData.Aws.IsNull() && !encryptionKeyData.Aws.IsUnknown() {
+			var awsData EncryptionKeyAwsKmsConfigModel
+			diags := encryptionKeyData.Aws.As(ctx, &awsData, basetypes.ObjectAsOptions{})
+			resp.Diagnostics.Append(diags...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+
+			// Transform to API format: {type: "aws", arn: "..."}
+			createReq.EncryptionKey = &client.EncryptionKeyAwsKmsConfig{
+				Type: client.Aws,
+				Arn:  awsData.Arn.ValueString(),
+			}
 		}
 	}
 
