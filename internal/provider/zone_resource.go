@@ -152,7 +152,6 @@ func (r *ZoneResource) Schema(ctx context.Context, req resource.SchemaRequest, r
 			"encryption_key": schema.SingleNestedAttribute{
 				MarkdownDescription: "Customer managed encryption key for the zone. When not specified, uses the default Keycard Cloud encryption key. Changing this value will force replacement of the zone.",
 				Optional:            true,
-				Computed:            true,
 				Attributes: map[string]schema.Attribute{
 					"aws": schema.SingleNestedAttribute{
 						MarkdownDescription: "AWS KMS configuration for encryption.",
