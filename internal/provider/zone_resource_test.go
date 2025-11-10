@@ -10,24 +10,26 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-// testAccCheckZoneIDSaved saves the zone ID to a variable for later comparison
-func testAccCheckZoneIDSaved(resourceName string, id *string) resource.TestCheckFunc {
+const zoneResourceName = "keycard_zone.test"
+
+// testAccCheckZoneIDSaved saves the zone ID to a variable for later comparison.
+func testAccCheckZoneIDSaved(id *string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[resourceName]
+		rs, ok := s.RootModule().Resources[zoneResourceName]
 		if !ok {
-			return fmt.Errorf("Not found: %s", resourceName)
+			return fmt.Errorf("Not found: %s", zoneResourceName)
 		}
 		*id = rs.Primary.ID
 		return nil
 	}
 }
 
-// testAccCheckZoneIDUnchanged verifies the zone ID hasn't changed (for updates that should NOT trigger replacement)
-func testAccCheckZoneIDUnchanged(resourceName string, originalID *string) resource.TestCheckFunc {
+// testAccCheckZoneIDUnchanged verifies the zone ID hasn't changed (for updates that should NOT trigger replacement).
+func testAccCheckZoneIDUnchanged(originalID *string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[resourceName]
+		rs, ok := s.RootModule().Resources[zoneResourceName]
 		if !ok {
-			return fmt.Errorf("Not found: %s", resourceName)
+			return fmt.Errorf("Not found: %s", zoneResourceName)
 		}
 		if rs.Primary.ID != *originalID {
 			return fmt.Errorf("Zone was replaced - ID changed from %s to %s", *originalID, rs.Primary.ID)
@@ -36,12 +38,12 @@ func testAccCheckZoneIDUnchanged(resourceName string, originalID *string) resour
 	}
 }
 
-// testAccCheckZoneIDChanged verifies the zone ID HAS changed (for RequiresReplace scenarios)
-func testAccCheckZoneIDChanged(resourceName string, originalID *string) resource.TestCheckFunc {
+// testAccCheckZoneIDChanged verifies the zone ID HAS changed (for RequiresReplace scenarios).
+func testAccCheckZoneIDChanged(originalID *string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[resourceName]
+		rs, ok := s.RootModule().Resources[zoneResourceName]
 		if !ok {
-			return fmt.Errorf("Not found: %s", resourceName)
+			return fmt.Errorf("Not found: %s", zoneResourceName)
 		}
 		if rs.Primary.ID == *originalID {
 			return fmt.Errorf("Zone was NOT replaced - ID remained %s (expected replacement)", rs.Primary.ID)
@@ -66,7 +68,7 @@ func TestAccZoneResource_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
 					resource.TestCheckResourceAttrSet("keycard_zone.test", "id"),
-					testAccCheckZoneIDSaved("keycard_zone.test", &zoneID),
+					testAccCheckZoneIDSaved(&zoneID),
 					// Verify OAuth2 values are populated by the API
 					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.pkce_required"),
 					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.dcr_enabled"),
@@ -86,7 +88,7 @@ func TestAccZoneResource_basic(t *testing.T) {
 				Config: testAccZoneResourceConfig_basic(rName + "-updated"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName+"-updated"),
-					testAccCheckZoneIDUnchanged("keycard_zone.test", &zoneID),
+					testAccCheckZoneIDUnchanged(&zoneID),
 					// Verify OAuth2 values are still present after update
 					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.pkce_required"),
 					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.dcr_enabled"),
@@ -114,7 +116,7 @@ func TestAccZoneResource_withDescription(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
 					resource.TestCheckResourceAttr("keycard_zone.test", "description", "Test description"),
-					testAccCheckZoneIDSaved("keycard_zone.test", &zoneID),
+					testAccCheckZoneIDSaved(&zoneID),
 				),
 			},
 			// Update description
@@ -122,7 +124,7 @@ func TestAccZoneResource_withDescription(t *testing.T) {
 				Config: testAccZoneResourceConfig_withDescription(rName, "Updated description"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_zone.test", "description", "Updated description"),
-					testAccCheckZoneIDUnchanged("keycard_zone.test", &zoneID),
+					testAccCheckZoneIDUnchanged(&zoneID),
 				),
 			},
 			// Remove description
@@ -130,7 +132,7 @@ func TestAccZoneResource_withDescription(t *testing.T) {
 				Config: testAccZoneResourceConfig_basic(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckNoResourceAttr("keycard_zone.test", "description"),
-					testAccCheckZoneIDUnchanged("keycard_zone.test", &zoneID),
+					testAccCheckZoneIDUnchanged(&zoneID),
 				),
 			},
 		},
@@ -152,7 +154,7 @@ func TestAccZoneResource_complete(t *testing.T) {
 					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
 					resource.TestCheckResourceAttr("keycard_zone.test", "description", "Complete zone"),
 					resource.TestCheckResourceAttrSet("keycard_zone.test", "id"),
-					testAccCheckZoneIDSaved("keycard_zone.test", &zoneID),
+					testAccCheckZoneIDSaved(&zoneID),
 					// Verify OAuth2 values are set by the API (computed)
 					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.pkce_required"),
 					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.dcr_enabled"),
@@ -186,7 +188,7 @@ func TestAccZoneResource_oauth2Custom(t *testing.T) {
 					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
 					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.pkce_required", "false"),
 					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.dcr_enabled", "false"),
-					testAccCheckZoneIDSaved("keycard_zone.test", &zoneID),
+					testAccCheckZoneIDSaved(&zoneID),
 					// Verify OAuth2 protocol URIs are populated regardless of settings
 					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.issuer_uri"),
 					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.redirect_uri"),
@@ -216,7 +218,7 @@ func TestAccZoneResource_oauth2Updates(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.pkce_required", "false"),
 					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.dcr_enabled", "false"),
-					testAccCheckZoneIDSaved("keycard_zone.test", &zoneID),
+					testAccCheckZoneIDSaved(&zoneID),
 				),
 			},
 			// Update OAuth2 to enable PKCE only
@@ -225,7 +227,7 @@ func TestAccZoneResource_oauth2Updates(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.pkce_required", "true"),
 					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.dcr_enabled", "false"),
-					testAccCheckZoneIDUnchanged("keycard_zone.test", &zoneID),
+					testAccCheckZoneIDUnchanged(&zoneID),
 				),
 			},
 			// Update OAuth2 to enable both
@@ -234,7 +236,7 @@ func TestAccZoneResource_oauth2Updates(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.pkce_required", "true"),
 					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.dcr_enabled", "true"),
-					testAccCheckZoneIDUnchanged("keycard_zone.test", &zoneID),
+					testAccCheckZoneIDUnchanged(&zoneID),
 				),
 			},
 			// Update name and verify OAuth2 settings persist
@@ -244,7 +246,7 @@ func TestAccZoneResource_oauth2Updates(t *testing.T) {
 					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName+"-updated"),
 					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.pkce_required", "true"),
 					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.dcr_enabled", "true"),
-					testAccCheckZoneIDUnchanged("keycard_zone.test", &zoneID),
+					testAccCheckZoneIDUnchanged(&zoneID),
 					// Verify OAuth2 protocol URIs persist through updates
 					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.issuer_uri"),
 					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.redirect_uri"),
@@ -270,7 +272,7 @@ func TestAccZoneResource_oauth2Defaults(t *testing.T) {
 					// Verify defaults are applied (both should be true)
 					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.pkce_required", "true"),
 					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.dcr_enabled", "true"),
-					testAccCheckZoneIDSaved("keycard_zone.test", &zoneID),
+					testAccCheckZoneIDSaved(&zoneID),
 				),
 			},
 			// Add OAuth2 block with explicit values
@@ -279,7 +281,7 @@ func TestAccZoneResource_oauth2Defaults(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.pkce_required", "false"),
 					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.dcr_enabled", "true"),
-					testAccCheckZoneIDUnchanged("keycard_zone.test", &zoneID),
+					testAccCheckZoneIDUnchanged(&zoneID),
 				),
 			},
 			// Remove OAuth2 block (should retain last set values)
@@ -289,7 +291,7 @@ func TestAccZoneResource_oauth2Defaults(t *testing.T) {
 					// Values should persist from previous state
 					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.pkce_required", "false"),
 					resource.TestCheckResourceAttr("keycard_zone.test", "oauth2.dcr_enabled", "true"),
-					testAccCheckZoneIDUnchanged("keycard_zone.test", &zoneID),
+					testAccCheckZoneIDUnchanged(&zoneID),
 				),
 			},
 		},
@@ -342,7 +344,7 @@ func TestAccZoneResource_encryptionKeyForceReplace(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
 					resource.TestCheckResourceAttr("keycard_zone.test", "encryption_key.aws.arn", kmsArn1),
-					testAccCheckZoneIDSaved("keycard_zone.test", &zoneID),
+					testAccCheckZoneIDSaved(&zoneID),
 				),
 			},
 			// Change encryption_key ARN - should force replacement
@@ -351,7 +353,7 @@ func TestAccZoneResource_encryptionKeyForceReplace(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
 					resource.TestCheckResourceAttr("keycard_zone.test", "encryption_key.aws.arn", kmsArn2),
-					testAccCheckZoneIDChanged("keycard_zone.test", &zoneID),
+					testAccCheckZoneIDChanged(&zoneID),
 				),
 			},
 		},
@@ -373,7 +375,7 @@ func TestAccZoneResource_encryptionKeyAddRemove(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
 					resource.TestCheckNoResourceAttr("keycard_zone.test", "encryption_key.aws.arn"),
-					testAccCheckZoneIDSaved("keycard_zone.test", &zoneID),
+					testAccCheckZoneIDSaved(&zoneID),
 				),
 			},
 			// Add encryption_key - should force replacement
@@ -382,7 +384,7 @@ func TestAccZoneResource_encryptionKeyAddRemove(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
 					resource.TestCheckResourceAttr("keycard_zone.test", "encryption_key.aws.arn", kmsArn),
-					testAccCheckZoneIDChanged("keycard_zone.test", &zoneID),
+					testAccCheckZoneIDChanged(&zoneID),
 				),
 			},
 			// Remove encryption_key - should force replacement
@@ -391,7 +393,7 @@ func TestAccZoneResource_encryptionKeyAddRemove(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
 					resource.TestCheckNoResourceAttr("keycard_zone.test", "encryption_key.aws.arn"),
-					testAccCheckZoneIDChanged("keycard_zone.test", &zoneID),
+					testAccCheckZoneIDChanged(&zoneID),
 				),
 			},
 		},
