@@ -1399,6 +1399,23 @@ components:
         - type
         - arn
       title: AWS KMS Encryption Key Configuration
+    EncryptionKeyAwsKmsConfigUpdate:
+      description: AWS KMS configuration for zone encryption update (set to null to remove customer-managed key and revert to default)
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - aws
+        arn:
+          description: AWS KMS Key ARN for encrypting the zone's data
+          type: string
+          minLength: 1
+      nullable: true
+      required:
+        - type
+        - arn
+      title: AWS KMS Encryption Key Configuration Update
     ProviderOAuth2Protocol:
       description: OAuth 2.0 protocol configuration
       type: object
@@ -2482,6 +2499,8 @@ components:
           nullable: true
         protocols:
           $ref: '#/components/schemas/ZoneProtocolUpdate'
+        encryption_key:
+          $ref: '#/components/schemas/EncryptionKeyAwsKmsConfigUpdate'
       title: Zone Update
   securitySchemes:
     bearerAuth:
