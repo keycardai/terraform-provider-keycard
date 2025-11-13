@@ -72,7 +72,7 @@ resource "okta_app_oauth" "example" {
 ### Optional
 
 - `description` (String) Optional description of the zone's purpose.
-- `encryption_key` (Attributes) Customer managed encryption key for the zone. When not specified, uses the default Keycard Cloud encryption key. Changing this value will force replacement of the zone. (see [below for nested schema](#nestedatt--encryption_key))
+- `encryption_key` (Attributes) Customer managed encryption key for the zone. When not specified, uses the default Keycard Cloud encryption key. Requires access to both the old and new key when updatin. Do not revoke any permissions on the existing key until after the plan has been applied successfully. (see [below for nested schema](#nestedatt--encryption_key))
 - `oauth2` (Attributes) OAuth2 configuration for the zone. (see [below for nested schema](#nestedatt--oauth2))
 
 ### Read-Only

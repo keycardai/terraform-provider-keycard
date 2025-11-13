@@ -150,7 +150,7 @@ func (r *ZoneResource) Schema(ctx context.Context, req resource.SchemaRequest, r
 				},
 			},
 			"encryption_key": schema.SingleNestedAttribute{
-				MarkdownDescription: "Customer managed encryption key for the zone. When not specified, uses the default Keycard Cloud encryption key. Changing this value will force replacement of the zone.",
+				MarkdownDescription: "Customer managed encryption key for the zone. When not specified, uses the default Keycard Cloud encryption key. Requires access to both the old and new key when updatin. Do not revoke any permissions on the existing key until after the plan has been applied successfully.",
 				Optional:            true,
 				Attributes: map[string]schema.Attribute{
 					"aws": schema.SingleNestedAttribute{
@@ -160,15 +160,11 @@ func (r *ZoneResource) Schema(ctx context.Context, req resource.SchemaRequest, r
 							"arn": schema.StringAttribute{
 								MarkdownDescription: "ARN of the AWS KMS key to use for encryption.",
 								Required:            true,
-								PlanModifiers: []planmodifier.String{
-									stringplanmodifier.RequiresReplace(),
-								},
 							},
 						},
 					},
 				},
 				PlanModifiers: []planmodifier.Object{
-					objectplanmodifier.RequiresReplace(),
 					objectplanmodifier.UseStateForUnknown(),
 				},
 			},
@@ -307,7 +303,7 @@ func (r *ZoneResource) Create(ctx context.Context, req resource.CreateRequest, r
 
 			// Transform to API format: {type: "aws", arn: "..."}
 			createReq.EncryptionKey = &client.EncryptionKeyAwsKmsConfig{
-				Type: client.Aws,
+				Type: client.EncryptionKeyAwsKmsConfigTypeAws,
 				Arn:  awsData.Arn.ValueString(),
 			}
 		}
@@ -435,6 +431,38 @@ func (r *ZoneResource) Update(ctx context.Context, req resource.UpdateRequest, r
 		}
 
 		updateReq.Protocols = nullable.NewNullableWithValue(protocolUpdate)
+	}
+
+	// Set encryption_key configuration if changed
+	if !data.EncryptionKey.IsUnknown() {
+		if data.EncryptionKey.IsNull() {
+			// User removed encryption_key, revert to default
+			updateReq.EncryptionKey = nullable.NewNullNullable[client.EncryptionKeyAwsKmsConfigUpdate]()
+		} else {
+			// User set or changed encryption_key
+			var encryptionKeyData EncryptionKeyConfigModel
+			diags := data.EncryptionKey.As(ctx, &encryptionKeyData, basetypes.ObjectAsOptions{})
+			resp.Diagnostics.Append(diags...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+
+			// Extract the AWS KMS configuration
+			if !encryptionKeyData.Aws.IsNull() && !encryptionKeyData.Aws.IsUnknown() {
+				var awsData EncryptionKeyAwsKmsConfigModel
+				diags := encryptionKeyData.Aws.As(ctx, &awsData, basetypes.ObjectAsOptions{})
+				resp.Diagnostics.Append(diags...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				// Transform to API format for update
+				updateReq.EncryptionKey = nullable.NewNullableWithValue(client.EncryptionKeyAwsKmsConfigUpdate{
+					Type: client.EncryptionKeyAwsKmsConfigUpdateTypeAws,
+					Arn:  awsData.Arn.ValueString(),
+				})
+			}
+		}
 	}
 
 	// Update the zone
