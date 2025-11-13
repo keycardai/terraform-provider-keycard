@@ -38,22 +38,6 @@ func testAccCheckZoneIDUnchanged(originalID *string) resource.TestCheckFunc {
 	}
 }
 
-// testAccCheckZoneIDChanged verifies the zone ID HAS changed (for RequiresReplace scenarios).
-func testAccCheckZoneIDChanged(originalID *string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[zoneResourceName]
-		if !ok {
-			return fmt.Errorf("Not found: %s", zoneResourceName)
-		}
-		if rs.Primary.ID == *originalID {
-			return fmt.Errorf("Zone was NOT replaced - ID remained %s (expected replacement)", rs.Primary.ID)
-		}
-		// Update the pointer for potential subsequent steps
-		*originalID = rs.Primary.ID
-		return nil
-	}
-}
-
 func TestAccZoneResource_basic(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	var zoneID string
@@ -328,7 +312,7 @@ resource "keycard_zone" "test" {
 `, name, pkceRequired, dcrEnabled)
 }
 
-func TestAccZoneResource_encryptionKeyForceReplace(t *testing.T) {
+func TestAccZoneResource_encryptionKeyUpdate(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	kmsArn1 := os.Getenv("KEYCARD_TEST_KMS_KEY_1")
 	kmsArn2 := os.Getenv("KEYCARD_TEST_KMS_KEY_2")
@@ -347,13 +331,13 @@ func TestAccZoneResource_encryptionKeyForceReplace(t *testing.T) {
 					testAccCheckZoneIDSaved(&zoneID),
 				),
 			},
-			// Change encryption_key ARN - should force replacement
+			// Change encryption_key ARN - should update in-place
 			{
 				Config: testAccZoneResourceConfig_withEncryptionKey(rName, kmsArn2),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
 					resource.TestCheckResourceAttr("keycard_zone.test", "encryption_key.aws.arn", kmsArn2),
-					testAccCheckZoneIDChanged(&zoneID),
+					testAccCheckZoneIDUnchanged(&zoneID),
 				),
 			},
 		},
@@ -378,22 +362,22 @@ func TestAccZoneResource_encryptionKeyAddRemove(t *testing.T) {
 					testAccCheckZoneIDSaved(&zoneID),
 				),
 			},
-			// Add encryption_key - should force replacement
+			// Add encryption_key - should update in-place
 			{
 				Config: testAccZoneResourceConfig_withEncryptionKey(rName, kmsArn),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
 					resource.TestCheckResourceAttr("keycard_zone.test", "encryption_key.aws.arn", kmsArn),
-					testAccCheckZoneIDChanged(&zoneID),
+					testAccCheckZoneIDUnchanged(&zoneID),
 				),
 			},
-			// Remove encryption_key - should force replacement
+			// Remove encryption_key - should update in-place
 			{
 				Config: testAccZoneResourceConfig_basic(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_zone.test", "name", rName),
 					resource.TestCheckNoResourceAttr("keycard_zone.test", "encryption_key.aws.arn"),
-					testAccCheckZoneIDChanged(&zoneID),
+					testAccCheckZoneIDUnchanged(&zoneID),
 				),
 			},
 		},
