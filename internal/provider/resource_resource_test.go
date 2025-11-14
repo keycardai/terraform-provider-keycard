@@ -2,6 +2,7 @@ package provider
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
@@ -261,6 +262,57 @@ func TestAccResourceResource_zoneChange(t *testing.T) {
 	})
 }
 
+func TestAccResourceResource_emptyDescriptionInvalid(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+	providerName := acctest.RandomWithPrefix("tftest-provider")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccResourceResourceConfig_withDescription(zoneName, providerName, rName, ""),
+				ExpectError: regexp.MustCompile(`Attribute description string length must be at least 1`),
+			},
+		},
+	})
+}
+
+func TestAccResourceResource_emptyDocsUrlInvalid(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+	providerName := acctest.RandomWithPrefix("tftest-provider")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccResourceResourceConfig_withMetadata(zoneName, providerName, rName, ""),
+				ExpectError: regexp.MustCompile(`Attribute metadata.docs_url string length must be at least 1`),
+			},
+		},
+	})
+}
+
+func TestAccResourceResource_emptyApplicationIdInvalid(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+	providerName := acctest.RandomWithPrefix("tftest-provider")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccResourceResourceConfig_withApplicationId(zoneName, providerName, rName, ""),
+				ExpectError: regexp.MustCompile(`Attribute application_id string length must be at least 1`),
+			},
+		},
+	})
+}
+
 // Helper function to generate import state ID in format zones/{zone-id}/resources/{resource-id}.
 func testAccResourceImportStateIdFunc(resourceName string) resource.ImportStateIdFunc {
 	return func(s *terraform.State) (string, error) {
@@ -448,4 +500,26 @@ resource "keycard_resource" "test" {
   }
 }
 `, zoneName, providerName, appName, resourceName)
+}
+
+func testAccResourceResourceConfig_withApplicationId(zoneName, providerName, resourceName, applicationId string) string {
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+}
+
+resource "keycard_provider" "test" {
+  name       = %[2]q
+  identifier = "https://%[2]s.example.com"
+  zone_id    = keycard_zone.test.id
+}
+
+resource "keycard_resource" "test" {
+  name                   = %[3]q
+  identifier             = "https://%[3]s.example.com"
+  zone_id                = keycard_zone.test.id
+  credential_provider_id = keycard_provider.test.id
+  application_id         = %[4]q
+}
+`, zoneName, providerName, resourceName, applicationId)
 }
