@@ -160,7 +160,7 @@ func (d *KeyPolicyDataSource) Read(ctx context.Context, req datasource.ReadReque
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-// replaceAccountIDPlaceholder replaces the <YOUR_AWS_ACCOUNT_ID> placeholder with the actual AWS account ID
+// replaceAccountIDPlaceholder replaces the <YOUR_AWS_ACCOUNT_ID> placeholder with the actual AWS account ID.
 func replaceAccountIDPlaceholder(arn, accountID string) string {
 	return strings.ReplaceAll(arn, "<YOUR_AWS_ACCOUNT_ID>", accountID)
 }

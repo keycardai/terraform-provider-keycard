@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-// TestAccKeyPolicyDataSource_basic tests fetching a KMS key policy with a valid AWS account ID
+// TestAccKeyPolicyDataSource_basic tests fetching a KMS key policy with a valid AWS account ID.
 func TestAccKeyPolicyDataSource_basic(t *testing.T) {
 	// Use a test AWS account ID
 	accountID := "123456789012"
