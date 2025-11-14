@@ -40,6 +40,10 @@ resource "keycard_application_dependency" "google_mcp_drive" {
 - `resource_id` (String) The resource that the application needs to access. Changing this will replace the dependency.
 - `zone_id` (String) The zone this application dependency belongs to. Changing this will replace the dependency.
 
+### Optional
+
+- `when_accessing` (List of String) Optional list of resource identifiers. When specified, the dependency is only active when the application is accessing these specific resources.
+
 ## Import
 
 Import is supported using the following syntax:
