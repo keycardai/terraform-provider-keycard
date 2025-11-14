@@ -46,10 +46,10 @@ paths:
                 required:
                   - items
                   - page_info
-  /organizations/{organization_id}/aws/key-policy-statements:
+  /organizations/{organization_id}/aws/key-policy:
     get:
-      operationId: getOrganizationKMSKeyPolicyStatements
-      description: Returns a list of KMS key policy statements for use with customer-managed keys
+      operationId: getOrganizationKMSKeyPolicy
+      description: Returns an KMS key policy for use with customer-managed keys
       parameters:
         - name: organization_id
           in: path
@@ -65,13 +65,11 @@ paths:
               schema:
                 type: object
                 properties:
-                  policy_statements:
-                    type: array
-                    description: JSON-encoded key policy statements that can be used in AWS KMS key policies
-                    items:
-                      type: string
+                  policy:
+                    type: string
+                    description: JSON-encoded policy that can be used in AWS KMS key policies
                 required:
-                  - policy_statements
+                  - policy
   /zones:
     get:
       operationId: listZones
