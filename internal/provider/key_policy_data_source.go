@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
 )
@@ -19,7 +21,7 @@ func NewKeyPolicyDataSource() datasource.DataSource {
 }
 
 type KeyPolicyDataSource struct {
-	client *client.ClientWithResponses
+	client *client.KeycardClient
 }
 
 type KeyPolicyDataSourceModel struct {
@@ -38,6 +40,10 @@ func (d *KeyPolicyDataSource) Schema(_ context.Context, _ datasource.SchemaReque
 			"account_id": schema.StringAttribute{
 				MarkdownDescription: "AWS account ID to allow admin access in the KMS key policy",
 				Required:            true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(12),
+					stringvalidator.LengthAtMost(12), // AWS account IDs are always 12 digits
+				},
 			},
 			"policy": schema.StringAttribute{
 				MarkdownDescription: "JSON-encoded key policy that can be used in AWS KMS key policies.",
@@ -53,12 +59,12 @@ func (d *KeyPolicyDataSource) Configure(_ context.Context, req datasource.Config
 		return
 	}
 
-	apiClient, ok := req.ProviderData.(*client.ClientWithResponses)
+	apiClient, ok := req.ProviderData.(*client.KeycardClient)
 
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Data Source Configure Type",
-			fmt.Sprintf("Expected *client.ClientWithResponses, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *client.KeycardClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 		return
 	}
@@ -76,40 +82,11 @@ func (d *KeyPolicyDataSource) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
-	// // Get the list or Organizations scoped to the user's credentials
-	// listOrgsParams := client.ListOrganizationsParams{}
-
-	// orgResp, err := d.client.ListOrganizationsWithResponse(ctx, &listOrgsParams)
-	// if err != nil {
-	// 	resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Failed to list organizations: %s", err))
-	// 	return
-	// }
-
-	// if orgResp.StatusCode() == 404 {
-	// 	resp.Diagnostics.AddError(
-	// 		"No Organizations found",
-	// 		fmt.Sprintf("Unable to find any Organizations"),
-	// 	)
-	// 	return
-	// }
-
-	// if orgResp.StatusCode() != 200 {
-	// 	resp.Diagnostics.AddError(
-	// 		"API Error",
-	// 		fmt.Sprintf("Failed to list organizations: %d", orgResp.StatusCode()),
-	// 	)
-	// 	return
-	// }
-
-	// if orgResp.JSON200 == nil {
-	// 	resp.Diagnostics.AddError("API Error", "Unable to list organizations: no response body")
-	// 	return
-	// }
-
-	// // Use the first Organization ID from the list in the response
-	// // There should only be one since there is a 1:1 relationship between service accounts and orgs
-	// orgId := *orgResp.JSON200.Items[0].Id
-	orgId := "nicksimkos-organization-pr1xp"
+	orgId, err := d.client.GetOrganizationID(ctx)
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get organization ID: %s", err))
+		return
+	}
 
 	kpResp, err := d.client.GetOrganizationKMSKeyPolicyWithResponse(ctx, orgId)
 	if err != nil {
@@ -154,12 +131,12 @@ func (d *KeyPolicyDataSource) Read(ctx context.Context, req datasource.ReadReque
 						switch v := awsPrincipal.(type) {
 						case string:
 							// Single AWS principal ARN
-							principal["AWS"] = strings.ReplaceAll(v, "<YOUR_AWS_ACCOUNT_ID>", accountID)
+							principal["AWS"] = replaceAccountIDPlaceholder(v, accountID)
 						case []interface{}:
 							// Multiple AWS principal ARNs
 							for i, arn := range v {
 								if arnStr, ok := arn.(string); ok {
-									v[i] = strings.ReplaceAll(arnStr, "<YOUR_AWS_ACCOUNT_ID>", accountID)
+									v[i] = replaceAccountIDPlaceholder(arnStr, accountID)
 								}
 							}
 						}
@@ -181,4 +158,9 @@ func (d *KeyPolicyDataSource) Read(ctx context.Context, req datasource.ReadReque
 
 	// Save data to the Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+// replaceAccountIDPlaceholder replaces the <YOUR_AWS_ACCOUNT_ID> placeholder with the actual AWS account ID
+func replaceAccountIDPlaceholder(arn, accountID string) string {
+	return strings.ReplaceAll(arn, "<YOUR_AWS_ACCOUNT_ID>", accountID)
 }
