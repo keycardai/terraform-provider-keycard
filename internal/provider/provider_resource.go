@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -12,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
@@ -88,6 +90,9 @@ func (r *ProviderResource) Schema(ctx context.Context, req resource.SchemaReques
 			"description": schema.StringAttribute{
 				MarkdownDescription: "Optional description of the provider's purpose.",
 				Optional:            true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"identifier": schema.StringAttribute{
 				MarkdownDescription: "User-specified identifier, must be unique within the zone.",
@@ -96,11 +101,17 @@ func (r *ProviderResource) Schema(ctx context.Context, req resource.SchemaReques
 			"client_id": schema.StringAttribute{
 				MarkdownDescription: "OAuth 2.0 client identifier.",
 				Optional:            true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"client_secret": schema.StringAttribute{
 				MarkdownDescription: "OAuth 2.0 client secret.",
 				Optional:            true,
 				Sensitive:           true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"oauth2": schema.SingleNestedAttribute{
 				MarkdownDescription: "OAuth 2.0 protocol configuration.",
@@ -111,6 +122,9 @@ func (r *ProviderResource) Schema(ctx context.Context, req resource.SchemaReques
 						MarkdownDescription: "OAuth 2.0 Authorization endpoint URL.",
 						Optional:            true,
 						Computed:            true,
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
 						PlanModifiers: []planmodifier.String{
 							stringplanmodifier.UseStateForUnknown(),
 						},
@@ -119,6 +133,9 @@ func (r *ProviderResource) Schema(ctx context.Context, req resource.SchemaReques
 						MarkdownDescription: "OAuth 2.0 Token endpoint URL.",
 						Optional:            true,
 						Computed:            true,
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
 						PlanModifiers: []planmodifier.String{
 							stringplanmodifier.UseStateForUnknown(),
 						},

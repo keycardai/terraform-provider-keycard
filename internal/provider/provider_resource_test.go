@@ -2,6 +2,7 @@ package provider
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
@@ -160,6 +161,86 @@ func TestAccProviderResource_oauth2Updates(t *testing.T) {
 	})
 }
 
+func TestAccProviderResource_emptyDescriptionInvalid(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	identifier := fmt.Sprintf("https://%s.example.com", rName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccProviderResourceConfig_withDescription(rName, identifier, ""),
+				ExpectError: regexp.MustCompile(`Attribute description string length must be at least 1`),
+			},
+		},
+	})
+}
+
+func TestAccProviderResource_emptyClientIdInvalid(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	identifier := fmt.Sprintf("https://%s.example.com", rName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccProviderResourceConfig_withClientId(rName, identifier, ""),
+				ExpectError: regexp.MustCompile(`Attribute client_id string length must be at least 1`),
+			},
+		},
+	})
+}
+
+func TestAccProviderResource_emptyClientSecretInvalid(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	identifier := fmt.Sprintf("https://%s.example.com", rName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccProviderResourceConfig_withClientSecret(rName, identifier, ""),
+				ExpectError: regexp.MustCompile(`Attribute client_secret string length must be at least 1`),
+			},
+		},
+	})
+}
+
+func TestAccProviderResource_emptyAuthorizationEndpointInvalid(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	identifier := fmt.Sprintf("https://%s.example.com", rName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccProviderResourceConfig_withOAuth2Endpoints(rName, identifier, "", "https://token.example.com"),
+				ExpectError: regexp.MustCompile(`Attribute oauth2.authorization_endpoint string length must be at least 1`),
+			},
+		},
+	})
+}
+
+func TestAccProviderResource_emptyTokenEndpointInvalid(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	identifier := fmt.Sprintf("https://%s.example.com", rName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccProviderResourceConfig_withOAuth2Endpoints(rName, identifier, "https://auth.example.com", ""),
+				ExpectError: regexp.MustCompile(`Attribute oauth2.token_endpoint string length must be at least 1`),
+			},
+		},
+	})
+}
+
 func testAccProviderResourceConfig_basic(name, identifier string) string {
 	return fmt.Sprintf(`
 resource "keycard_zone" "test" {
@@ -208,4 +289,53 @@ resource "keycard_provider" "test" {
   }
 }
 `, name, identifier)
+}
+
+func testAccProviderResourceConfig_withClientId(name, identifier, clientId string) string {
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+}
+
+resource "keycard_provider" "test" {
+  name       = %[1]q
+  zone_id    = keycard_zone.test.id
+  identifier = %[2]q
+  client_id  = %[3]q
+}
+`, name, identifier, clientId)
+}
+
+func testAccProviderResourceConfig_withClientSecret(name, identifier, clientSecret string) string {
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+}
+
+resource "keycard_provider" "test" {
+  name          = %[1]q
+  zone_id       = keycard_zone.test.id
+  identifier    = %[2]q
+  client_secret = %[3]q
+}
+`, name, identifier, clientSecret)
+}
+
+func testAccProviderResourceConfig_withOAuth2Endpoints(name, identifier, authEndpoint, tokenEndpoint string) string {
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+}
+
+resource "keycard_provider" "test" {
+  name       = %[1]q
+  zone_id    = keycard_zone.test.id
+  identifier = %[2]q
+
+  oauth2 = {
+    authorization_endpoint = %[3]q
+    token_endpoint         = %[4]q
+  }
+}
+`, name, identifier, authEndpoint, tokenEndpoint)
 }
