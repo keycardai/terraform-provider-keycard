@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -12,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
@@ -98,6 +100,9 @@ func (r *ResourceResource) Schema(ctx context.Context, req resource.SchemaReques
 			"description": schema.StringAttribute{
 				MarkdownDescription: "Optional description of the resource's purpose.",
 				Optional:            true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"identifier": schema.StringAttribute{
 				MarkdownDescription: "Unique identifier for the resource, typically its URL or URN. Must be unique within the zone.",
@@ -110,6 +115,9 @@ func (r *ResourceResource) Schema(ctx context.Context, req resource.SchemaReques
 			"application_id": schema.StringAttribute{
 				MarkdownDescription: "The application that provides this resource.",
 				Optional:            true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"metadata": schema.SingleNestedAttribute{
 				MarkdownDescription: "Metadata associated with the resource.",
@@ -118,6 +126,9 @@ func (r *ResourceResource) Schema(ctx context.Context, req resource.SchemaReques
 					"docs_url": schema.StringAttribute{
 						MarkdownDescription: "URL to documentation relevant to this resource.",
 						Optional:            true,
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
 					},
 				},
 			},

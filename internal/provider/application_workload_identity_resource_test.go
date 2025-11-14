@@ -2,6 +2,7 @@ package provider
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
@@ -269,6 +270,22 @@ func TestAccApplicationWorkloadIdentityResource_multipleIdentities(t *testing.T)
 	})
 }
 
+func TestAccApplicationWorkloadIdentityResource_emptySubjectInvalid(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccApplicationWorkloadIdentityResourceConfig_emptySubject(zoneName, rName),
+				ExpectError: regexp.MustCompile(`Attribute subject string length must be at least 1`),
+			},
+		},
+	})
+}
+
 // Helper functions for test configurations
 
 func testAccApplicationWorkloadIdentityResourceConfig_kubernetes(zoneName, appName, namespace, serviceAccount string) string {
@@ -416,4 +433,31 @@ resource "keycard_application_workload_identity" "staging" {
   subject        = "system:serviceaccount:%[5]s:%[6]s"
 }
 `, zoneName, appName, namespace1, serviceAccount1, namespace2, serviceAccount2)
+}
+
+func testAccApplicationWorkloadIdentityResourceConfig_emptySubject(zoneName, appName string) string {
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+}
+
+resource "keycard_provider" "test" {
+  name        = "k8s-provider-%[2]s"
+  identifier  = "https://kubernetes.default.svc.cluster.local"
+  zone_id     = keycard_zone.test.id
+}
+
+resource "keycard_application" "test" {
+  name       = %[2]q
+  identifier = "https://%[2]s.example.com"
+  zone_id    = keycard_zone.test.id
+}
+
+resource "keycard_application_workload_identity" "test" {
+  zone_id        = keycard_zone.test.id
+  application_id = keycard_application.test.id
+  provider_id    = keycard_provider.test.id
+  subject        = ""
+}
+`, zoneName, appName)
 }

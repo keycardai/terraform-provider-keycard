@@ -3,6 +3,7 @@ package provider
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
@@ -118,6 +119,21 @@ func TestAccZoneResource_withDescription(t *testing.T) {
 					resource.TestCheckNoResourceAttr("keycard_zone.test", "description"),
 					testAccCheckZoneIDUnchanged(&zoneID),
 				),
+			},
+		},
+	})
+}
+
+func TestAccZoneResource_emptyDescriptionInvalid(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccZoneResourceConfig_withDescription(rName, ""),
+				ExpectError: regexp.MustCompile(`Attribute description string length must be at least 1`),
 			},
 		},
 	})

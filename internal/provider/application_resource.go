@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
@@ -96,6 +98,9 @@ func (r *ApplicationResource) Schema(ctx context.Context, req resource.SchemaReq
 			"description": schema.StringAttribute{
 				MarkdownDescription: "Optional description of the application's purpose.",
 				Optional:            true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"identifier": schema.StringAttribute{
 				MarkdownDescription: "Unique identifier for the application, typically its URL or URN. Must be unique within the zone.",
@@ -108,6 +113,9 @@ func (r *ApplicationResource) Schema(ctx context.Context, req resource.SchemaReq
 					"docs_url": schema.StringAttribute{
 						MarkdownDescription: "URL to documentation relevant to this application.",
 						Optional:            true,
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
 					},
 				},
 			},

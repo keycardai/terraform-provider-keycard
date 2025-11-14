@@ -2,6 +2,7 @@ package provider
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
@@ -223,6 +224,38 @@ func TestAccApplicationResource_zoneChange(t *testing.T) {
 					resource.TestCheckResourceAttr("keycard_application.test", "name", rName),
 					resource.TestCheckResourceAttrPair("keycard_application.test", "zone_id", "keycard_zone.test", "id"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccApplicationResource_emptyDescriptionInvalid(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccApplicationResourceConfig_withDescription(zoneName, rName, ""),
+				ExpectError: regexp.MustCompile(`Attribute description string length must be at least 1`),
+			},
+		},
+	})
+}
+
+func TestAccApplicationResource_emptyDocsUrlInvalid(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccApplicationResourceConfig_withMetadata(zoneName, rName, ""),
+				ExpectError: regexp.MustCompile(`Attribute metadata.docs_url string length must be at least 1`),
 			},
 		},
 	})
