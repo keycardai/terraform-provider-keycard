@@ -21,12 +21,10 @@ resource "keycard_zone" "custom" {
 }
 
 # Zone with customer-managed encryption key (AWS KMS)
-# WARNING: The encryption_key attribute cannot be changed after zone creation.
-# Adding, removing, or modifying the encryption_key will force replacement of
-# the zone, which destroys and recreates it. Plan carefully before applying changes.
 #
-# Best practice: Specify the encryption_key at zone creation time to ensure
-# all zone data is encrypted with your KMS key from the start.
+# IMPORTANT: When updating the encryption key, you must have access to both the
+# old and new keys during the update operation. Do not revoke permissions on the
+# existing key until after the plan has been applied successfully.
 resource "keycard_zone" "encrypted" {
   name        = "Encrypted Zone"
   description = "Zone with data encrypted using AWS KMS"
