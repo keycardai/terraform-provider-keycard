@@ -22,7 +22,7 @@ func NewResourceDataSource() datasource.DataSource {
 
 // ResourceDataSource defines the data source implementation.
 type ResourceDataSource struct {
-	client *client.ClientWithResponses
+	client *client.KeycardClient
 }
 
 func (d *ResourceDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -95,12 +95,12 @@ func (d *ResourceDataSource) Configure(ctx context.Context, req datasource.Confi
 		return
 	}
 
-	client, ok := req.ProviderData.(*client.ClientWithResponses)
+	client, ok := req.ProviderData.(*client.KeycardClient)
 
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Data Source Configure Type",
-			fmt.Sprintf("Expected *client.ClientWithResponses, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *client.KeycardClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 
 		return

@@ -18,7 +18,7 @@ func NewZoneDataSource() datasource.DataSource {
 
 // ZoneDataSource defines the data source implementation.
 type ZoneDataSource struct {
-	client *client.ClientWithResponses
+	client *client.KeycardClient
 }
 
 func (d *ZoneDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -90,12 +90,12 @@ func (d *ZoneDataSource) Configure(ctx context.Context, req datasource.Configure
 		return
 	}
 
-	client, ok := req.ProviderData.(*client.ClientWithResponses)
+	client, ok := req.ProviderData.(*client.KeycardClient)
 
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Data Source Configure Type",
-			fmt.Sprintf("Expected *client.ClientWithResponses, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *client.KeycardClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 
 		return
