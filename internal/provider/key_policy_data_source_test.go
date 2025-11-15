@@ -45,7 +45,7 @@ func TestAccKeyPolicyDataSource_basic(t *testing.T) {
 	})
 }
 
-// TestAccKeyPolicyDataSource_differentAccountID tests with a different account ID
+// TestAccKeyPolicyDataSource_differentAccountID tests with a different account ID.
 func TestAccKeyPolicyDataSource_differentAccountID(t *testing.T) {
 	accountID := "999888777666"
 
@@ -65,7 +65,7 @@ func TestAccKeyPolicyDataSource_differentAccountID(t *testing.T) {
 	})
 }
 
-// TestAccKeyPolicyDataSource_invalidAccountID tests validation for invalid account IDs
+// TestAccKeyPolicyDataSource_invalidAccountID tests validation for invalid account IDs.
 func TestAccKeyPolicyDataSource_invalidAccountID(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -85,7 +85,7 @@ func TestAccKeyPolicyDataSource_invalidAccountID(t *testing.T) {
 	})
 }
 
-// TestAccKeyPolicyDataSource_withRealKMSKey tests the data source with environment-provided KMS key
+// TestAccKeyPolicyDataSource_withRealKMSKey tests the data source with environment-provided KMS key.
 func TestAccKeyPolicyDataSource_withRealKMSKey(t *testing.T) {
 	accountID := os.Getenv("KEYCARD_TEST_AWS_ACCOUNT_ID")
 	if accountID == "" {
@@ -112,7 +112,7 @@ func TestAccKeyPolicyDataSource_withRealKMSKey(t *testing.T) {
 	})
 }
 
-// Helper function to generate test configuration
+// Helper function to generate test configuration.
 func testAccKeyPolicyDataSourceConfig_basic(accountID string) string {
 	return `
 data "keycard_key_policy" "test" {
@@ -121,7 +121,7 @@ data "keycard_key_policy" "test" {
 `
 }
 
-// Unit test for replaceAccountIDPlaceholder function
+// Unit test for replaceAccountIDPlaceholder function.
 func TestReplaceAccountIDPlaceholder(t *testing.T) {
 	tests := []struct {
 		name      string
