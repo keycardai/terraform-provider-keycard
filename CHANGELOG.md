@@ -1,3 +1,20 @@
+## 0.2.0
+
+This release adds support for customer managed encryption keys and includes bug fixes for optional string attributes.
+
+FEATURES:
+
+* **New Data Source**: `keycard_aws_kms_key_policy` - Generate AWS KMS key policies for Keycard zones with proper IAM permissions ([#39](https://github.com/keycardai/terraform-provider-keycard/pull/39))
+
+ENHANCEMENTS:
+
+* resource/zone: Added `encryption_key` attribute for AWS KMS key configuration ([#31](https://github.com/keycardai/terraform-provider-keycard/pull/31), [#34](https://github.com/keycardai/terraform-provider-keycard/pull/34))
+* datasource/zone: Added `encryption_key` attribute ([#31](https://github.com/keycardai/terraform-provider-keycard/pull/31))
+
+BUG FIXES:
+
+* Validate length of optional string attributes across all resources to prevent "Provider produced inconsistent result" errors when empty strings are provided ([#38](https://github.com/keycardai/terraform-provider-keycard/pull/38))
+
 ## 0.1.1
 
 Fixes for Okta integration guide documentation.
