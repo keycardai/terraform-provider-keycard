@@ -64,9 +64,8 @@ func TestAccAwsKmsKeyPolicyDataSource_invalidAccountId(t *testing.T) {
 				Steps: []resource.TestStep{
 					{
 						Config: testAccAwsKmsKeyPolicyDataSourceConfig_basic(accountID),
-						// The API should either reject invalid account IDs or the JSON validation should fail
-						// We expect some kind of error, either from the API or from invalid JSON after replacement
-						ExpectError: regexp.MustCompile(`(Client Error|API Error|invalid)`),
+						// Validator should reject invalid account ID formats
+						ExpectError: regexp.MustCompile(`must be a 12-digit AWS account ID`),
 					},
 				},
 			})

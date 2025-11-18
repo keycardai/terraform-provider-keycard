@@ -108,7 +108,7 @@ resource "keycard_zone" "combined_policy_zone" {
 
 ### Required
 
-- `account_id` (String) AWS account ID to allow admin access in the KMS key policy.
+- `account_id` (String) AWS account ID to allow admin access in the KMS key policy. Must be a 12-digit number.
 
 ### Read-Only
 

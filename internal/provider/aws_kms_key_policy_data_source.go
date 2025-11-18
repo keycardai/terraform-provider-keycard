@@ -4,10 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
 )
@@ -36,8 +39,14 @@ func (d *AwsKmsKeyPolicyDataSource) Schema(_ context.Context, _ datasource.Schem
 		MarkdownDescription: "Returns an AWS KMS key policy that grants Keycard permissions to Encrypt and Decrypt operations on the key scoped to this Keycard organization as well as DescribeKey permissions on the key.",
 		Attributes: map[string]schema.Attribute{
 			"account_id": schema.StringAttribute{
-				MarkdownDescription: "AWS account ID to allow admin access in the KMS key policy. ",
+				MarkdownDescription: "AWS account ID to allow admin access in the KMS key policy. Must be a 12-digit number.",
 				Required:            true,
+				Validators: []validator.String{
+					stringvalidator.RegexMatches(
+						regexp.MustCompile(`^\d{12}$`),
+						"must be a 12-digit AWS account ID",
+					),
+				},
 			},
 			"policy": schema.StringAttribute{
 				MarkdownDescription: "JSON-encoded AWS policy document that can be used with the AWS terraform provider.",
