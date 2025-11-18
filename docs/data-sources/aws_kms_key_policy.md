@@ -3,12 +3,12 @@
 page_title: "keycard_aws_kms_key_policy Data Source - keycard"
 subcategory: ""
 description: |-
-  Fetches a KMS key policy for customer-managed KMS encryption keys.
+  Returns an AWS KMS key policy that grants Keycard permissions to Encrypt and Decrypt operations on the key scoped to this Keycard organization as well as DescribeKey permissions on the key.
 ---
 
 # keycard_aws_kms_key_policy (Data Source)
 
-Fetches a KMS key policy for customer-managed KMS encryption keys.
+Returns an AWS KMS key policy that grants Keycard permissions to Encrypt and Decrypt operations on the key scoped to this Keycard organization as well as DescribeKey permissions on the key.
 
 ## Example Usage
 
@@ -38,8 +38,8 @@ output "kms_key_policy" {
 
 ### Required
 
-- `account_id` (String) AWS account ID to allow admin access in the KMS key policy
+- `account_id` (String) AWS account ID to allow admin access in the KMS key policy.
 
 ### Read-Only
 
-- `policy` (String) JSON-encoded key policy that can be used in AWS KMS key policies.
+- `policy` (String) JSON-encoded AWS policy document that can be used with the AWS terraform provider.

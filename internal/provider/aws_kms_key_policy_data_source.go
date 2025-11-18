@@ -33,14 +33,14 @@ func (d *AwsKmsKeyPolicyDataSource) Metadata(_ context.Context, req datasource.M
 
 func (d *AwsKmsKeyPolicyDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Fetches a KMS key policy for customer-managed KMS encryption keys.",
+		MarkdownDescription: "Returns an AWS KMS key policy that grants Keycard permissions to Encrypt and Decrypt operations on the key scoped to this Keycard organization as well as DescribeKey permissions on the key.",
 		Attributes: map[string]schema.Attribute{
 			"account_id": schema.StringAttribute{
-				MarkdownDescription: "AWS account ID to allow admin access in the KMS key policy",
+				MarkdownDescription: "AWS account ID to allow admin access in the KMS key policy. ",
 				Required:            true,
 			},
 			"policy": schema.StringAttribute{
-				MarkdownDescription: "JSON-encoded key policy that can be used in AWS KMS key policies.",
+				MarkdownDescription: "JSON-encoded AWS policy document that can be used with the AWS terraform provider.",
 				Computed:            true,
 			},
 		},
