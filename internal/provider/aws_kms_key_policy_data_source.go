@@ -12,26 +12,26 @@ import (
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
 )
 
-var _ datasource.DataSource = &KeyPolicyDataSource{}
+var _ datasource.DataSource = &AwsKmsKeyPolicyDataSource{}
 
-func NewKeyPolicyDataSource() datasource.DataSource {
-	return &KeyPolicyDataSource{}
+func NewAwsKmsKeyPolicyDataSource() datasource.DataSource {
+	return &AwsKmsKeyPolicyDataSource{}
 }
 
-type KeyPolicyDataSource struct {
+type AwsKmsKeyPolicyDataSource struct {
 	client *client.ClientWithResponses
 }
 
-type KeyPolicyDataSourceModel struct {
+type AwsKmsKeyPolicyDataSourceModel struct {
 	AccountID types.String `tfsdk:"account_id"`
 	Policy    types.String `tfsdk:"policy"`
 }
 
-func (d *KeyPolicyDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_key_policy"
+func (d *AwsKmsKeyPolicyDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_aws_kms_key_policy"
 }
 
-func (d *KeyPolicyDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *AwsKmsKeyPolicyDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "Fetches a KMS key policy for customer-managed KMS encryption keys.",
 		Attributes: map[string]schema.Attribute{
@@ -47,7 +47,7 @@ func (d *KeyPolicyDataSource) Schema(_ context.Context, _ datasource.SchemaReque
 	}
 }
 
-func (d *KeyPolicyDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *AwsKmsKeyPolicyDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	// Prevent panic if the provider has not been configured.
 	if req.ProviderData == nil {
 		return
@@ -66,8 +66,8 @@ func (d *KeyPolicyDataSource) Configure(_ context.Context, req datasource.Config
 	d.client = apiClient
 }
 
-func (d *KeyPolicyDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data KeyPolicyDataSourceModel
+func (d *AwsKmsKeyPolicyDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var data AwsKmsKeyPolicyDataSourceModel
 
 	// Read Terraform configuration data into the model
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
