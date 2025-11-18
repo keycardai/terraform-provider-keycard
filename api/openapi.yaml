@@ -6,6 +6,70 @@ info:
 servers:
   - url: /
 paths:
+  /organizations:
+    get:
+      operationId: listOrganizations
+      description: Returns a list of organizations for the authenticated organization
+      parameters:
+        - name: slug
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+            minimum: 1
+      responses:
+        '200':
+          description: Default response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Organization'
+                  page_info:
+                    $ref: '#/components/schemas/PageInfo'
+                required:
+                  - items
+                  - page_info
+  /organizations/{organization_id}/aws/key-policy:
+    get:
+      operationId: getOrganizationKMSKeyPolicy
+      description: Returns an KMS key policy for use with customer-managed keys
+      parameters:
+        - name: organization_id
+          in: path
+          required: true
+          description: Organization ID or label
+          schema:
+            $ref: '#/components/schemas/OrganizationIdOrLabel'
+      responses:
+        '200':
+          description: Valid encryption key policy statements
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  policy:
+                    type: string
+                    description: JSON-encoded policy that can be used in AWS KMS key policies
+                required:
+                  - policy
   /zones:
     get:
       operationId: listZones
@@ -2502,6 +2566,32 @@ components:
         encryption_key:
           $ref: '#/components/schemas/EncryptionKeyAwsKmsConfigUpdate'
       title: Zone Update
+    Organization:
+      description: A Keycard Organization
+      type: object
+      properties:
+        id:
+          description: Unique identifier for the Organization
+          type: string
+          minLength: 1
+          maxLength: 255
+        name:
+          description: Display name for the Organization
+          type: string
+        label:
+          description: A domain name segment for the Organization
+          type: string
+        created_at:
+          description: The time the Organization was created in UTC
+          format: date-time
+        updated_at:
+          description: The time the Organization was most recently updated in UTC
+          format: date-time
+    OrganizationIdOrLabel:
+      type: string
+      description: Organization ID or label identifier
+      minLength: 1
+      maxLength: 255
   securitySchemes:
     bearerAuth:
       type: http
