@@ -264,3 +264,47 @@ func updateApplicationWorkloadIdentityModelFromAPIResponse(cred *client.Applicat
 
 	return diags
 }
+
+// updateApplicationURLCredentialModelFromCreateResponse updates the model with data from the
+// ApplicationCredentialCreateResponse. This function is called during Create.
+func updateApplicationURLCredentialModelFromCreateResponse(cred *client.ApplicationCredentialCreateResponse, data *ApplicationURLCredentialModel) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	// The response is a union type, we need to check which type we got
+	// For URL credentials, we expect ApplicationCredentialUrl
+	urlCred, err := cred.AsApplicationCredentialUrl()
+	if err != nil {
+		diags.AddError("API Error", fmt.Sprintf("Expected URL credential response, got error: %s", err))
+		return diags
+	}
+
+	// Map all fields
+	data.ID = types.StringValue(urlCred.Id)
+	data.ZoneID = types.StringValue(urlCred.ZoneId)
+	data.ApplicationID = types.StringValue(urlCred.ApplicationId)
+	data.URL = types.StringValue(urlCred.Identifier)
+
+	return diags
+}
+
+// updateApplicationURLCredentialModelFromAPIResponse updates the model with data from the
+// ApplicationCredential API response (from Read operations).
+func updateApplicationURLCredentialModelFromAPIResponse(cred *client.ApplicationCredential, data *ApplicationURLCredentialModel) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	// The response is a union type, we need to check which type we got
+	// For URL credentials, we expect ApplicationCredentialUrl
+	urlCred, err := cred.AsApplicationCredentialUrl()
+	if err != nil {
+		diags.AddError("API Error", fmt.Sprintf("Expected URL credential type, got error: %s", err))
+		return diags
+	}
+
+	// Update all fields
+	data.ID = types.StringValue(urlCred.Id)
+	data.ZoneID = types.StringValue(urlCred.ZoneId)
+	data.ApplicationID = types.StringValue(urlCred.ApplicationId)
+	data.URL = types.StringValue(urlCred.Identifier)
+
+	return diags
+}
