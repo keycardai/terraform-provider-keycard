@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
@@ -34,6 +35,7 @@ type ApplicationDependencyModel struct {
 	ZoneID        types.String `tfsdk:"zone_id"`
 	ApplicationID types.String `tfsdk:"application_id"`
 	ResourceID    types.String `tfsdk:"resource_id"`
+	WhenAccessing types.Set    `tfsdk:"when_accessing"`
 }
 
 func (r *ApplicationDependencyResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -64,6 +66,14 @@ func (r *ApplicationDependencyResource) Schema(ctx context.Context, req resource
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"when_accessing": schema.SetAttribute{
+				MarkdownDescription: "Filter the dependency to be active only when accessing specific resources provided by the application. Changing this will replace the dependency.",
+				ElementType:         types.StringType,
+				Optional:            true,
+				PlanModifiers: []planmodifier.Set{
+					setplanmodifier.RequiresReplace(),
 				},
 			},
 		},
@@ -100,13 +110,26 @@ func (r *ApplicationDependencyResource) Create(ctx context.Context, req resource
 		return
 	}
 
+	// Prepare the when_accessing parameter
+	var params *client.AddApplicationDependencyParams
+	if !data.WhenAccessing.IsNull() && !data.WhenAccessing.IsUnknown() {
+		var whenAccessingSlice []string
+		resp.Diagnostics.Append(data.WhenAccessing.ElementsAs(ctx, &whenAccessingSlice, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		params = &client.AddApplicationDependencyParams{
+			WhenAccessing: &whenAccessingSlice,
+		}
+	}
+
 	// Add the application dependency
 	createResp, err := r.client.AddApplicationDependencyWithResponse(
 		ctx,
 		data.ZoneID.ValueString(),
 		data.ApplicationID.ValueString(),
 		data.ResourceID.ValueString(),
-		nil,
+		params,
 	)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create application dependency, got error: %s", err))
@@ -166,7 +189,18 @@ func (r *ApplicationDependencyResource) Read(ctx context.Context, req resource.R
 		return
 	}
 
-	// The dependency exists - state is already correct, no need to update
+	// Update the when_accessing field from the API response
+	if getResp.JSON200.WhenAccessing != nil {
+		whenAccessingSet, diag := types.SetValueFrom(ctx, types.StringType, getResp.JSON200.WhenAccessing)
+		if diag.HasError() {
+			resp.Diagnostics.Append(diag...)
+			return
+		}
+		data.WhenAccessing = whenAccessingSet
+	} else {
+		data.WhenAccessing = types.SetNull(types.StringType)
+	}
+
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

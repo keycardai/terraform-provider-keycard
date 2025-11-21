@@ -140,6 +140,7 @@ func (p *KeycardProvider) Resources(ctx context.Context) []func() resource.Resou
 		NewZoneUserIdentityConfigResource,
 		NewApplicationResource,
 		NewApplicationClientSecretResource,
+		NewApplicationURLCredentialResource,
 		NewApplicationWorkloadIdentityResource,
 		NewResourceResource,
 		NewApplicationDependencyResource,
