@@ -1980,6 +1980,11 @@ components:
           allOf:
             - $ref: '#/components/schemas/Application'
           deprecated: true
+        when_accessing:
+          description: 'List of resource IDs that, when accessed, make this dependency available. Only present when this resource is returned as a dependency.'
+          type: array
+          items:
+            type: string
         metadata:
           $ref: '#/components/schemas/Metadata'
         created_at:
