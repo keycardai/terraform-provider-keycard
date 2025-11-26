@@ -45,6 +45,7 @@ resource "keycard_application_client_secret" "local_dev" {
 - `metadata` (Attributes) Metadata associated with the application. May be empty. (see [below for nested schema](#nestedatt--metadata))
 - `name` (String) Human-readable name for the application.
 - `oauth2` (Attributes) OAuth2 configuration for the application. May be empty. (see [below for nested schema](#nestedatt--oauth2))
+- `traits` (List of String) Traits of the application. Traits ascribe behaviors and characteristics to an application. May be empty.
 
 <a id="nestedatt--metadata"></a>
 ### Nested Schema for `metadata`

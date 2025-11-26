@@ -185,6 +185,8 @@ func TestAccApplicationResource_complete(t *testing.T) {
 					resource.TestCheckResourceAttr("keycard_application.test", "identifier", "https://"+rName+".example.com"),
 					resource.TestCheckResourceAttr("keycard_application.test", "metadata.docs_url", "https://docs.example.com/complete"),
 					resource.TestCheckResourceAttr("keycard_application.test", "oauth2.redirect_uris.#", "2"),
+					resource.TestCheckResourceAttr("keycard_application.test", "traits.#", "1"),
+					resource.TestCheckResourceAttr("keycard_application.test", "traits.0", "gateway"),
 					resource.TestCheckResourceAttrSet("keycard_application.test", "id"),
 					resource.TestCheckResourceAttrSet("keycard_application.test", "zone_id"),
 				),
@@ -256,6 +258,65 @@ func TestAccApplicationResource_emptyDocsUrlInvalid(t *testing.T) {
 			{
 				Config:      testAccApplicationResourceConfig_withMetadata(zoneName, rName, ""),
 				ExpectError: regexp.MustCompile(`Attribute metadata.docs_url string length must be at least 1`),
+			},
+		},
+	})
+}
+
+func TestAccApplicationResource_withTraits(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create with traits
+			{
+				Config: testAccApplicationResourceConfig_withTraits(zoneName, rName, []string{"gateway"}),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_application.test", "name", rName),
+					resource.TestCheckResourceAttr("keycard_application.test", "traits.#", "1"),
+					resource.TestCheckResourceAttr("keycard_application.test", "traits.0", "gateway"),
+				),
+			},
+			// ImportState testing
+			{
+				ResourceName:      "keycard_application.test",
+				ImportState:       true,
+				ImportStateIdFunc: testAccApplicationImportStateIdFunc("keycard_application.test"),
+				ImportStateVerify: true,
+			},
+			// Remove traits
+			{
+				Config: testAccApplicationResourceConfig_basic(zoneName, rName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckNoResourceAttr("keycard_application.test", "traits"),
+				),
+			},
+			// Re-add traits
+			{
+				Config: testAccApplicationResourceConfig_withTraits(zoneName, rName, []string{"gateway"}),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_application.test", "traits.#", "1"),
+					resource.TestCheckResourceAttr("keycard_application.test", "traits.0", "gateway"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccApplicationResource_invalidTraitValue(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccApplicationResourceConfig_withTraits(zoneName, rName, []string{"invalid-trait"}),
+				ExpectError: regexp.MustCompile(`Attribute traits\[0\] value must be one of`),
 			},
 		},
 	})
@@ -357,6 +418,34 @@ resource "keycard_application" "test" {
 	return config
 }
 
+func testAccApplicationResourceConfig_withTraits(zoneName, appName string, traits []string) string {
+	config := fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+}
+
+resource "keycard_application" "test" {
+  name       = %[2]q
+  identifier = "https://%[2]s.example.com"
+  zone_id    = keycard_zone.test.id
+
+  traits = [
+`, zoneName, appName)
+
+	for i, trait := range traits {
+		if i > 0 {
+			config += ",\n"
+		}
+		config += fmt.Sprintf("    %q", trait)
+	}
+
+	config += `
+  ]
+}
+`
+	return config
+}
+
 func testAccApplicationResourceConfig_complete(zoneName, appName string) string {
 	return fmt.Sprintf(`
 resource "keycard_zone" "test" {
@@ -379,6 +468,8 @@ resource "keycard_application" "test" {
       "https://%[2]s.example.com/auth/callback"
     ]
   }
+
+  traits = ["gateway"]
 }
 `, zoneName, appName)
 }

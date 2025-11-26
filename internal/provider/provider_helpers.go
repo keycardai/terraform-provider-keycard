@@ -168,6 +168,20 @@ func updateApplicationModelFromAPIResponse(ctx context.Context, app *client.Appl
 		data.OAuth2 = types.ObjectNull(ApplicationOAuth2Model{}.AttributeTypes())
 	}
 
+	// Handle traits
+	traits, err := app.Traits.Get()
+	if err == nil && traits != nil && len(traits) > 0 {
+		traitStrings := make([]string, len(traits))
+		for i, t := range traits {
+			traitStrings[i] = string(t)
+		}
+		traitsList, listDiags := types.ListValueFrom(ctx, types.StringType, traitStrings)
+		diags.Append(listDiags...)
+		data.Traits = traitsList
+	} else {
+		data.Traits = types.ListNull(types.StringType)
+	}
+
 	return diags
 }
 

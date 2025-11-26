@@ -2128,6 +2128,12 @@ components:
         dependencies_count:
           description: Number of resource dependencies
           type: integer
+        traits:
+          description: Traits of the application
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/ApplicationTrait'
         created_at:
           description: Entity creation timestamp
           type: string
@@ -2147,6 +2153,12 @@ components:
         - created_at
         - updated_at
       title: Application
+    ApplicationTrait:
+      description: Traits ascribe behaviors and characteristics to an application, which may activate trait-specific user experiences, workflows, or other system behaviors
+      type: string
+      enum:
+        - gateway
+      title: Application Trait
     ApplicationCreate:
       description: Schema for creating a new application
       type: object
@@ -2183,6 +2195,11 @@ components:
           $ref: '#/components/schemas/Metadata'
         protocols:
           $ref: '#/components/schemas/ApplicationProtocolCreate'
+        traits:
+          description: Traits of the application
+          type: array
+          items:
+            $ref: '#/components/schemas/ApplicationTrait'
       required:
         - name
         - identifier
@@ -2210,6 +2227,12 @@ components:
           $ref: '#/components/schemas/MetadataUpdate'
         protocols:
           $ref: '#/components/schemas/ApplicationProtocolUpdate'
+        traits:
+          description: Traits of the application
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/ApplicationTrait'
       title: Application Update
     ApplicationCredentialBaseFields:
       description: Common fields shared by all application credential types

@@ -77,6 +77,11 @@ func (d *ApplicationDataSource) Schema(ctx context.Context, req datasource.Schem
 					},
 				},
 			},
+			"traits": schema.ListAttribute{
+				MarkdownDescription: "Traits of the application. Traits ascribe behaviors and characteristics to an application. May be empty.",
+				ElementType:         types.StringType,
+				Computed:            true,
+			},
 		},
 	}
 }

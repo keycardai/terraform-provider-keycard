@@ -130,6 +130,34 @@ func TestAccApplicationDataSource_withOAuth2(t *testing.T) {
 	})
 }
 
+func TestAccApplicationDataSource_withTraits(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create an application with traits and fetch it
+			{
+				Config: testAccApplicationDataSourceConfig_withTraits(zoneName, rName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrPair(
+						"data.keycard_application.test", "id",
+						"keycard_application.test", "id",
+					),
+					resource.TestCheckResourceAttrPair(
+						"data.keycard_application.test", "traits.#",
+						"keycard_application.test", "traits.#",
+					),
+					resource.TestCheckResourceAttr("data.keycard_application.test", "traits.#", "1"),
+					resource.TestCheckResourceAttr("data.keycard_application.test", "traits.0", "gateway"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccApplicationDataSource_complete(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
@@ -166,10 +194,16 @@ func TestAccApplicationDataSource_complete(t *testing.T) {
 						"data.keycard_application.test", "oauth2.redirect_uris.#",
 						"keycard_application.test", "oauth2.redirect_uris.#",
 					),
+					resource.TestCheckResourceAttrPair(
+						"data.keycard_application.test", "traits.#",
+						"keycard_application.test", "traits.#",
+					),
 					resource.TestCheckResourceAttr("data.keycard_application.test", "name", rName),
 					resource.TestCheckResourceAttr("data.keycard_application.test", "description", "Complete application with all fields"),
 					resource.TestCheckResourceAttr("data.keycard_application.test", "metadata.docs_url", "https://docs.example.com/complete"),
 					resource.TestCheckResourceAttr("data.keycard_application.test", "oauth2.redirect_uris.#", "2"),
+					resource.TestCheckResourceAttr("data.keycard_application.test", "traits.#", "1"),
+					resource.TestCheckResourceAttr("data.keycard_application.test", "traits.0", "gateway"),
 				),
 			},
 		},
@@ -280,6 +314,27 @@ data "keycard_application" "test" {
 `, zoneName, appName)
 }
 
+func testAccApplicationDataSourceConfig_withTraits(zoneName, appName string) string {
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+}
+
+resource "keycard_application" "test" {
+  name       = %[2]q
+  identifier = "https://%[2]s.example.com"
+  zone_id    = keycard_zone.test.id
+
+  traits = ["gateway"]
+}
+
+data "keycard_application" "test" {
+  zone_id = keycard_application.test.zone_id
+  id      = keycard_application.test.id
+}
+`, zoneName, appName)
+}
+
 func testAccApplicationDataSourceConfig_complete(zoneName, appName string) string {
 	return fmt.Sprintf(`
 resource "keycard_zone" "test" {
@@ -302,6 +357,8 @@ resource "keycard_application" "test" {
       "https://%[2]s.example.com/auth/callback"
     ]
   }
+
+  traits = ["gateway"]
 }
 
 data "keycard_application" "test" {

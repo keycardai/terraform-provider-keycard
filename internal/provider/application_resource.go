@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -44,6 +45,7 @@ type ApplicationModel struct {
 	Identifier  types.String `tfsdk:"identifier"`
 	Metadata    types.Object `tfsdk:"metadata"`
 	OAuth2      types.Object `tfsdk:"oauth2"`
+	Traits      types.List   `tfsdk:"traits"`
 }
 
 // ApplicationMetadataModel describes the nested metadata block data model.
@@ -128,6 +130,16 @@ func (r *ApplicationResource) Schema(ctx context.Context, req resource.SchemaReq
 						ElementType:         types.StringType,
 						Optional:            true,
 					},
+				},
+			},
+			"traits": schema.ListAttribute{
+				MarkdownDescription: "Traits of the application. Traits ascribe behaviors and characteristics to an application, which may activate trait-specific user experiences, workflows, or other system behaviors. Valid values: `gateway`.",
+				ElementType:         types.StringType,
+				Optional:            true,
+				Validators: []validator.List{
+					listvalidator.ValueStringsAre(
+						stringvalidator.OneOf("gateway"),
+					),
 				},
 			},
 		},
@@ -216,6 +228,22 @@ func (r *ApplicationResource) Create(ctx context.Context, req resource.CreateReq
 				},
 			}
 		}
+	}
+
+	// Set traits if provided
+	if !data.Traits.IsNull() && !data.Traits.IsUnknown() {
+		var traits []string
+		diags := data.Traits.ElementsAs(ctx, &traits, false)
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		applicationTraits := make([]client.ApplicationTrait, len(traits))
+		for i, t := range traits {
+			applicationTraits[i] = client.ApplicationTrait(t)
+		}
+		createReq.Traits = &applicationTraits
 	}
 
 	// Create the application
@@ -385,6 +413,27 @@ func (r *ApplicationResource) Update(ctx context.Context, req resource.UpdateReq
 			}
 
 			updateReq.Protocols = nullable.NewNullableWithValue(protocolUpdate)
+		}
+	}
+
+	// Set traits if changed
+	if !data.Traits.IsUnknown() {
+		if data.Traits.IsNull() {
+			// Remove traits by setting to null
+			updateReq.Traits = nullable.NewNullNullable[[]client.ApplicationTrait]()
+		} else {
+			var traits []string
+			diags := data.Traits.ElementsAs(ctx, &traits, false)
+			resp.Diagnostics.Append(diags...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+
+			applicationTraits := make([]client.ApplicationTrait, len(traits))
+			for i, t := range traits {
+				applicationTraits[i] = client.ApplicationTrait(t)
+			}
+			updateReq.Traits = nullable.NewNullableWithValue(applicationTraits)
 		}
 	}
 

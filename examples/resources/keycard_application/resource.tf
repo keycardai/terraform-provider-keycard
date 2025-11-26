@@ -50,3 +50,15 @@ resource "keycard_application" "mobile_app" {
     ]
   }
 }
+
+# API Gateway application
+# Gateways route requests and manage access to downstream services
+resource "keycard_application" "api_gateway" {
+  name        = "API Gateway"
+  identifier  = "https://api.example.com"
+  zone_id     = keycard_zone.dev.id
+  description = "Central API gateway for all services"
+
+  # The gateway trait enables gateway-specific behaviors and workflows
+  traits = ["gateway"]
+}
