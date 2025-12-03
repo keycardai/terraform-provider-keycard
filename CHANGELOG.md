@@ -1,3 +1,26 @@
+## 0.3.0
+
+This release adds support for application traits, conditional dependencies, and URL credentials for workload identity.
+
+FEATURES:
+
+* **Application Traits**: Applications can now be assigned traits that ascribe behaviors and characteristics, enabling trait-specific workflows
+* **Conditional Dependencies**: Application dependencies can now be filtered to activate only when accessing specific resources provided by the application
+
+RESOURCES:
+
+* `keycard_application_url_credential` - New resource for managing URL credentials for application workload identity using OAuth client ID metadata documents
+* `keycard_application` - Added `traits` attribute to assign behaviors and characteristics to applications
+* `keycard_application_dependency` - Added `when_accessing` attribute to express conditional dependencies
+
+DATA SOURCES:
+
+* `keycard_application` - Added new `traits` attribute
+
+DOCUMENTATION:
+
+* Examples demonstrating new features
+
 ## 0.2.0
 
 This release adds support for customer managed encryption keys and includes bug fixes for optional string attributes.
