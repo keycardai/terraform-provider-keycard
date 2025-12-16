@@ -1,0 +1,13 @@
+# Keycard service account credentials
+keycard_client_id     = "your-keycard-client-id"
+keycard_client_secret = "your-keycard-client-secret"
+keycard_endpoint      = "https://api.keycard.ai"
+organization_id       = "org-xxxxx"
+
+# Okta admin credentials
+okta_org_name  = "org-12345678"      # from your-org.okta.com
+okta_api_token = "your-okta-api-token"
+okta_group_id  = "00gxxxxxxxxxx"     # Group ID from Okta Admin > Directory > Groups
+
+# Override redirect URI if needed
+# keycard_redirect_uri = "http://id.keycard.ai/oauth/2/redirect"
