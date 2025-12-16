@@ -1294,6 +1294,153 @@ paths:
         - bearerAuth: []
       tags:
         - Resources
+  '/organizations/{organization_id}/sso-connection':
+    post:
+      operationId: enableSSOConnection
+      summary: Enable SSO connection
+      description: Enable SSO for organization
+      parameters:
+        - name: organization_id
+          in: path
+          required: true
+          description: Organization ID or label
+          schema:
+            $ref: '#/components/schemas/OrganizationIdOrLabel'
+      requestBody:
+        description: SSO connection configuration
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SSOConnectionCreate'
+      responses:
+        '201':
+          description: SSO connection created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SSOConnection'
+        '409':
+          description: SSO is already enabled for this organization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - SSO
+    get:
+      operationId: getSSOConnection
+      summary: Get SSO connection
+      description: Get SSO connection configuration for organization
+      parameters:
+        - name: organization_id
+          in: path
+          required: true
+          description: Organization ID or label
+          schema:
+            $ref: '#/components/schemas/OrganizationIdOrLabel'
+      responses:
+        '200':
+          description: SSO connection details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SSOConnection'
+        '404':
+          description: Organization not found or SSO not enabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - SSO
+    patch:
+      operationId: updateSSOConnection
+      summary: Update SSO connection
+      description: Update SSO connection configuration
+      parameters:
+        - name: organization_id
+          in: path
+          required: true
+          description: Organization ID or label
+          schema:
+            $ref: '#/components/schemas/OrganizationIdOrLabel'
+      requestBody:
+        description: SSO connection update details
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SSOConnectionUpdate'
+      responses:
+        '200':
+          description: SSO connection updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SSOConnection'
+        '404':
+          description: Organization not found or SSO not enabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - SSO
+    delete:
+      operationId: disableSSOConnection
+      summary: Disable SSO connection
+      description: Disable SSO for organization
+      parameters:
+        - name: organization_id
+          in: path
+          required: true
+          description: Organization ID or label
+          schema:
+            $ref: '#/components/schemas/OrganizationIdOrLabel'
+      responses:
+        '204':
+          description: SSO connection disabled successfully
+        '404':
+          description: Organization not found or SSO not enabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - SSO
 components:
   schemas:
     PageInfo:
@@ -2620,6 +2767,76 @@ components:
       description: Organization ID or label identifier
       minLength: 1
       maxLength: 255
+    SSOConnection:
+      description: SSO connection configuration for an organization
+      type: object
+      properties:
+        id:
+          description: Unique identifier for the SSO connection
+          type: string
+        identifier:
+          description: SSO provider identifier (e.g., issuer URL)
+          type: string
+          minLength: 1
+          maxLength: 2048
+        client_id:
+          description: OAuth 2.0 client ID
+          type: string
+          nullable: true
+        client_secret_set:
+          description: Whether a client secret is configured
+          type: boolean
+        created_at:
+          description: Entity creation timestamp
+          type: string
+          format: date-time
+        updated_at:
+          description: Entity update timestamp
+          type: string
+          format: date-time
+      required:
+        - id
+        - identifier
+        - client_id
+        - client_secret_set
+        - created_at
+        - updated_at
+      title: SSO Connection
+    SSOConnectionCreate:
+      description: Schema for creating an SSO connection
+      type: object
+      properties:
+        identifier:
+          description: SSO provider identifier (e.g., issuer URL)
+          type: string
+          minLength: 1
+          maxLength: 2048
+        client_id:
+          description: OAuth 2.0 client ID
+          type: string
+        client_secret:
+          description: OAuth 2.0 client secret (optional, will be encrypted if provided)
+          type: string
+      required:
+        - identifier
+        - client_id
+      title: SSO Connection Create
+    SSOConnectionUpdate:
+      description: Schema for updating an SSO connection
+      type: object
+      properties:
+        identifier:
+          description: SSO provider identifier (e.g., issuer URL)
+          type: string
+          minLength: 1
+          maxLength: 2048
+        client_id:
+          description: OAuth 2.0 client ID (set to null to remove)
+          type: string
+        client_secret:
+          description: OAuth 2.0 client secret (set to null to remove)
+          type: string
+      title: SSO Connection Update
   securitySchemes:
     bearerAuth:
       type: http

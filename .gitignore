@@ -25,6 +25,9 @@ website/node_modules
 *.test
 *.iml
 
+# Local secrets
+.env
+
 # Claude Code local files
 CLAUDE.md
 .claude/
