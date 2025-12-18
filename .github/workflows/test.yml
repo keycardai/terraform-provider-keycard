@@ -12,11 +12,6 @@ on:
 permissions:
   contents: read
 
-# Serialize acceptance tests to avoid conflicts with shared test org resources (e.g., SSO connection)
-concurrency:
-  group: acceptance-tests
-  cancel-in-progress: false
-
 jobs:
   # Ensure project builds before running testing matrix
   build:
@@ -62,7 +57,6 @@ jobs:
     timeout-minutes: 15
     strategy:
       fail-fast: false
-      max-parallel: 1
       matrix:
         # list whatever Terraform versions here you would like to support
         terraform:
@@ -75,15 +69,9 @@ jobs:
           - '1.13'
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-      - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+      - uses: ./.github/actions/setup-test-env
         with:
-          go-version-file: 'go.mod'
-          cache: true
-      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
-        with:
-          terraform_version: ~${{ matrix.terraform }}
-          terraform_wrapper: false
-      - run: go mod download
+          terraform_version: ${{ matrix.terraform }}
       - env:
           TF_ACC: "1"
           TF_ACC_LOG_PATH: ${{ runner.temp }}/terraform-test.log
@@ -93,7 +81,7 @@ jobs:
           KEYCARD_ENDPOINT: ${{ secrets.KEYCARD_ENDPOINT }}
           KEYCARD_TEST_KMS_KEY_1: ${{ secrets.KEYCARD_TEST_KMS_KEY_1 }}
           KEYCARD_TEST_KMS_KEY_2: ${{ secrets.KEYCARD_TEST_KMS_KEY_2 }}
-        run: go test -v -cover -timeout 300s -parallel=1 ./internal/provider/
+        run: go test -v -cover -timeout 300s -parallel=5 -skip 'TestAccSSOConnection' ./internal/provider/
         timeout-minutes: 10
       - name: Upload Terraform test logs
         uses: actions/upload-artifact@v5
@@ -101,4 +89,47 @@ jobs:
         with:
           name: terraform-test-logs-${{ matrix.terraform }}
           path: ${{ runner.temp }}/terraform-test.log
+          if-no-files-found: warn
+
+  # SSO tests run separately and serialized across PRs (shared org resource)
+  test-sso:
+    name: SSO Acceptance Tests
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: sso-acceptance-tests
+      cancel-in-progress: false
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        terraform:
+          - '1.7'
+          - '1.8'
+          - '1.9'
+          - '1.10'
+          - '1.11'
+          - '1.12'
+          - '1.13'
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: ./.github/actions/setup-test-env
+        with:
+          terraform_version: ${{ matrix.terraform }}
+      - env:
+          TF_ACC: "1"
+          TF_ACC_LOG_PATH: ${{ runner.temp }}/terraform-sso-test.log
+          TF_ACC_LOG: DEBUG
+          KEYCARD_CLIENT_ID: ${{ secrets.KEYCARD_CLIENT_ID }}
+          KEYCARD_CLIENT_SECRET: ${{ secrets.KEYCARD_CLIENT_SECRET }}
+          KEYCARD_ENDPOINT: ${{ secrets.KEYCARD_ENDPOINT }}
+        run: go test -v -cover -timeout 300s -parallel=1 -run 'TestAccSSOConnection' ./internal/provider/
+        timeout-minutes: 10
+      - name: Upload SSO test logs
+        uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: terraform-sso-test-logs-${{ matrix.terraform }}
+          path: ${{ runner.temp }}/terraform-sso-test.log
           if-no-files-found: warn

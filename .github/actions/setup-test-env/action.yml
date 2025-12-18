@@ -1,0 +1,20 @@
+name: 'Setup Test Environment'
+description: 'Common setup for acceptance tests'
+inputs:
+  terraform_version:
+    description: 'Terraform version to install (optional, uses latest if not specified)'
+    required: false
+    default: ''
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+      with:
+        go-version-file: 'go.mod'
+        cache: true
+    - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+      with:
+        terraform_version: ${{ inputs.terraform_version && format('~{0}', inputs.terraform_version) || '' }}
+        terraform_wrapper: false
+    - run: go mod download
+      shell: bash
