@@ -3,7 +3,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -277,17 +276,15 @@ func (r *SSOConnectionResource) Delete(ctx context.Context, req resource.DeleteR
 }
 
 func (r *SSOConnectionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Parse import ID as organizations/{organization_id}/sso-connection
-	parts := strings.Split(req.ID, "/")
-	if len(parts) != 3 || parts[0] != "organizations" || parts[2] != "sso-connection" || parts[1] == "" {
+	// Import ID is the organization ID (or label)
+	organizationID := req.ID
+	if organizationID == "" {
 		resp.Diagnostics.AddError(
 			"Invalid Import ID",
-			fmt.Sprintf("Expected import ID in format 'organizations/{organization_id}/sso-connection', got: %s", req.ID),
+			"Import ID must be the organization ID or label",
 		)
 		return
 	}
-
-	organizationID := parts[1]
 
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("organization_id"), organizationID)...)
 

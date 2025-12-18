@@ -40,7 +40,7 @@ func TestAccSSOConnectionResource_basic(t *testing.T) {
 				ImportStateVerify: true,
 				ImportStateIdFunc: func(state *terraform.State) (string, error) {
 					rs := state.RootModule().Resources["keycard_sso_connection.test"]
-					return fmt.Sprintf("organizations/%s/sso-connection", rs.Primary.Attributes["organization_id"]), nil
+					return rs.Primary.Attributes["organization_id"], nil
 				},
 				// client_secret is write-only, won't match on import
 				ImportStateVerifyIgnore: []string{"client_secret"},
@@ -113,7 +113,7 @@ func TestAccSSOConnectionResource_withClientSecret(t *testing.T) {
 				ImportStateVerify: true,
 				ImportStateIdFunc: func(state *terraform.State) (string, error) {
 					rs := state.RootModule().Resources["keycard_sso_connection.test"]
-					return fmt.Sprintf("organizations/%s/sso-connection", rs.Primary.Attributes["organization_id"]), nil
+					return rs.Primary.Attributes["organization_id"], nil
 				},
 				ImportStateVerifyIgnore: []string{"client_secret"},
 			},

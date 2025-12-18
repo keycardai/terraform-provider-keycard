@@ -63,10 +63,10 @@ Import is supported using the following syntax:
 In Terraform v1.5.0 and later, the [`import` block](https://developer.hashicorp.com/terraform/language/import) can be used with the `id` attribute, for example:
 
 ```terraform
-# SSO connections can be imported using the format: organizations/{organization_id}/sso-connection
+# SSO connections can be imported using the organization ID or label
 import {
   to = keycard_sso_connection.okta
-  id = "organizations/org-12345/sso-connection"
+  id = "org-12345"
 }
 
 resource "keycard_sso_connection" "okta" {

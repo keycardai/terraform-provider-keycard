@@ -1294,7 +1294,7 @@ paths:
         - bearerAuth: []
       tags:
         - Resources
-  '/organizations/{organization_id}/sso-connection':
+  /organizations/{organization_id}/sso-connection:
     post:
       operationId: enableSSOConnection
       summary: Enable SSO connection
