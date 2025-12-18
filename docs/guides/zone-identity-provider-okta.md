@@ -1,6 +1,6 @@
-# Okta Integration Guide
+# Zone Identity Provider Using Okta
 
-This guide demonstrates a complete integration between Keycard and Okta, showing how to:
+This guide demonstrates a complete integration between Keycard Zones and Okta, showing how to:
 
 1. Configure Okta as a user identity provider
 2. Set up Okta for credential management
@@ -8,6 +8,8 @@ This guide demonstrates a complete integration between Keycard and Okta, showing
 4. Configure authorization policies
 5. Protect resources with Okta-issued credentials
 6. Grant application access to protected resources
+
+-> **Note:** You can also enable Single Sign-On for your Keycard Organization using an existing Okta IDP. See [Organization SSO Using Okta](organization-sso-okta.md).
 
 ## Prerequisites
 

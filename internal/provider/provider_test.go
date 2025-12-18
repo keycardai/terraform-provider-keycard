@@ -16,12 +16,24 @@ var testAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServe
 	"keycard": providerserver.NewProtocol6WithError(New("test")()),
 }
 
-func testAccPreCheck(t *testing.T) {
-	// Check that required environment variables are set
+func testAccPreCheckBasic(t *testing.T) {
 	requiredEnvVars := []string{
 		"KEYCARD_CLIENT_ID",
 		"KEYCARD_CLIENT_SECRET",
 		"KEYCARD_ENDPOINT",
+	}
+
+	for _, envVar := range requiredEnvVars {
+		if v := os.Getenv(envVar); v == "" {
+			t.Fatalf("%s must be set for acceptance tests", envVar)
+		}
+	}
+}
+
+func testAccPreCheck(t *testing.T) {
+	testAccPreCheckBasic(t)
+
+	requiredEnvVars := []string{
 		"KEYCARD_TEST_KMS_KEY_1",
 		"KEYCARD_TEST_KMS_KEY_2",
 	}

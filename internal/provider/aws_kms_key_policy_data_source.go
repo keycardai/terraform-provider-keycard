@@ -85,41 +85,13 @@ func (d *AwsKmsKeyPolicyDataSource) Read(ctx context.Context, req datasource.Rea
 		return
 	}
 
-	listOrgsParams := client.ListOrganizationsParams{}
-
-	orgResp, err := d.client.ListOrganizationsWithResponse(ctx, &listOrgsParams)
+	orgID, err := GetOrganizationID(ctx, d.client)
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Failed to list organizations: %s", err))
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get organization ID: %s", err))
 		return
 	}
 
-	if orgResp.StatusCode() != 200 {
-		resp.Diagnostics.AddError(
-			"API Error",
-			fmt.Sprintf("Failed to list organizations: %d", orgResp.StatusCode()),
-		)
-		return
-	}
-
-	if orgResp.JSON200 == nil {
-		resp.Diagnostics.AddError("API Error", "Unable to list organizations: no response body")
-		return
-	}
-
-	// Use the first Organization ID from the list in the response.
-	// The access token is scoped to only 1 organization so there should only be one item in this list.
-	if len(orgResp.JSON200.Items) != 1 {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unexpected number of organizations in list response: %v", len(orgResp.JSON200.Items)))
-		return
-	}
-
-	thisOrg := orgResp.JSON200.Items[0]
-	if thisOrg.Id == nil {
-		resp.Diagnostics.AddError("Client Error", "Missing organization ID")
-		return
-	}
-
-	kpResp, err := d.client.GetOrganizationKMSKeyPolicyWithResponse(ctx, *thisOrg.Id)
+	kpResp, err := d.client.GetOrganizationKMSKeyPolicyWithResponse(ctx, orgID)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Failed to get KMS Key Policy: %s", err))
 		return

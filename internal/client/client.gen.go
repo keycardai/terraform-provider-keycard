@@ -918,6 +918,51 @@ type ResourceUpdate struct {
 	Scopes nullable.Nullable[[]string] `json:"scopes,omitempty"`
 }
 
+// SSOConnection SSO connection configuration for an organization
+type SSOConnection struct {
+	// ClientId OAuth 2.0 client ID
+	ClientId nullable.Nullable[string] `json:"client_id"`
+
+	// ClientSecretSet Whether a client secret is configured
+	ClientSecretSet bool `json:"client_secret_set"`
+
+	// CreatedAt Entity creation timestamp
+	CreatedAt time.Time `json:"created_at"`
+
+	// Id Unique identifier for the SSO connection
+	Id string `json:"id"`
+
+	// Identifier SSO provider identifier (e.g., issuer URL)
+	Identifier string `json:"identifier"`
+
+	// UpdatedAt Entity update timestamp
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// SSOConnectionCreate Schema for creating an SSO connection
+type SSOConnectionCreate struct {
+	// ClientId OAuth 2.0 client ID
+	ClientId string `json:"client_id"`
+
+	// ClientSecret OAuth 2.0 client secret (optional, will be encrypted if provided)
+	ClientSecret *string `json:"client_secret,omitempty"`
+
+	// Identifier SSO provider identifier (e.g., issuer URL)
+	Identifier string `json:"identifier"`
+}
+
+// SSOConnectionUpdate Schema for updating an SSO connection
+type SSOConnectionUpdate struct {
+	// ClientId OAuth 2.0 client ID (set to null to remove)
+	ClientId *string `json:"client_id,omitempty"`
+
+	// ClientSecret OAuth 2.0 client secret (set to null to remove)
+	ClientSecret *string `json:"client_secret,omitempty"`
+
+	// Identifier SSO provider identifier (e.g., issuer URL)
+	Identifier *string `json:"identifier,omitempty"`
+}
+
 // TokenCredentialUpdate Schema for updating a token credential
 type TokenCredentialUpdate struct {
 	// Subject Subject identifier for the token. Set to null to unset, which allows any token from the provider to be accepted without checking application-specific claims.
@@ -1163,6 +1208,12 @@ type ListResourcesParams struct {
 	CredentialProviderId *string `form:"credentialProviderId,omitempty" json:"credentialProviderId,omitempty"`
 	Slug                 *string `form:"slug,omitempty" json:"slug,omitempty"`
 }
+
+// UpdateSSOConnectionJSONRequestBody defines body for UpdateSSOConnection for application/json ContentType.
+type UpdateSSOConnectionJSONRequestBody = SSOConnectionUpdate
+
+// EnableSSOConnectionJSONRequestBody defines body for EnableSSOConnection for application/json ContentType.
+type EnableSSOConnectionJSONRequestBody = SSOConnectionCreate
 
 // CreateZoneJSONRequestBody defines body for CreateZone for application/json ContentType.
 type CreateZoneJSONRequestBody = ZoneCreate
@@ -1833,6 +1884,22 @@ type ClientInterface interface {
 	// GetOrganizationKMSKeyPolicy request
 	GetOrganizationKMSKeyPolicy(ctx context.Context, organizationId OrganizationIdOrLabel, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DisableSSOConnection request
+	DisableSSOConnection(ctx context.Context, organizationId OrganizationIdOrLabel, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetSSOConnection request
+	GetSSOConnection(ctx context.Context, organizationId OrganizationIdOrLabel, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateSSOConnectionWithBody request with any body
+	UpdateSSOConnectionWithBody(ctx context.Context, organizationId OrganizationIdOrLabel, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateSSOConnection(ctx context.Context, organizationId OrganizationIdOrLabel, body UpdateSSOConnectionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// EnableSSOConnectionWithBody request with any body
+	EnableSSOConnectionWithBody(ctx context.Context, organizationId OrganizationIdOrLabel, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	EnableSSOConnection(ctx context.Context, organizationId OrganizationIdOrLabel, body EnableSSOConnectionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListZones request
 	ListZones(ctx context.Context, params *ListZonesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1961,6 +2028,78 @@ func (c *Client) ListOrganizations(ctx context.Context, params *ListOrganization
 
 func (c *Client) GetOrganizationKMSKeyPolicy(ctx context.Context, organizationId OrganizationIdOrLabel, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetOrganizationKMSKeyPolicyRequest(c.Server, organizationId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DisableSSOConnection(ctx context.Context, organizationId OrganizationIdOrLabel, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDisableSSOConnectionRequest(c.Server, organizationId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetSSOConnection(ctx context.Context, organizationId OrganizationIdOrLabel, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetSSOConnectionRequest(c.Server, organizationId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateSSOConnectionWithBody(ctx context.Context, organizationId OrganizationIdOrLabel, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateSSOConnectionRequestWithBody(c.Server, organizationId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateSSOConnection(ctx context.Context, organizationId OrganizationIdOrLabel, body UpdateSSOConnectionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateSSOConnectionRequest(c.Server, organizationId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) EnableSSOConnectionWithBody(ctx context.Context, organizationId OrganizationIdOrLabel, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewEnableSSOConnectionRequestWithBody(c.Server, organizationId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) EnableSSOConnection(ctx context.Context, organizationId OrganizationIdOrLabel, body EnableSSOConnectionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewEnableSSOConnectionRequest(c.Server, organizationId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2574,6 +2713,168 @@ func NewGetOrganizationKMSKeyPolicyRequest(server string, organizationId Organiz
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewDisableSSOConnectionRequest generates requests for DisableSSOConnection
+func NewDisableSSOConnectionRequest(server string, organizationId OrganizationIdOrLabel) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "organization_id", runtime.ParamLocationPath, organizationId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/sso-connection", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetSSOConnectionRequest generates requests for GetSSOConnection
+func NewGetSSOConnectionRequest(server string, organizationId OrganizationIdOrLabel) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "organization_id", runtime.ParamLocationPath, organizationId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/sso-connection", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateSSOConnectionRequest calls the generic UpdateSSOConnection builder with application/json body
+func NewUpdateSSOConnectionRequest(server string, organizationId OrganizationIdOrLabel, body UpdateSSOConnectionJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateSSOConnectionRequestWithBody(server, organizationId, "application/json", bodyReader)
+}
+
+// NewUpdateSSOConnectionRequestWithBody generates requests for UpdateSSOConnection with any type of body
+func NewUpdateSSOConnectionRequestWithBody(server string, organizationId OrganizationIdOrLabel, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "organization_id", runtime.ParamLocationPath, organizationId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/sso-connection", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewEnableSSOConnectionRequest calls the generic EnableSSOConnection builder with application/json body
+func NewEnableSSOConnectionRequest(server string, organizationId OrganizationIdOrLabel, body EnableSSOConnectionJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewEnableSSOConnectionRequestWithBody(server, organizationId, "application/json", bodyReader)
+}
+
+// NewEnableSSOConnectionRequestWithBody generates requests for EnableSSOConnection with any type of body
+func NewEnableSSOConnectionRequestWithBody(server string, organizationId OrganizationIdOrLabel, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "organization_id", runtime.ParamLocationPath, organizationId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/sso-connection", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -4430,6 +4731,22 @@ type ClientWithResponsesInterface interface {
 	// GetOrganizationKMSKeyPolicyWithResponse request
 	GetOrganizationKMSKeyPolicyWithResponse(ctx context.Context, organizationId OrganizationIdOrLabel, reqEditors ...RequestEditorFn) (*GetOrganizationKMSKeyPolicyResponse, error)
 
+	// DisableSSOConnectionWithResponse request
+	DisableSSOConnectionWithResponse(ctx context.Context, organizationId OrganizationIdOrLabel, reqEditors ...RequestEditorFn) (*DisableSSOConnectionResponse, error)
+
+	// GetSSOConnectionWithResponse request
+	GetSSOConnectionWithResponse(ctx context.Context, organizationId OrganizationIdOrLabel, reqEditors ...RequestEditorFn) (*GetSSOConnectionResponse, error)
+
+	// UpdateSSOConnectionWithBodyWithResponse request with any body
+	UpdateSSOConnectionWithBodyWithResponse(ctx context.Context, organizationId OrganizationIdOrLabel, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateSSOConnectionResponse, error)
+
+	UpdateSSOConnectionWithResponse(ctx context.Context, organizationId OrganizationIdOrLabel, body UpdateSSOConnectionJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateSSOConnectionResponse, error)
+
+	// EnableSSOConnectionWithBodyWithResponse request with any body
+	EnableSSOConnectionWithBodyWithResponse(ctx context.Context, organizationId OrganizationIdOrLabel, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*EnableSSOConnectionResponse, error)
+
+	EnableSSOConnectionWithResponse(ctx context.Context, organizationId OrganizationIdOrLabel, body EnableSSOConnectionJSONRequestBody, reqEditors ...RequestEditorFn) (*EnableSSOConnectionResponse, error)
+
 	// ListZonesWithResponse request
 	ListZonesWithResponse(ctx context.Context, params *ListZonesParams, reqEditors ...RequestEditorFn) (*ListZonesResponse, error)
 
@@ -4590,6 +4907,101 @@ func (r GetOrganizationKMSKeyPolicyResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetOrganizationKMSKeyPolicyResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DisableSSOConnectionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON404      *Error
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r DisableSSOConnectionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DisableSSOConnectionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetSSOConnectionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SSOConnection
+	JSON404      *Error
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GetSSOConnectionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetSSOConnectionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateSSOConnectionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SSOConnection
+	JSON404      *Error
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateSSOConnectionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateSSOConnectionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type EnableSSOConnectionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *SSOConnection
+	JSON409      *Error
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r EnableSSOConnectionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r EnableSSOConnectionResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -5359,6 +5771,58 @@ func (c *ClientWithResponses) GetOrganizationKMSKeyPolicyWithResponse(ctx contex
 	return ParseGetOrganizationKMSKeyPolicyResponse(rsp)
 }
 
+// DisableSSOConnectionWithResponse request returning *DisableSSOConnectionResponse
+func (c *ClientWithResponses) DisableSSOConnectionWithResponse(ctx context.Context, organizationId OrganizationIdOrLabel, reqEditors ...RequestEditorFn) (*DisableSSOConnectionResponse, error) {
+	rsp, err := c.DisableSSOConnection(ctx, organizationId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDisableSSOConnectionResponse(rsp)
+}
+
+// GetSSOConnectionWithResponse request returning *GetSSOConnectionResponse
+func (c *ClientWithResponses) GetSSOConnectionWithResponse(ctx context.Context, organizationId OrganizationIdOrLabel, reqEditors ...RequestEditorFn) (*GetSSOConnectionResponse, error) {
+	rsp, err := c.GetSSOConnection(ctx, organizationId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetSSOConnectionResponse(rsp)
+}
+
+// UpdateSSOConnectionWithBodyWithResponse request with arbitrary body returning *UpdateSSOConnectionResponse
+func (c *ClientWithResponses) UpdateSSOConnectionWithBodyWithResponse(ctx context.Context, organizationId OrganizationIdOrLabel, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateSSOConnectionResponse, error) {
+	rsp, err := c.UpdateSSOConnectionWithBody(ctx, organizationId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateSSOConnectionResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateSSOConnectionWithResponse(ctx context.Context, organizationId OrganizationIdOrLabel, body UpdateSSOConnectionJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateSSOConnectionResponse, error) {
+	rsp, err := c.UpdateSSOConnection(ctx, organizationId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateSSOConnectionResponse(rsp)
+}
+
+// EnableSSOConnectionWithBodyWithResponse request with arbitrary body returning *EnableSSOConnectionResponse
+func (c *ClientWithResponses) EnableSSOConnectionWithBodyWithResponse(ctx context.Context, organizationId OrganizationIdOrLabel, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*EnableSSOConnectionResponse, error) {
+	rsp, err := c.EnableSSOConnectionWithBody(ctx, organizationId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseEnableSSOConnectionResponse(rsp)
+}
+
+func (c *ClientWithResponses) EnableSSOConnectionWithResponse(ctx context.Context, organizationId OrganizationIdOrLabel, body EnableSSOConnectionJSONRequestBody, reqEditors ...RequestEditorFn) (*EnableSSOConnectionResponse, error) {
+	rsp, err := c.EnableSSOConnection(ctx, organizationId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseEnableSSOConnectionResponse(rsp)
+}
+
 // ListZonesWithResponse request returning *ListZonesResponse
 func (c *ClientWithResponses) ListZonesWithResponse(ctx context.Context, params *ListZonesParams, reqEditors ...RequestEditorFn) (*ListZonesResponse, error) {
 	rsp, err := c.ListZones(ctx, params, reqEditors...)
@@ -5772,6 +6236,159 @@ func ParseGetOrganizationKMSKeyPolicyResponse(rsp *http.Response) (*GetOrganizat
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDisableSSOConnectionResponse parses an HTTP response from a DisableSSOConnectionWithResponse call
+func ParseDisableSSOConnectionResponse(rsp *http.Response) (*DisableSSOConnectionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DisableSSOConnectionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetSSOConnectionResponse parses an HTTP response from a GetSSOConnectionWithResponse call
+func ParseGetSSOConnectionResponse(rsp *http.Response) (*GetSSOConnectionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetSSOConnectionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SSOConnection
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateSSOConnectionResponse parses an HTTP response from a UpdateSSOConnectionWithResponse call
+func ParseUpdateSSOConnectionResponse(rsp *http.Response) (*UpdateSSOConnectionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateSSOConnectionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SSOConnection
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseEnableSSOConnectionResponse parses an HTTP response from a EnableSSOConnectionWithResponse call
+func ParseEnableSSOConnectionResponse(rsp *http.Response) (*EnableSSOConnectionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &EnableSSOConnectionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest SSOConnection
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
 
 	}
 
@@ -6794,110 +7411,117 @@ func ParseUpdateResourceResponse(rsp *http.Response) (*UpdateResourceResponse, e
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"H4sIAAAAAAAC/+x9b3PjNpL3V0Hx2arYeSTZyWavbv3myutJ9rwzybjs+KYq2TkvTLYkrilAAUB7lCl/",
+	"9ysABAmSIAlSki1N9GY3Y5H40/3rRneju/k5COliSQkQwYOzzwEP57DA6j/Pl8skDrGIKZH/jICHLF7q",
+	"fwbnBFm/o5gjjDidiifMAPEVF7BAT7GYI0wQ5pyGMRYQoTgCImKxQmKOBQrlj2EInKNr4DRlIfAJuhRo",
+	"gVcIhwLJkQVH9Imge5jjZIqOFjicxwTGgo6z/zxGlMknsyfoFGGUcmDoKIIEZmpePcvxJBgFS0aXwEQM",
+	"apMhA/nAHRb1PX6vl6oekZsU8QK4wItlMAqmlC3kO0GEBYzlL8EoEKslBGcBFywms+B5FESwBBIBCWPg",
+	"dyFNiWOWn9LFPTC5bJbRANmvFcPGRMAMmB7XGqE64H+nC0zGDHCE7xM5WPHjKFjgT++AzMQ8OPv29Lv/",
+	"HAUkTRL5XHAmWAqOPcRRfYpbEv+WQsbNaayXL+aAsIUZ51jmBceYkmV8CaH8PbLGHqFUTyfxFBM1z++U",
+	"gGs3i5iYP3zjmH8BAkdYYDn7nxhMg7Pg/50UAnCSof/kR/Pc8yggeAGdRFYPldfzl790LoeyGSbx74pc",
+	"dy46v7ce0CJDnwhHYi7lrZ3US0YFDWmiUI6jKJYP4uTKQv8UJxwqYAqusvfGGStCFFIyjWcpM1NVEVMW",
+	"KIpTMf+2i8CW7nh/Ll8w0wbPz/lm6P2/IRRyMzxJZw7EXL8bczyF3lj5jz9XWbPEQgCTg/7vr3j8++n4",
+	"rx///9F/nY3zfxx//ScXlQXDsVac5aX9rP7ulopYwIL3IJAaSyHRLaqYMbySv6fLqEuX6UcGaDJJRCdE",
+	"f6EEaoBE95BQMuNI0Ppgz6OAwW9pzCAKzn6V+qUuCcWEGfNLuiMTSqd+HdkqvUSTj6NAxEKSr3S0OeBm",
+	"/XyhBqtv+0bxCU0py84HMkMYEXiqMLssHCXFXhvzjfVrB3TKw7r4Yg5UVKJbHcDqD5+7efTRQacqAF/2",
+	"WDocJU3q3lOxGJ2bYfyl1VkZPRXEZVSwuOwWX5QtvlOK1UA4UachWb2fBme/ei+5eP1n+gAkeB4NePUK",
+	"c/5EWTTw7fQ+icO3sBr2+i1L1pk3eP5YtROKR7jSgtrClmoQPsmjFCeIA3uMQ+BoyujCRo0yat28NGxq",
+	"4t/fMIcfYkgiB0ov6GJBCZqqnxGfYwYRul8hnCSlwynMR0MSNLympnHZ8/Ekmlyz9abztLx84xAifXxa",
+	"q2o7PUdbdll6mfvFmoNNm7ftQ++sQfjKNpgniAaaYBV09zW1LPlGUo5RJsi+uruwxdbQ4HqQNfS4HmA9",
+	"bZ6NsZ5O14MM1uz2Ghz63cvArUhpO8sLM8OHrp4W9zJ7vnlVjap9awq6yzSVto3aR774YugRwgmnKOUQ",
+	"IcyRco7Rt5NTFCYxEIEu36AjnAo6ngEBpmNqU0SoQEtGH+MIouM2Mx9IupASb2a2zPoG3VCTefX4R09u",
+	"o5yf/YQ8g6UvCNTT+wKBy+IYVSDQi395CGgSbx0Aepoh7JeasR8CHmC1Lyi4yJlpgUCuf+tA+PfTA79L",
+	"WVxf0z8+vL1Bt9eXSFDEQLAYHsFamjbkbXNFjuINtfEDrIbCzVp1T+QhiaJ+6LsGvqSEw8FX3JCvaAi6",
+	"eWsC5bxqZ6nmhacyEfLhXdIjmTizjgnMYyjmPJVbURup+VPoEZhUStzpWKVaQuqk0j/YTqAkm5xXTTNB",
+	"H+ZAEF3EQkA0QpisMkIq77+yPhUuWEqNJf0ymgoUziF8UPQvyGTdQSQ4XvCJj7JRkw7XMzatvVWNhlc/",
+	"LSPFzBOQt9fv9sa+vX5XDw6go0XKBboHhNEjTuJI7uh4wEGSsmQ4Z71iiRXG3l6/82ar7brgJBl6bFgR",
+	"LqmFq5H+bboWTt3T6JCZ/Rq05symJFlJ+yFlBCKk8ao2OUJcUAaIQ5gySFbHXUviEDIQm3Vo3Ggoc7h2",
+	"gpm9ju+xWuvAQ8s614O2I/SVELS+Z7JJx2MYo6prRkeEZjhS6MMzOPZgVGbKtLIp809eg1Mb8R72zzmo",
+	"Q6LiGPih4wFW6wpy4Vs0YSQ3OXdAkivn+wT9IP+orDNJspF+AH5LccLV2Z2ZgfK0TmGEKENfff0VepIW",
+	"nvkp5srVzK9ZJ22Wa9c1ypV5bn1rN7Nu1c2Pz03CmgYvSZNEJaBt2/DtvBEfaAg77N6+SldBfU2JMt6y",
+	"W5hu1d2Cv0OuRqu93uXVmuO5/4vmPOj95i1LBs5Wf60thq8uZxTKCIJPMRcVxPXiVb7OoDGA8Fo28Ou7",
+	"H4PMltvrd2vKj/RUygypJNb1SwMszAWTWdIzD5BBFDMIhTyaHXf1xfjmQWlb8OK0akgy6WJZe47cs5uM",
+	"xWJyarU7fWXSWveSmyOwTqoog8GdVPZKlB5IWb+EnTKBLe2/RQLr++uXBDY64iCkPW2MiF8/yn+lhIM4",
+	"fgXUG8Xezpu1YN+RXuyP+jXzjM1ldANt+qF1LZz2pYgnTNekjzniu+jjhRid8teUVYjl3+5B1W88xpRx",
+	"hEmEwjlmOBTApK0ScikXuBSUH6GneRzOTa1I/KiSauSQBSVVGQh8WgKLgYTAR+iJsodpQp+4cmqomAMz",
+	"5Sr5/MEoP/FnWMATXjUFDPXGHAJpPVSAYrBx5sgjPiTaNiXaFsbpjqbbFgvcoeqBBjlvFu/vSchWasFv",
+	"YXX+xN8u+IXSW45asQ836O2PNw69JiGBIB/JuNR2WGGkaBDBFKeJQG9hFWIWoYuEppH1pop9PcVJIq38",
+	"lOtoROVmhJHmpb2FFTq//kktyoxKZjlsv+JIQbATF1WPAT9xb49BLtDWM9nSCkKrVV5UrHB/xjQpIm/2",
+	"mMzFktWiooEL+ggoTLmgC2DjBSZ4BpHOxiARYvAITL2RsfG48/T6EpnVJkyMUYd6VX9GzFxx12oXaeSq",
+	"3ZAqk3M8c//GBRYpt34iqv6wtk8zxkhPk79obVqv2rGdHy2V3cMSyvJjc4VfO/VoyO9S17XpGxqmCyAi",
+	"o7O6tKvYzLVjp87mxn0Msusqu6nZ+p+fLdkxT3VLRg8i1AQ1dyy6aNNhFLhoZedyO0Q319yl5/pU4/48",
+	"1znTSs5LmeNPmKPsTRQTdPvzhTul2ju73cR5K2vtaSMk+B4SFykiusAxUZYH4jCTPGuasu7pOW2aNzFf",
+	"JniF8utfn6HaUtXbib2gXCAGIRCRmHz2DtJ3QeYyes/euQlWmv7yjZQdRdpyZVtP5lzhGVySKe3rrOFZ",
+	"TLKSd6L36cIxkOguTBl3KfUL9Xe0pDHRxxZVRE4wF0gadygzl8OUMYmMpdbCnXb6HPM7Ap/E3TJT/eVp",
+	"P8xBOTvyfwBhBmhBGagZOcJToX+qzprNck9pApiYaZYMHmOacu+p9Cz3MJVTek3DBWaiLw2nMVuLiJUj",
+	"sExR19atw1ACCilEOZDeeLHg5xW6sjlqmOuXEVEsOxu5Ht537cO6zqtqtSv7ksv41Kqoh6fSowBuej0I",
+	"WrR7UAYiTqRHLr146f0fSa+SSzG3PBF+rCIAqZjLRYZYgKOXg7rYdlcaVW+/y9XEXbKVjazTCO44ODTm",
+	"JYnUsjh6yuCPy1kski7GxIbICfptN6PY0aYR+SXxDkYfdrX7QxvNSsGJ1+juYFRBtbXDKKBLIHqrXu8v",
+	"gVy+2dfWEBV9bMpig1HwoG3h8aN0hq1/c+FyQF+9qDBPX9hCSWG9zturqvCqBv/6IdW/dYMlVBs6WdpP",
+	"Eo/RsrPjyMS2sngHROrgVOmUUZFP+fpq/4vV1t4RXwM/x02Td4OD3JZqvn5q0LEtiBp4kS81PmVGioFE",
+	"yup23Ep2W1E0grtwjpMEyAzuFiDmNOJ30jykTIASrjy83fOOs5y52HdlDGYxF2z9LfKQLmFjW1IZXGus",
+	"59mBKL9cBze6mjSq11V7foo0Xul6I23DyOqBpMHIWRMpvZExCAm91U2TF9sFiAm6cV4h4CTRy/o2e35y",
+	"UE9/dPXkEY6o+Al1OKrf0QUlBEIx9CBMObCYTOmmd1xenJdWLu23USv77NpTNfvsffheffROacuNesdn",
+	"y63KRw/gq3xeFhIektCFCZ9ko240rBMFKLqArBMLcKRv5dTrgaouPHWQqw1Jub8w2WpQpUgmWYecjmyv",
+	"Ojm70Tc01WnDfncDWya9I70b98/XWdnBj39dP75NRlpEw12r4XvvU61mrEnIbpdz5oTSU/vdMTXW0vQj",
+	"Wrkasvu6rKMMsbIVld3jsx1z0+W6Mit6tFavzODTknJQoVcBob5dz6+bEWVompJQ31nHYqV6pmfBJW5f",
+	"kqmH9SWL/BmyzNJQUGanz6rKGJUrW841HpkrW3VBp18NgfNJV8fE3qU/WUnMkkGIlV+iFVOtP272+xn6",
+	"CbioVMtomk/QLS/lTN7FkdS0UxDhvPQ8hyVmWECyyvIOVbA7b8KOl0vAjCOiZ4oJwkTnC59fXeZJWVnp",
+	"pOo5WSQgkgimMYFosk5PSJz38eHlpb18U8hCju7sik4/Nhe1ncN4nNujNoMdKyoxOn/ppbjsXlAbt60C",
+	"tXy1eZVIG6939iK3bdGHfs2bu/xto7MO8bjOSvl3lId+dHl0iWfDI0F/yHasT3Mgd3nb4/r472IuSp/1",
+	"uHzDFSdHupBevwrRCC3wQ3bVmjeIXyH8iGNF9Al6T5IVWjLg0ip7qisx9d9ZuxUsTYlimEkrX6t89LgM",
+	"zid9oRb/HpfB1zVxqJtf/S+DLcHYTIulvuf5Bo4TQYuP7+jP8XSp6UNl0asdCVvR3MOb7OfOSXMYzTwy",
+	"NO6T65KjJWYKuVrAjyf/JP8kX3/9ATMSk9nZ11+jizkmM1Pl8a9ixf/KjDLlxjDAD8Xo6ntJOlCn0wzt",
+	"r29Mti/Wzen33VGoF5D+NZZ3UBKvXH44VFU08zzXIF2ROd8qwlx9NIdGbm7eZ1ccTiDd3LxHYf67qyqa",
+	"INpaTdIjeqxiXZvIA/6wo9m//SpfyrTv68/Jt4ueR8XoRzCZTUaqYRMw04Slr0Buz6R3Wa3lxMQcUC4o",
+	"eNmqkjQXDsI2SEUvs5XU2bamQGzseoQudbByhOoXJfG0vV/1KyGthgYnEBpZ22I2lTjc03baKIcbKnmP",
+	"N8l5/xlej88NHGw+udztxTzvJ3RzuJariTVa0t04jncT6TdVNi396QRVdwG70KLO8ESR2u+qxdVLzZMn",
+	"t9fvht6yvVLLMUMfOb0XdX6R9q/jEkoV+UtyZLaU7ZhxY0B3mlpuY/dCtQQoFbweXfx0/uP3xzlwM7M8",
+	"p8ucctFgFL/wpcdLejlFk4W7B91Vts3XaO690Tdin1F/b8qemtbrUfLkciDMeEPycaQ8DS1wUu/Wi5ts",
+	"eyNbRD7ix32qfdpm2D3lKhiivyPeHh7J8zPylD7pfGndz4GhhM5iMjR6XS5gKgDo5Qb8UsJxWUn3D1U7",
+	"Ufw6KnlPleYuJBxJ3vsUDVVg1OJoOFTUsNqNBkXZnHvfNEfpDZS/0W0XlafiwB6B3dmxuaYZz0sz3qgX",
+	"kQnW5StAR5MnSJLxA6FP5ETp3nFpyrGe0seEi0J2B0QiJmoOD71ZEbyIQ5Q1cr+2MvxRzJF53xUn0s5O",
+	"254zd6jksnatuqXx+837n9AHuFc5T9LB6MG25UMIdwWCm6hx9fbie32LqZ/UoCtxLqQRINW5z0kUuyun",
+	"b1POItuiqvH6Fvs0zdbG5R5UrBdaNE2oHTvvoasnnUZWl7SNmgS/ttIKX5ooaKGvCpmyOFVVn18xW10N",
+	"rlXIphymxtz4mvSrjmfuZKcNKAOHgHlMuK68PXfyodepNLSMzBiRxRFVu0ns5s9aDGmwUdoZtAmOdE3s",
+	"waH2UMFGaqrajIfcci9XYXVNVJRGlyZqOMiV7zQuzeBzhDvrelqXdcuBXZIpHax7G8jhWktNC/pXkDls",
+	"zD4Oc7vqG+o3O4p51L48dYlvEc8Q3bGJwp1Gfde84XbRHJpu4acg1/MbWwL+Pv7kTqUebMi/3K2GxA6J",
+	"GR5UEbSIq1TCKoPTS6pC0SQLz6NA1VXFYqWAr9F7D5gBk9JW/OsHA7x/fPg5GNU+a/Uz+pt6TH+CRjmM",
+	"RflEMAoU5dThqh4rVjIXYhk8y4XEWSfB8tCm5eX5lXY1VF9cI4g6JUnMIWZFuH1ifefDejsYBY/AuB71",
+	"dHI6+caEGvEyDs6CP09OJ6eBCtfNFRVO7HCV+svMdWl3rZJGOcIoyXJVS+/lgm23XYuqFwFSd2QtHLOk",
+	"1/elyeWyGF6AAMZVrUAsp/4tBbYy4bMzE0zTIHUksj2P3O9lDQIHvJnEC9W6vXgxt5y/OT1V8hcv0oX6",
+	"16kSv+yfOftVfpnqnPtRHuW6UkAR+9vTU92flwjQtoN1cXbyb651VzFz5bLJpOJ4tfoudfl0pPQu8Qzu",
+	"DD7bP36UdcSseYVqGfZI9Vj083O9kEN37M67Fz+rh8rIPPlcias+n+AnfvIAq/GSJnG46oYuUX2XH2CF",
+	"9BtGDemEN1dPal4D7d+hhNm3P968hdWVXkANvn7NSYORRp0UyQJ09ShyQWitDAtQ+DK96Jy6aSAWLKgH",
+	"hMZApD8SGaqre5oQE9N/HcUEmabYOXOc3xyu2sF6Uh+I/Y+6WK00gc/WwwUWsJBE8wUe53QcVtLREhDu",
+	"brvqpL65eW9fnLoVYvZwOddtz0H1XWeyXqR3HSGeqiqHaZokSh19p1/2RmSrxaX6jzuAUaIfoQJNaUrk",
+	"waVYJv9gPHj1aqb2t72qSjd324BRGLBNl18/SrLzdLHAbFWBXDkvD88kgiT9g4/PI7ey/DsI1JlN2Yri",
+	"v4P4ohB8ujF2l8niYHtVMkDgOOEHWRgsC3U0O+RgiUU4d9yNa6e/TRhq2Nfv7Dv8VfX332i02g7y85BG",
+	"F/6zsIsRg+pen3dIVE1j+8MZthG5dcqeS3Qpd6aN+Ntc+tmDxLYKQB517RKDqnbsEthvXk1gzUdA6gL7",
+	"1+2LhlxLzBFOGOBoZaSzuGOmFUd9L2TWkroWmZXulYpp9Yg06RjYwAjTL2qyQ2Rpq5EllaO2gxGl6xzJ",
+	"eyJEqhHA7xlkjeRoCDefd1o9cyvDz0NYJijL545VZCzmNFHPAHmMGSX5l4Yuz38sB53LIqbnznIUt3EQ",
+	"WWmOOjqzNZtPg7jOz4F57/sCOU3cPF26grlcX598jqPntlDXFbAFJvo7T/oZbm5Lsw+3IP0J16zMOCpI",
+	"WI+EqfczVLUaY+reRxWgOWyvDnOrqqS9old7q1o0TZv4PGo/jDMfTJ7GGOXlPIq59ytN/1oU6PXZd9AN",
+	"G4ifNAKmNW5iZP8rXokfOpIKXDGUVwHPdk6vIt5xOL22FSnoPr3k/11Gzyd2XWJRhNfHHal8c96MYL4j",
+	"VzSZyBZV90msboYX1hK26qRYq76M9tfLMVOUhV0z90VPi3XcJSf/D/7TpvynBgG19IP93XJbAn19LPcM",
+	"Dc6Rm9tuYd8MrDd/jjn38DJuWcvU11bCyKimt/VvriK4BvbtmcfWCMJulPufi8PcPuIrIdopeVEJcZ8g",
+	"B1ex7iquAbBB7qR7vmYH80uAzZb1pAsZFqd0SrvpS4rMdycRB/YYS+9A9f2w1sT3ynVdC8Bd7m2Tjqt6",
+	"vA0O7p6C94VMi5fxmQ8i4/Klt2ZXDHSyB3rWW/anSxXTB2d6J5zpgwu9BRe6wW/2d5ZtdTGW9h6diifM",
+	"wHzFRGXfY4JMTVGRIK7VbP7tE97tYO+1W/2yJ54zWExK3NLfmmlgl3WR18059dmZBV4hHAokRxYc0SeC",
+	"7mGOkyk6WuBwHhMYCzrO/vMYUSafzJ5QnoIqGTuSXuZMzatnOZ7ssefeLFwdZ+kGHPNub/zgg++QD96m",
+	"hwd427ag+7jYB8f6oDN3wJFvtUY6XXbrldrNNCYRshrXdDjtf3BX/cUd9IPo7UJAYD1zZYuX77o3hyuU",
+	"3OMG/gfKuiX8y/bkd+I0Ptytfxl36956wf7cTqcyyL9QYr9lvvLRQ/Df2JN6yXrlM26HuN/ea4v8e3AH",
+	"BbEFBRGVJWxTGuLkc/HRwsv2IMi1aiklDYi61lhlVzXtSkOP4FIbq512AdyD2IQ7BFty5Gomu7G7GhJ3",
+	"YTFo2OUWqQt/0p5tR185BHOA3qYdzEL/uzKn9/ej6/uapeEndcvUIXXnUdSk5wXtkrPzKOojZ/52of/n",
+	"Ng+nx76eHudR1BvEXkZPUSDnHyApKjvMl9LQ/aqnZ2RfuB5CIAen5uDUWNJtV636C7fpk9pHlPN3eiRA",
+	"XeXz7HD2k3rMfs98wsxk0wWj4EH3NB0/KogU/+aCO79ydsiz2rJWMcg6aJVNaZWlJatGkxTy65telTdZ",
+	"Hld8FJ7KPcvn9O2WoMUFlynJV195lO6G+tnuFtGQa5WjYL8SrcyyXybLqhAVl1eZM6zmVfbk2NEtl4cD",
+	"ZfYtKD+ucnLv0qOWBcZcYtF2ug7sUmHN6MqI2jboD+lQvulQHdAYlAiVy2NjFtSe8v+g0HYhvNUJ2c4+",
+	"GubxIRlL+wPd7R36L5OrdJCRtZKM+h/660XH/F3qlmhYebof4kSA9YkOeaCUHOX1POnuyayi2WXx6ZWG",
+	"iYuHDZ2H9QXxCSH06NuzZ15xc6zN6eAOdWq/W2tLC+Acz8DJnNIizYPDltnbAXaF0gpp83WA81u68VqX",
+	"dNkFnbpFq37Xx+UJ55xfp0vV7njIZjsv4yEf7l13wtNmBYZd8td26A70tC2pcXnaryVUo7rpkEHw0FvS",
+	"3zvvgNMg7zxnRKN3/gfCzEEBf0mJL53i0hkZMI8PiQx82WKzPQPpZaIJB/nciahEl4GkhmSPRnJSlgRn",
+	"wUnw/PH5/wIAAP//PVovOy4DAQA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
