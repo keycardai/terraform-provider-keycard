@@ -1,6 +1,8 @@
-# Okta SSO Guide
+# Organization SSO Using Okta
 
-This guide configures Okta as the SSO provider for your Keycard organization.
+This guide configures Single Sign-On for your Keycard Organization using an existing Okta IDP.
+
+-> **Note:** If you are looking to configure Okta as an identity and/or credential provider for applications within a Keycard Zone, see [Zone Identity Provider Using Okta](zone-identity-provider-okta.md).
 
 ## Prerequisites
 
