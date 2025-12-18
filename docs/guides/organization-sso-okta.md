@@ -44,7 +44,6 @@ Create a `terraform.tfvars` file with your configuration:
 # Keycard credentials
 keycard_client_id     = "your-keycard-client-id"
 keycard_client_secret = "your-keycard-client-secret"
-organization_id       = "your-organization-id"
 
 # Okta credentials
 okta_org_name  = "dev-12345"
@@ -64,11 +63,6 @@ variable "keycard_client_secret" {
   type        = string
   sensitive   = true
   description = "Keycard service account client secret"
-}
-
-variable "organization_id" {
-  type        = string
-  description = "Keycard organization ID"
 }
 
 variable "okta_org_name" {
@@ -149,10 +143,9 @@ resource "okta_app_group_assignments" "keycard_sso" {
 
 # Configure Keycard to use Okta for SSO
 resource "keycard_sso_connection" "okta" {
-  organization_id = var.organization_id
-  identifier      = "https://${var.okta_org_name}.${var.okta_base_url}"
-  client_id       = okta_app_oauth.keycard_sso.client_id
-  client_secret   = okta_app_oauth.keycard_sso.client_secret
+  identifier    = "https://${var.okta_org_name}.${var.okta_base_url}"
+  client_id     = okta_app_oauth.keycard_sso.client_id
+  client_secret = okta_app_oauth.keycard_sso.client_secret
 }
 ```
 

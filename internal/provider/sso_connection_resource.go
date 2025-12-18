@@ -32,11 +32,10 @@ type SSOConnectionResource struct {
 
 // SSOConnectionResourceModel describes the resource data model.
 type SSOConnectionResourceModel struct {
-	ID             types.String `tfsdk:"id"`
-	OrganizationID types.String `tfsdk:"organization_id"`
-	Identifier     types.String `tfsdk:"identifier"`
-	ClientID       types.String `tfsdk:"client_id"`
-	ClientSecret   types.String `tfsdk:"client_secret"`
+	ID           types.String `tfsdk:"id"`
+	Identifier   types.String `tfsdk:"identifier"`
+	ClientID     types.String `tfsdk:"client_id"`
+	ClientSecret types.String `tfsdk:"client_secret"`
 }
 
 func (r *SSOConnectionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -53,13 +52,6 @@ func (r *SSOConnectionResource) Schema(ctx context.Context, req resource.SchemaR
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
-			"organization_id": schema.StringAttribute{
-				MarkdownDescription: "The organization this SSO connection belongs to. Can be the organization ID or label. Changing this will replace the SSO connection.",
-				Required:            true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"identifier": schema.StringAttribute{
@@ -114,6 +106,12 @@ func (r *SSOConnectionResource) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
+	orgID, err := GetOrganizationID(ctx, r.client)
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get organization ID: %s", err))
+		return
+	}
+
 	createReq := client.SSOConnectionCreate{
 		Identifier: data.Identifier.ValueString(),
 		ClientId:   data.ClientID.ValueString(),
@@ -124,7 +122,7 @@ func (r *SSOConnectionResource) Create(ctx context.Context, req resource.CreateR
 		createReq.ClientSecret = &clientSecret
 	}
 
-	createResp, err := r.client.EnableSSOConnectionWithResponse(ctx, data.OrganizationID.ValueString(), createReq)
+	createResp, err := r.client.EnableSSOConnectionWithResponse(ctx, orgID, createReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create SSO connection, got error: %s", err))
 		return
@@ -162,7 +160,13 @@ func (r *SSOConnectionResource) Read(ctx context.Context, req resource.ReadReque
 		return
 	}
 
-	getResp, err := r.client.GetSSOConnectionWithResponse(ctx, data.OrganizationID.ValueString())
+	orgID, err := GetOrganizationID(ctx, r.client)
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get organization ID: %s", err))
+		return
+	}
+
+	getResp, err := r.client.GetSSOConnectionWithResponse(ctx, orgID)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read SSO connection, got error: %s", err))
 		return
@@ -205,6 +209,12 @@ func (r *SSOConnectionResource) Update(ctx context.Context, req resource.UpdateR
 		return
 	}
 
+	orgID, err := GetOrganizationID(ctx, r.client)
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get organization ID: %s", err))
+		return
+	}
+
 	updateReq := client.SSOConnectionUpdate{}
 
 	if !data.Identifier.IsNull() && !data.Identifier.IsUnknown() {
@@ -222,7 +232,7 @@ func (r *SSOConnectionResource) Update(ctx context.Context, req resource.UpdateR
 		updateReq.ClientSecret = &clientSecret
 	}
 
-	updateResp, err := r.client.UpdateSSOConnectionWithResponse(ctx, data.OrganizationID.ValueString(), updateReq)
+	updateResp, err := r.client.UpdateSSOConnectionWithResponse(ctx, orgID, updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update SSO connection, got error: %s", err))
 		return
@@ -260,7 +270,13 @@ func (r *SSOConnectionResource) Delete(ctx context.Context, req resource.DeleteR
 		return
 	}
 
-	deleteResp, err := r.client.DisableSSOConnectionWithResponse(ctx, data.OrganizationID.ValueString())
+	orgID, err := GetOrganizationID(ctx, r.client)
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get organization ID: %s", err))
+		return
+	}
+
+	deleteResp, err := r.client.DisableSSOConnectionWithResponse(ctx, orgID)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete SSO connection, got error: %s", err))
 		return
@@ -276,27 +292,20 @@ func (r *SSOConnectionResource) Delete(ctx context.Context, req resource.DeleteR
 }
 
 func (r *SSOConnectionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Import ID is the organization ID (or label)
-	organizationID := req.ID
-	if organizationID == "" {
-		resp.Diagnostics.AddError(
-			"Invalid Import ID",
-			"Import ID must be the organization ID or label",
-		)
+	orgID, err := GetOrganizationID(ctx, r.client)
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get organization ID: %s", err))
 		return
 	}
 
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("organization_id"), organizationID)...)
-
-	// Fetch the SSO connection to get the ID
-	getResp, err := r.client.GetSSOConnectionWithResponse(ctx, organizationID)
+	getResp, err := r.client.GetSSOConnectionWithResponse(ctx, orgID)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read SSO connection during import, got error: %s", err))
 		return
 	}
 
 	if getResp.StatusCode() == 404 {
-		resp.Diagnostics.AddError("Not Found", fmt.Sprintf("SSO connection not found for organization: %s", organizationID))
+		resp.Diagnostics.AddError("Not Found", "SSO connection not found for organization")
 		return
 	}
 

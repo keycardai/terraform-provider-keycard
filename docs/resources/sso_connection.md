@@ -16,26 +16,23 @@ Manages an SSO connection for a Keycard organization. An SSO connection enables 
 # Configure SSO with Okta for your organization
 # This enables organization members to authenticate using Okta
 resource "keycard_sso_connection" "okta" {
-  organization_id = var.organization_id
-  identifier      = "https://your-org.okta.com"
-  client_id       = var.okta_client_id
-  client_secret   = var.okta_client_secret
+  identifier    = "https://your-org.okta.com"
+  client_id     = var.okta_client_id
+  client_secret = var.okta_client_secret
 }
 
 # Configure SSO with Azure AD
 resource "keycard_sso_connection" "azure_ad" {
-  organization_id = var.organization_id
-  identifier      = "https://login.microsoftonline.com/${var.azure_tenant_id}/v2.0"
-  client_id       = var.azure_client_id
-  client_secret   = var.azure_client_secret
+  identifier    = "https://login.microsoftonline.com/${var.azure_tenant_id}/v2.0"
+  client_id     = var.azure_client_id
+  client_secret = var.azure_client_secret
 }
 
 # Configure SSO with Google Workspace
 resource "keycard_sso_connection" "google" {
-  organization_id = var.organization_id
-  identifier      = "https://accounts.google.com"
-  client_id       = var.google_client_id
-  client_secret   = var.google_client_secret
+  identifier    = "https://accounts.google.com"
+  client_id     = var.google_client_id
+  client_secret = var.google_client_secret
 }
 ```
 
@@ -46,7 +43,6 @@ resource "keycard_sso_connection" "google" {
 
 - `client_id` (String) OAuth 2.0 client ID from your identity provider.
 - `identifier` (String) SSO provider identifier (e.g., the issuer URL from your identity provider).
-- `organization_id` (String) The organization this SSO connection belongs to. Can be the organization ID or label. Changing this will replace the SSO connection.
 
 ### Optional
 
@@ -63,14 +59,11 @@ Import is supported using the following syntax:
 In Terraform v1.5.0 and later, the [`import` block](https://developer.hashicorp.com/terraform/language/import) can be used with the `id` attribute, for example:
 
 ```terraform
-# SSO connections can be imported using the organization ID or label
 import {
   to = keycard_sso_connection.okta
-  id = "org-12345"
 }
 
 resource "keycard_sso_connection" "okta" {
-  # Configuration will be populated after import
   # Note: client_secret must be provided manually after import
 }
 ```

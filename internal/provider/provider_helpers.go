@@ -322,3 +322,34 @@ func updateApplicationURLCredentialModelFromAPIResponse(cred *client.Application
 
 	return diags
 }
+
+// GetOrganizationID retrieves the organization ID from the API using ListOrganizations.
+// Service account credentials are scoped to a single organization, so this returns the
+// one organization the credentials have access to.
+func GetOrganizationID(ctx context.Context, apiClient *client.ClientWithResponses) (string, error) {
+	listOrgsParams := client.ListOrganizationsParams{}
+
+	orgResp, err := apiClient.ListOrganizationsWithResponse(ctx, &listOrgsParams)
+	if err != nil {
+		return "", fmt.Errorf("failed to list organizations: %w", err)
+	}
+
+	if orgResp.StatusCode() != 200 {
+		return "", fmt.Errorf("failed to list organizations: status %d", orgResp.StatusCode())
+	}
+
+	if orgResp.JSON200 == nil {
+		return "", fmt.Errorf("unable to list organizations: no response body")
+	}
+
+	if len(orgResp.JSON200.Items) != 1 {
+		return "", fmt.Errorf("unexpected number of organizations: %d", len(orgResp.JSON200.Items))
+	}
+
+	thisOrg := orgResp.JSON200.Items[0]
+	if thisOrg.Id == nil {
+		return "", fmt.Errorf("missing organization ID")
+	}
+
+	return *thisOrg.Id, nil
+}
