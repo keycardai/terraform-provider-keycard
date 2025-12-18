@@ -12,6 +12,11 @@ on:
 permissions:
   contents: read
 
+# Serialize acceptance tests to avoid conflicts with shared test org resources (e.g., SSO connection)
+concurrency:
+  group: acceptance-tests
+  cancel-in-progress: false
+
 jobs:
   # Ensure project builds before running testing matrix
   build:
@@ -57,6 +62,7 @@ jobs:
     timeout-minutes: 15
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         # list whatever Terraform versions here you would like to support
         terraform:
@@ -87,7 +93,7 @@ jobs:
           KEYCARD_ENDPOINT: ${{ secrets.KEYCARD_ENDPOINT }}
           KEYCARD_TEST_KMS_KEY_1: ${{ secrets.KEYCARD_TEST_KMS_KEY_1 }}
           KEYCARD_TEST_KMS_KEY_2: ${{ secrets.KEYCARD_TEST_KMS_KEY_2 }}
-        run: go test -v -cover -timeout 300s -parallel=5 ./internal/provider/
+        run: go test -v -cover -timeout 300s -parallel=1 ./internal/provider/
         timeout-minutes: 10
       - name: Upload Terraform test logs
         uses: actions/upload-artifact@v5
