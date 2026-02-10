@@ -1,3 +1,21 @@
+## 0.4.0
+
+This release adds organization-level Single Sign-On (SSO) support, enabling secure authentication through external identity providers, plus AWS PrivateLink integration examples for enhanced network security.
+
+FEATURES:
+
+* **Organization SSO Support**: Organizations can now configure Single Sign-On authentication with external identity providers like Okta, Azure AD, and Google Workspace
+
+RESOURCES:
+
+* `keycard_sso_connection` - New resource for managing SSO connections to identity providers ([#53](https://github.com/keycardai/terraform-provider-keycard/pull/53))
+
+DOCUMENTATION:
+
+* Added Organization SSO configuration guide with step-by-step Okta integration instructions
+* New AWS PrivateLink integration example demonstrating secure VPC endpoint configuration and private DNS resolution for Keycard services ([#50](https://github.com/keycardai/terraform-provider-keycard/pull/50))
+* Examples for configuring SSO with multiple providers: Okta, Azure AD, and Google Workspace
+
 ## 0.3.0
 
 This release adds support for application traits, conditional dependencies, and URL credentials for workload identity.
