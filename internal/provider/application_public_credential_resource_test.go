@@ -268,7 +268,7 @@ resource "keycard_zone" "zone2" {
 resource "keycard_application" "test" {
   name       = %[3]q
   identifier = "https://%[3]s.example.com"
-  zone_id    = keycard_zone.zone1.id
+  zone_id    = keycard_zone.%[4]s.id
 }
 
 resource "keycard_application_public_credential" "test" {
