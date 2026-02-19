@@ -1,3 +1,15 @@
+## 0.5.0
+
+This release adds support for public application credentials, enabling OAuth2 public client flows for single-page apps, mobile apps, and other clients that cannot securely store a client secret.
+
+RESOURCES:
+
+* `keycard_application_public_credential` - New resource for managing public application credentials (client ID only, no secret) for OAuth2 public clients ([#57](https://github.com/keycardai/terraform-provider-keycard/pull/57))
+
+DOCUMENTATION:
+
+* Added documentation and examples for `keycard_application_public_credential`
+
 ## 0.4.0
 
 This release adds organization-level Single Sign-On (SSO) support, enabling secure authentication through external identity providers, plus AWS PrivateLink integration examples for enhanced network security.
