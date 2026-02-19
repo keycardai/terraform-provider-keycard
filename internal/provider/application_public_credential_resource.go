@@ -120,7 +120,7 @@ func (r *ApplicationPublicCredentialResource) Create(ctx context.Context, req re
 	// Build the create request for a public-type credential
 	publicCreate := client.ApplicationCredentialCreatePublic{
 		ApplicationId: data.ApplicationID.ValueString(),
-		Identifier:    data.Identifier.ValueStringPointer(),
+		Identifier:    data.Identifier.ValueStringPointer(), // *string per generated client; never nil since field is Required
 		Type:          client.ApplicationCredentialCreatePublicTypePublic,
 	}
 
@@ -243,7 +243,10 @@ func (r *ApplicationPublicCredentialResource) Delete(ctx context.Context, req re
 }
 
 func (r *ApplicationPublicCredentialResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Parse import ID as zones/{zone-id}/application-credentials/{credential-id}
+	// Parse import ID as zones/{zone-id}/application-credentials/{credential-id}.
+	// Note: application_id is not encoded in the import string. After ImportState sets
+	// zone_id and id, the framework calls Read, which fetches the credential from the API
+	// and populates application_id from the response.
 	parts := strings.Split(req.ID, "/")
 	if len(parts) != 4 || parts[0] != "zones" || parts[2] != "application-credentials" || parts[1] == "" || parts[3] == "" {
 		resp.Diagnostics.AddError(
