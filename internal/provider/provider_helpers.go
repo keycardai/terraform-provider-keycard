@@ -323,6 +323,44 @@ func updateApplicationURLCredentialModelFromAPIResponse(cred *client.Application
 	return diags
 }
 
+// updateApplicationPublicCredentialModelFromCreateResponse updates the model with data from the
+// ApplicationCredentialCreateResponse. This function is called during Create.
+func updateApplicationPublicCredentialModelFromCreateResponse(cred *client.ApplicationCredentialCreateResponse, data *ApplicationPublicCredentialModel) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	publicCred, err := cred.AsApplicationCredentialPublic()
+	if err != nil {
+		diags.AddError("API Error", fmt.Sprintf("Expected public credential response, got error: %s", err))
+		return diags
+	}
+
+	data.ID = types.StringValue(publicCred.Id)
+	data.ZoneID = types.StringValue(publicCred.ZoneId)
+	data.ApplicationID = types.StringValue(publicCred.ApplicationId)
+	data.ClientID = types.StringValue(publicCred.Identifier)
+
+	return diags
+}
+
+// updateApplicationPublicCredentialModelFromAPIResponse updates the model with data from the
+// ApplicationCredential API response (from Read operations).
+func updateApplicationPublicCredentialModelFromAPIResponse(cred *client.ApplicationCredential, data *ApplicationPublicCredentialModel) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	publicCred, err := cred.AsApplicationCredentialPublic()
+	if err != nil {
+		diags.AddError("API Error", fmt.Sprintf("Expected public credential type, got error: %s", err))
+		return diags
+	}
+
+	data.ID = types.StringValue(publicCred.Id)
+	data.ZoneID = types.StringValue(publicCred.ZoneId)
+	data.ApplicationID = types.StringValue(publicCred.ApplicationId)
+	data.ClientID = types.StringValue(publicCred.Identifier)
+
+	return diags
+}
+
 // GetOrganizationID retrieves the organization ID from the API using ListOrganizations.
 // Service account credentials are scoped to a single organization, so this returns the
 // one organization the credentials have access to.
