@@ -13,8 +13,10 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &ProviderDataSource{}
-var _ datasource.DataSourceWithConfigValidators = &ProviderDataSource{}
+var (
+	_ datasource.DataSource                     = &ProviderDataSource{}
+	_ datasource.DataSourceWithConfigValidators = &ProviderDataSource{}
+)
 
 func NewProviderDataSource() datasource.DataSource {
 	return &ProviderDataSource{}

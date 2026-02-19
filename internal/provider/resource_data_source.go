@@ -13,8 +13,10 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &ResourceDataSource{}
-var _ datasource.DataSourceWithConfigValidators = &ResourceDataSource{}
+var (
+	_ datasource.DataSource                     = &ResourceDataSource{}
+	_ datasource.DataSourceWithConfigValidators = &ResourceDataSource{}
+)
 
 func NewResourceDataSource() datasource.DataSource {
 	return &ResourceDataSource{}
