@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
 )
@@ -34,7 +36,7 @@ type ApplicationPublicCredentialModel struct {
 	ID            types.String `tfsdk:"id"`
 	ZoneID        types.String `tfsdk:"zone_id"`
 	ApplicationID types.String `tfsdk:"application_id"`
-	ClientID      types.String `tfsdk:"client_id"`
+	Identifier    types.String `tfsdk:"identifier"`
 }
 
 func (r *ApplicationPublicCredentialResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -44,7 +46,7 @@ func (r *ApplicationPublicCredentialResource) Metadata(ctx context.Context, req 
 func (r *ApplicationPublicCredentialResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "Manages public application credentials for a Keycard application. " +
-			"Public credentials have no secret — they consist only of an auto-generated client ID (identifier). " +
+			"Public credentials have no secret — they consist only of a client identifier. " +
 			"This credential type is suitable for public OAuth clients.",
 
 		Attributes: map[string]schema.Attribute{
@@ -69,11 +71,16 @@ func (r *ApplicationPublicCredentialResource) Schema(ctx context.Context, req re
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"client_id": schema.StringAttribute{
-				MarkdownDescription: "The auto-generated client identifier for this public credential.",
-				Computed:            true,
+			"identifier": schema.StringAttribute{
+				MarkdownDescription: "The client identifier for this public credential, " +
+					"used as the OAuth 2.0 client_id in authorization requests. " +
+					"Changing this will replace the credential.",
+				Required: true,
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
 				},
 			},
 		},
@@ -113,6 +120,7 @@ func (r *ApplicationPublicCredentialResource) Create(ctx context.Context, req re
 	// Build the create request for a public-type credential
 	publicCreate := client.ApplicationCredentialCreatePublic{
 		ApplicationId: data.ApplicationID.ValueString(),
+		Identifier:    data.Identifier.ValueStringPointer(),
 		Type:          client.ApplicationCredentialCreatePublicTypePublic,
 	}
 

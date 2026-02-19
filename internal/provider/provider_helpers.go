@@ -337,7 +337,7 @@ func updateApplicationPublicCredentialModelFromCreateResponse(cred *client.Appli
 	data.ID = types.StringValue(publicCred.Id)
 	data.ZoneID = types.StringValue(publicCred.ZoneId)
 	data.ApplicationID = types.StringValue(publicCred.ApplicationId)
-	data.ClientID = types.StringValue(publicCred.Identifier)
+	data.Identifier = types.StringValue(publicCred.Identifier)
 
 	return diags
 }
@@ -356,7 +356,7 @@ func updateApplicationPublicCredentialModelFromAPIResponse(cred *client.Applicat
 	data.ID = types.StringValue(publicCred.Id)
 	data.ZoneID = types.StringValue(publicCred.ZoneId)
 	data.ApplicationID = types.StringValue(publicCred.ApplicationId)
-	data.ClientID = types.StringValue(publicCred.Identifier)
+	data.Identifier = types.StringValue(publicCred.Identifier)
 
 	return diags
 }
