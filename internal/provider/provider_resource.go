@@ -11,7 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -160,7 +159,7 @@ func (r *ProviderResource) Schema(ctx context.Context, req resource.SchemaReques
 					},
 				},
 				PlanModifiers: []planmodifier.Object{
-					objectplanmodifier.UseStateForUnknown(),
+					syncOAuth2WithIdentifierModifier{},
 				},
 			},
 		},
@@ -388,13 +387,12 @@ func (r *ProviderResource) Update(ctx context.Context, req resource.UpdateReques
 	// Set protocols.oauth2 fields if oauth2 block is provided
 	if !data.OAuth2.IsUnknown() {
 		if data.OAuth2.IsNull() {
-			// No oauth2 block in config. Because oauth2 is Optional+Computed with
-			// UseStateForUnknown, this only happens when the user never configured
-			// oauth2 (identifier-only provider). Don't send protocols — the API
-			// preserves the existing issuer (copied from identifier on create).
+			// Null means this is a non-OAuth2 provider (e.g. vault) that has
+			// no oauth2 in state. Don't send protocols.
 			//
-			// The API allows clearing protocols/oauth2 (set to null) but always
-			// preserves issuer if one is already stored.
+			// Identifier-only providers always have oauth2 in state (the API
+			// copies identifier into issuer on create), so the plan modifier
+			// gives them a non-null value and they go through the else branch.
 		} else {
 			var oauth2Data OAuth2ProviderModel
 			diags := data.OAuth2.As(ctx, &oauth2Data, basetypes.ObjectAsOptions{})

@@ -203,6 +203,7 @@ func TestAccProviderResource_customIdentifier(t *testing.T) {
 func TestAccProviderResource_identifierOnly(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	identifier := fmt.Sprintf("https://%s.example.com", rName)
+	identifierV2 := fmt.Sprintf("https://%s-v2.example.com", rName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -236,6 +237,15 @@ func TestAccProviderResource_identifierOnly(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_provider.test", "name", rName+"-updated"),
 					resource.TestCheckResourceAttr("keycard_provider.test", "identifier", identifier),
+					resource.TestCheckResourceAttr("keycard_provider.test", "oauth2.issuer", identifier),
+				),
+			},
+			// Update identifier — oauth2.issuer must follow
+			{
+				Config: testAccProviderResourceConfig_identifierOnly(rName+"-updated", identifierV2),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_provider.test", "identifier", identifierV2),
+					resource.TestCheckResourceAttr("keycard_provider.test", "oauth2.issuer", identifierV2),
 				),
 			},
 		},
