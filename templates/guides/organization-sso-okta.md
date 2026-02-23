@@ -162,6 +162,34 @@ Run `terraform apply -var-file=terraform.tfvars` to deploy.
 
 - **SSO Connection**: Links your organization to Okta for SSO
 
+## Enable IdP-Initiated Login (Optional)
+
+To allow users to launch Keycard directly from Okta's app dashboard (IdP-initiated login), use the `keycard_sso_login_url` data source to compute the login URL and set it on the Okta app.
+
+Update the `okta_app_oauth` resource in your `main.tf` to add a `login_uri`, and add the data source:
+
+```hcl
+# Compute the IdP-initiated login URL for the SSO connection
+data "keycard_sso_login_url" "okta" {
+  issuer = "https://${var.okta_org_name}.${var.okta_base_url}"
+}
+
+# Create OIDC app in Okta for SSO
+resource "okta_app_oauth" "keycard_sso" {
+  label                      = "Keycard SSO"
+  type                       = "web"
+  grant_types                = ["authorization_code"]
+  redirect_uris              = [var.keycard_redirect_uri]
+  response_types             = ["code"]
+  token_endpoint_auth_method = "client_secret_basic"
+
+  # Enable IdP-initiated login from Okta's app dashboard
+  login_uri                  = data.keycard_sso_login_url.okta.url
+}
+```
+
+After applying, users will see a Keycard tile in their Okta dashboard and can click it to sign in directly.
+
 ## After Applying
 
 Once applied, your team can sign into Keycard using their Okta credentials:

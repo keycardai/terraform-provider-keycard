@@ -340,7 +340,10 @@ resource "keycard_zone" "test" {
 
 resource "keycard_provider" "test" {
   name       = %[2]q
-  identifier = "https://%[2]s.example.com"
+
+  oauth2 = {
+    issuer = "https://%[2]s.example.com"
+  }
   zone_id    = keycard_zone.test.id
 }
 
@@ -361,7 +364,10 @@ resource "keycard_zone" "test" {
 
 resource "keycard_provider" "test" {
   name       = %[2]q
-  identifier = "https://%[2]s.example.com"
+
+  oauth2 = {
+    issuer = "https://%[2]s.example.com"
+  }
   zone_id    = keycard_zone.test.id
 }
 
@@ -383,7 +389,10 @@ resource "keycard_zone" "test" {
 
 resource "keycard_provider" "test" {
   name       = %[2]q
-  identifier = "https://%[2]s.example.com"
+
+  oauth2 = {
+    issuer = "https://%[2]s.example.com"
+  }
   zone_id    = keycard_zone.test.id
 }
 
@@ -408,7 +417,10 @@ resource "keycard_zone" "test" {
 
 resource "keycard_provider" "test" {
   name       = %[2]q
-  identifier = "https://%[2]s.example.com"
+
+  oauth2 = {
+    issuer = "https://%[2]s.example.com"
+  }
   zone_id    = keycard_zone.test.id
 }
 
@@ -445,7 +457,10 @@ resource "keycard_zone" "test" {
 
 resource "keycard_provider" "test" {
   name       = %[2]q
-  identifier = "https://%[2]s.example.com"
+
+  oauth2 = {
+    issuer = "https://%[2]s.example.com"
+  }
   zone_id    = keycard_zone.test.id
 }
 
@@ -473,7 +488,10 @@ resource "keycard_zone" "test" {
 
 resource "keycard_provider" "test" {
   name       = %[2]q
-  identifier = "https://%[2]s.example.com"
+
+  oauth2 = {
+    issuer = "https://%[2]s.example.com"
+  }
   zone_id    = keycard_zone.test.id
 }
 
@@ -510,7 +528,10 @@ resource "keycard_zone" "test" {
 
 resource "keycard_provider" "test" {
   name       = %[2]q
-  identifier = "https://%[2]s.example.com"
+
+  oauth2 = {
+    issuer = "https://%[2]s.example.com"
+  }
   zone_id    = keycard_zone.test.id
 }
 

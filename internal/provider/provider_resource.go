@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -22,8 +23,10 @@ import (
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var (
-	_ resource.Resource                = &ProviderResource{}
-	_ resource.ResourceWithImportState = &ProviderResource{}
+	_ resource.Resource                   = &ProviderResource{}
+	_ resource.ResourceWithImportState    = &ProviderResource{}
+	_ resource.ResourceWithUpgradeState   = &ProviderResource{}
+	_ resource.ResourceWithValidateConfig = &ProviderResource{}
 )
 
 func NewProviderResource() resource.Resource {
@@ -49,12 +52,14 @@ type ProviderResourceModel struct {
 
 // OAuth2ProviderModel describes the nested oauth2 block data model.
 type OAuth2ProviderModel struct {
+	Issuer                types.String `tfsdk:"issuer"`
 	AuthorizationEndpoint types.String `tfsdk:"authorization_endpoint"`
 	TokenEndpoint         types.String `tfsdk:"token_endpoint"`
 }
 
 func (m OAuth2ProviderModel) AttributeTypes() map[string]attr.Type {
 	return map[string]attr.Type{
+		"issuer":                 types.StringType,
 		"authorization_endpoint": types.StringType,
 		"token_endpoint":         types.StringType,
 	}
@@ -67,6 +72,7 @@ func (r *ProviderResource) Metadata(ctx context.Context, req resource.MetadataRe
 func (r *ProviderResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "Manages a Keycard provider. A provider is a system that supplies access to resources and allows actors (users or applications) to authenticate.",
+		Version:             1,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -95,8 +101,12 @@ func (r *ProviderResource) Schema(ctx context.Context, req resource.SchemaReques
 				},
 			},
 			"identifier": schema.StringAttribute{
-				MarkdownDescription: "User-specified identifier, must be unique within the zone.",
-				Required:            true,
+				MarkdownDescription: "User-specified identifier, must be unique within the zone. Defaults to the `oauth2.issuer` value when not set.",
+				Optional:            true,
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					defaultIdentifierFromIssuerModifier{},
+				},
 			},
 			"client_id": schema.StringAttribute{
 				MarkdownDescription: "OAuth 2.0 client identifier.",
@@ -114,10 +124,18 @@ func (r *ProviderResource) Schema(ctx context.Context, req resource.SchemaReques
 				},
 			},
 			"oauth2": schema.SingleNestedAttribute{
-				MarkdownDescription: "OAuth 2.0 protocol configuration.",
+				MarkdownDescription: "OAuth 2.0 protocol configuration. When provided, `issuer` is required. If `identifier` is not set, it defaults to the `issuer` value.",
 				Optional:            true,
 				Computed:            true,
 				Attributes: map[string]schema.Attribute{
+					"issuer": schema.StringAttribute{
+						MarkdownDescription: "OIDC issuer URL used for discovery and token validation. Must be a valid URI.",
+						Required:            true,
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+							IsValidURI(),
+						},
+					},
 					"authorization_endpoint": schema.StringAttribute{
 						MarkdownDescription: "OAuth 2.0 Authorization endpoint URL.",
 						Optional:            true,
@@ -146,6 +164,29 @@ func (r *ProviderResource) Schema(ctx context.Context, req resource.SchemaReques
 				},
 			},
 		},
+	}
+}
+
+func (r *ProviderResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var identifier types.String
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("identifier"), &identifier)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var oauth2 types.Object
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("oauth2"), &oauth2)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if identifier.IsNull() && oauth2.IsNull() {
+		resp.Diagnostics.AddError(
+			"Missing Required Configuration",
+			"At least one of \"identifier\" or \"oauth2\" must be configured. "+
+				"When \"oauth2\" is provided, \"identifier\" defaults to the issuer value. "+
+				"When \"oauth2\" is not provided, \"identifier\" is required.",
+		)
 	}
 }
 
@@ -211,20 +252,18 @@ func (r *ProviderResource) Create(ctx context.Context, req resource.CreateReques
 			return
 		}
 
-		// Only set protocols if at least one endpoint is provided
-		if (!oauth2Data.AuthorizationEndpoint.IsNull() && !oauth2Data.AuthorizationEndpoint.IsUnknown()) ||
-			(!oauth2Data.TokenEndpoint.IsNull() && !oauth2Data.TokenEndpoint.IsUnknown()) {
+		createReq.Protocols = &client.ProviderProtocolCreate{
+			Oauth2: &client.ProviderOAuth2ProtocolCreate{
+				Issuer: oauth2Data.Issuer.ValueStringPointer(),
+			},
+		}
 
-			createReq.Protocols = &client.ProviderProtocolCreate{
-				Oauth2: &client.ProviderOAuth2ProtocolCreate{},
-			}
-			if !oauth2Data.AuthorizationEndpoint.IsNull() && !oauth2Data.AuthorizationEndpoint.IsUnknown() {
-				createReq.Protocols.Oauth2.AuthorizationEndpoint = oauth2Data.AuthorizationEndpoint.ValueStringPointer()
-			}
+		if !oauth2Data.AuthorizationEndpoint.IsNull() && !oauth2Data.AuthorizationEndpoint.IsUnknown() {
+			createReq.Protocols.Oauth2.AuthorizationEndpoint = oauth2Data.AuthorizationEndpoint.ValueStringPointer()
+		}
 
-			if !oauth2Data.TokenEndpoint.IsNull() && !oauth2Data.TokenEndpoint.IsUnknown() {
-				createReq.Protocols.Oauth2.TokenEndpoint = oauth2Data.TokenEndpoint.ValueStringPointer()
-			}
+		if !oauth2Data.TokenEndpoint.IsNull() && !oauth2Data.TokenEndpoint.IsUnknown() {
+			createReq.Protocols.Oauth2.TokenEndpoint = oauth2Data.TokenEndpoint.ValueStringPointer()
 		}
 	}
 
@@ -346,12 +385,16 @@ func (r *ProviderResource) Update(ctx context.Context, req resource.UpdateReques
 		updateReq.ClientSecret = StringValueNullable(data.ClientSecret)
 	}
 
-	// Set protocols.oauth2 fields
-	// Handle both null (to clear) and non-null (to set) values
+	// Set protocols.oauth2 fields if oauth2 block is provided
 	if !data.OAuth2.IsUnknown() {
 		if data.OAuth2.IsNull() {
-			// Explicitly clear protocols to allow server defaults
-			updateReq.Protocols = nullable.NewNullNullable[client.ProviderProtocolUpdate]()
+			// No oauth2 block in config. Because oauth2 is Optional+Computed with
+			// UseStateForUnknown, this only happens when the user never configured
+			// oauth2 (identifier-only provider). Don't send protocols — the API
+			// preserves the existing issuer (copied from identifier on create).
+			//
+			// The API allows clearing protocols/oauth2 (set to null) but always
+			// preserves issuer if one is already stored.
 		} else {
 			var oauth2Data OAuth2ProviderModel
 			diags := data.OAuth2.As(ctx, &oauth2Data, basetypes.ObjectAsOptions{})
@@ -360,21 +403,23 @@ func (r *ProviderResource) Update(ctx context.Context, req resource.UpdateReques
 				return
 			}
 
-			// Only set protocols if at least one endpoint is provided
-			if !oauth2Data.AuthorizationEndpoint.IsUnknown() || !oauth2Data.TokenEndpoint.IsUnknown() {
-				oauth2Update := client.ProviderOAuth2ProtocolUpdate{}
-				if !oauth2Data.AuthorizationEndpoint.IsNull() && !oauth2Data.AuthorizationEndpoint.IsUnknown() {
-					oauth2Update.AuthorizationEndpoint = StringValueNullable(oauth2Data.AuthorizationEndpoint)
-				}
-
-				if !oauth2Data.TokenEndpoint.IsNull() && !oauth2Data.TokenEndpoint.IsUnknown() {
-					oauth2Update.TokenEndpoint = StringValueNullable(oauth2Data.TokenEndpoint)
-				}
-				protocolUpdate := client.ProviderProtocolUpdate{
-					Oauth2: nullable.NewNullableWithValue(oauth2Update),
-				}
-				updateReq.Protocols = nullable.NewNullableWithValue(protocolUpdate)
+			oauth2Update := client.ProviderOAuth2ProtocolUpdate{
+				// Always send issuer explicitly — it cannot be null once stored
+				Issuer: oauth2Data.Issuer.ValueStringPointer(),
 			}
+
+			if !oauth2Data.AuthorizationEndpoint.IsNull() && !oauth2Data.AuthorizationEndpoint.IsUnknown() {
+				oauth2Update.AuthorizationEndpoint = StringValueNullable(oauth2Data.AuthorizationEndpoint)
+			}
+
+			if !oauth2Data.TokenEndpoint.IsNull() && !oauth2Data.TokenEndpoint.IsUnknown() {
+				oauth2Update.TokenEndpoint = StringValueNullable(oauth2Data.TokenEndpoint)
+			}
+
+			protocolUpdate := client.ProviderProtocolUpdate{
+				Oauth2: nullable.NewNullableWithValue(oauth2Update),
+			}
+			updateReq.Protocols = nullable.NewNullableWithValue(protocolUpdate)
 		}
 	}
 
@@ -451,4 +496,96 @@ func (r *ProviderResource) ImportState(ctx context.Context, req resource.ImportS
 
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("zone_id"), zoneID)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), providerID)...)
+}
+
+func (r *ProviderResource) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader {
+	return map[int64]resource.StateUpgrader{
+		0: {
+			// Migrate from schema version 0 (no issuer) to version 1 (issuer required).
+			// Populates oauth2.issuer from the identifier value, matching the API's
+			// backward-compatible default behavior.
+			PriorSchema: &schema.Schema{
+				Attributes: map[string]schema.Attribute{
+					"id":            schema.StringAttribute{Computed: true},
+					"zone_id":       schema.StringAttribute{Required: true},
+					"name":          schema.StringAttribute{Required: true},
+					"description":   schema.StringAttribute{Optional: true},
+					"identifier":    schema.StringAttribute{Required: true},
+					"client_id":     schema.StringAttribute{Optional: true},
+					"client_secret": schema.StringAttribute{Optional: true, Sensitive: true},
+					"oauth2": schema.SingleNestedAttribute{
+						Optional: true,
+						Computed: true,
+						Attributes: map[string]schema.Attribute{
+							"authorization_endpoint": schema.StringAttribute{Optional: true, Computed: true},
+							"token_endpoint":         schema.StringAttribute{Optional: true, Computed: true},
+						},
+					},
+				},
+			},
+			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+				// Read v0 state
+				type v0OAuth2Model struct {
+					AuthorizationEndpoint types.String `tfsdk:"authorization_endpoint"`
+					TokenEndpoint         types.String `tfsdk:"token_endpoint"`
+				}
+				type v0Model struct {
+					ID           types.String `tfsdk:"id"`
+					ZoneID       types.String `tfsdk:"zone_id"`
+					Name         types.String `tfsdk:"name"`
+					Description  types.String `tfsdk:"description"`
+					Identifier   types.String `tfsdk:"identifier"`
+					ClientID     types.String `tfsdk:"client_id"`
+					ClientSecret types.String `tfsdk:"client_secret"`
+					OAuth2       types.Object `tfsdk:"oauth2"`
+				}
+
+				var priorState v0Model
+				resp.Diagnostics.Append(req.State.Get(ctx, &priorState)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				// Build the new oauth2 object with issuer populated from identifier.
+				// This matches the API's backward-compatible default: when issuer was
+				// not provided on create, identifier was copied into issuer.
+				// For non-OAuth2 providers (e.g. vault), keep oauth2 null.
+				var oauth2Obj basetypes.ObjectValue
+				if !priorState.OAuth2.IsNull() && !priorState.OAuth2.IsUnknown() {
+					var oauth2 v0OAuth2Model
+					resp.Diagnostics.Append(priorState.OAuth2.As(ctx, &oauth2, basetypes.ObjectAsOptions{})...)
+					if resp.Diagnostics.HasError() {
+						return
+					}
+
+					newOAuth2 := OAuth2ProviderModel{
+						Issuer:                priorState.Identifier,
+						AuthorizationEndpoint: oauth2.AuthorizationEndpoint,
+						TokenEndpoint:         oauth2.TokenEndpoint,
+					}
+					var diags diag.Diagnostics
+					oauth2Obj, diags = types.ObjectValueFrom(ctx, newOAuth2.AttributeTypes(), newOAuth2)
+					resp.Diagnostics.Append(diags...)
+					if resp.Diagnostics.HasError() {
+						return
+					}
+				} else {
+					oauth2Obj = types.ObjectNull(OAuth2ProviderModel{}.AttributeTypes())
+				}
+
+				// Write upgraded state
+				upgradedState := ProviderResourceModel{
+					ID:           priorState.ID,
+					ZoneID:       priorState.ZoneID,
+					Name:         priorState.Name,
+					Description:  priorState.Description,
+					Identifier:   priorState.Identifier,
+					ClientID:     priorState.ClientID,
+					ClientSecret: priorState.ClientSecret,
+					OAuth2:       oauth2Obj,
+				}
+				resp.Diagnostics.Append(resp.State.Set(ctx, upgradedState)...)
+			},
+		},
+	}
 }

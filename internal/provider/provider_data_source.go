@@ -78,6 +78,10 @@ func (d *ProviderDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 				MarkdownDescription: "OAuth 2.0 protocol configuration. May be empty.",
 				Computed:            true,
 				Attributes: map[string]schema.Attribute{
+					"issuer": schema.StringAttribute{
+						MarkdownDescription: "OIDC issuer URL used for discovery and token validation.",
+						Computed:            true,
+					},
 					"authorization_endpoint": schema.StringAttribute{
 						MarkdownDescription: "OAuth 2.0 Authorization endpoint URL. May be empty.",
 						Computed:            true,

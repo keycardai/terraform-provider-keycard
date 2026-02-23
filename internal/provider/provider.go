@@ -155,6 +155,8 @@ func (p *KeycardProvider) EphemeralResources(ctx context.Context) []func() ephem
 
 func (p *KeycardProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
+
+		NewSSOLoginURLDataSource,
 		NewZoneDataSource,
 		NewProviderDataSource,
 		NewZoneUserIdentityConfigDataSource,

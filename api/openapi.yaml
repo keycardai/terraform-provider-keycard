@@ -1630,7 +1630,13 @@ components:
     ProviderOAuth2Protocol:
       description: OAuth 2.0 protocol configuration
       type: object
+      required:
+        - issuer
       properties:
+        issuer:
+          description: OIDC issuer URL. Always present in responses.
+          type: string
+          format: uri
         authorization_endpoint:
           type: string
           format: uri
@@ -1673,6 +1679,10 @@ components:
       description: OAuth 2.0 protocol configuration for provider creation
       type: object
       properties:
+        issuer:
+          description: OIDC issuer URL. When omitted, the provider identifier is used.
+          type: string
+          format: uri
         authorization_endpoint:
           type: string
           format: uri
@@ -1715,6 +1725,10 @@ components:
       description: OAuth 2.0 protocol configuration. Set to null to remove all OAuth2 config.
       type: object
       properties:
+        issuer:
+          description: OIDC issuer URL. Cannot be set to null once stored.
+          type: string
+          format: uri
         authorization_endpoint:
           type: string
           format: uri

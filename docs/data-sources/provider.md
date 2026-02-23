@@ -58,4 +58,5 @@ resource "keycard_resource" "google_photos" {
 Read-Only:
 
 - `authorization_endpoint` (String) OAuth 2.0 Authorization endpoint URL. May be empty.
+- `issuer` (String) OIDC issuer URL used for discovery and token validation.
 - `token_endpoint` (String) OAuth 2.0 Token endpoint URL. May be empty.
