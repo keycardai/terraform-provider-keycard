@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/url"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -14,6 +15,26 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
 )
+
+// ssoLoginURL builds the IdP-initiated login URL for this SSO connection.
+// The identity and console URLs are derived from the API endpoint.
+func ssoLoginURL(issuer, orgID, apiEndpoint string) (string, error) {
+	idURL, err := identityURL(apiEndpoint)
+	if err != nil {
+		return "", fmt.Errorf("unable to derive identity URL: %w", err)
+	}
+
+	consoleBaseURL, err := consoleURL(apiEndpoint)
+	if err != nil {
+		return "", fmt.Errorf("unable to derive console URL: %w", err)
+	}
+
+	params := url.Values{}
+	params.Set("iss", issuer)
+	params.Set("target_link_uri", consoleBaseURL)
+	params.Set("tenant", orgID)
+	return idURL + "/openid/connect/login?" + params.Encode(), nil
+}
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var (
@@ -36,6 +57,7 @@ type SSOConnectionResourceModel struct {
 	Identifier   types.String `tfsdk:"identifier"`
 	ClientID     types.String `tfsdk:"client_id"`
 	ClientSecret types.String `tfsdk:"client_secret"`
+	LoginURL     types.String `tfsdk:"login_url"`
 }
 
 func (r *SSOConnectionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -76,6 +98,10 @@ func (r *SSOConnectionResource) Schema(ctx context.Context, req resource.SchemaR
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 				},
+			},
+			"login_url": schema.StringAttribute{
+				MarkdownDescription: "IdP-initiated login URL for this SSO connection. Use this as the `login_uri` on your identity provider's OAuth app to enable IdP-initiated login to Keycard.",
+				Computed:            true,
 			},
 		},
 	}
@@ -148,6 +174,12 @@ func (r *SSOConnectionResource) Create(ctx context.Context, req resource.CreateR
 		data.ClientID = types.StringValue(ssoConn.ClientId.MustGet())
 	}
 	// client_secret is write-only, preserve the configured value
+	loginURL, err := ssoLoginURL(ssoConn.Identifier, orgID, r.client.Endpoint())
+	if err != nil {
+		resp.Diagnostics.AddError("Configuration Error", err.Error())
+		return
+	}
+	data.LoginURL = types.StringValue(loginURL)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -197,6 +229,12 @@ func (r *SSOConnectionResource) Read(ctx context.Context, req resource.ReadReque
 		data.ClientID = types.StringValue(ssoConn.ClientId.MustGet())
 	}
 	// client_secret is write-only, preserve state value
+	loginURL, err := ssoLoginURL(ssoConn.Identifier, orgID, r.client.Endpoint())
+	if err != nil {
+		resp.Diagnostics.AddError("Configuration Error", err.Error())
+		return
+	}
+	data.LoginURL = types.StringValue(loginURL)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -258,6 +296,12 @@ func (r *SSOConnectionResource) Update(ctx context.Context, req resource.UpdateR
 		data.ClientID = types.StringValue(ssoConn.ClientId.MustGet())
 	}
 	// client_secret is write-only, preserve the configured value
+	loginURL, err := ssoLoginURL(ssoConn.Identifier, orgID, r.client.Endpoint())
+	if err != nil {
+		resp.Diagnostics.AddError("Configuration Error", err.Error())
+		return
+	}
+	data.LoginURL = types.StringValue(loginURL)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -328,4 +372,10 @@ func (r *SSOConnectionResource) ImportState(ctx context.Context, req resource.Im
 	if ssoConn.ClientId.IsSpecified() && !ssoConn.ClientId.IsNull() {
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("client_id"), ssoConn.ClientId.MustGet())...)
 	}
+	loginURL, err := ssoLoginURL(ssoConn.Identifier, orgID, r.client.Endpoint())
+	if err != nil {
+		resp.Diagnostics.AddError("Configuration Error", err.Error())
+		return
+	}
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("login_url"), loginURL)...)
 }

@@ -51,6 +51,7 @@ resource "keycard_sso_connection" "google" {
 ### Read-Only
 
 - `id` (String) Unique identifier of the SSO connection.
+- `login_url` (String) IdP-initiated login URL for this SSO connection. Use this as the `login_uri` on your identity provider's OAuth app to enable IdP-initiated login to Keycard.
 
 ## Import
 

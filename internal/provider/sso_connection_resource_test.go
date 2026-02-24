@@ -24,6 +24,7 @@ func TestAccSSOConnectionResource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("keycard_sso_connection.test", "identifier", identifier),
 					resource.TestCheckResourceAttr("keycard_sso_connection.test", "client_id", clientID),
 					resource.TestCheckResourceAttrSet("keycard_sso_connection.test", "id"),
+					resource.TestCheckResourceAttrSet("keycard_sso_connection.test", "login_url"),
 				),
 			},
 			// ImportState testing

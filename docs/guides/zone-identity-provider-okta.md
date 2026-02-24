@@ -130,9 +130,12 @@ resource "okta_app_oauth" "keycard_idp" {
 resource "keycard_provider" "okta_idp" {
   zone_id       = keycard_zone.okta_demo.id
   name          = "Okta Identity Provider"
-  identifier    = data.okta_org_metadata.default.domains.organization
   client_id     = okta_app_oauth.keycard_idp.client_id
   client_secret = okta_app_oauth.keycard_idp.client_secret
+
+  oauth2 = {
+    issuer = data.okta_org_metadata.default.domains.organization
+  }
 }
 
 # Configure the zone to use Okta for user authentication
@@ -190,9 +193,12 @@ resource "okta_auth_server_policy_rule" "keycard" {
 resource "keycard_provider" "okta_credentials" {
   zone_id       = keycard_zone.okta_demo.id
   name          = "Okta Credential Provider"
-  identifier    = data.okta_auth_server.default.issuer
   client_id     = okta_app_oauth.keycard_credentials.client_id
   client_secret = okta_app_oauth.keycard_credentials.client_secret
+
+  oauth2 = {
+    issuer = data.okta_auth_server.default.issuer
+  }
 }
 
 # Step 4: Create a Protected Resource
@@ -335,9 +341,12 @@ For Kubernetes-based applications, add workload identity:
 ```hcl
 # First, create an EKS provider
 resource "keycard_provider" "eks" {
-  zone_id    = keycard_zone.okta_demo.id
-  name       = "EKS Cluster"
-  identifier = "https://oidc.eks.us-east-1.amazonaws.com/id/YOUR-CLUSTER-ID"
+  zone_id = keycard_zone.okta_demo.id
+  name    = "EKS Cluster"
+
+  oauth2 = {
+    issuer = "https://oidc.eks.us-east-1.amazonaws.com/id/YOUR-CLUSTER-ID"
+  }
 }
 
 # Then configure workload identity

@@ -11,7 +11,7 @@ import (
 
 func TestAccProviderDataSource_basic(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	identifier := fmt.Sprintf("https://%s.example.com", rName)
+	issuer := fmt.Sprintf("https://%s.example.com", rName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -19,7 +19,7 @@ func TestAccProviderDataSource_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a provider resource and fetch it with the data source
 			{
-				Config: testAccProviderDataSourceConfig_basic(rName, identifier),
+				Config: testAccProviderDataSourceConfig_basic(rName, issuer),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify data source attributes match the resource
 					resource.TestCheckResourceAttrPair(
@@ -38,8 +38,13 @@ func TestAccProviderDataSource_basic(t *testing.T) {
 						"data.keycard_provider.test", "identifier",
 						"keycard_provider.test", "identifier",
 					),
+					resource.TestCheckResourceAttrPair(
+						"data.keycard_provider.test", "oauth2.issuer",
+						"keycard_provider.test", "oauth2.issuer",
+					),
 					resource.TestCheckResourceAttr("data.keycard_provider.test", "name", rName),
-					resource.TestCheckResourceAttr("data.keycard_provider.test", "identifier", identifier),
+					resource.TestCheckResourceAttr("data.keycard_provider.test", "identifier", issuer),
+					resource.TestCheckResourceAttr("data.keycard_provider.test", "oauth2.issuer", issuer),
 				),
 			},
 		},
@@ -48,7 +53,7 @@ func TestAccProviderDataSource_basic(t *testing.T) {
 
 func TestAccProviderDataSource_withDescription(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	identifier := fmt.Sprintf("https://%s.example.com", rName)
+	issuer := fmt.Sprintf("https://%s.example.com", rName)
 	description := "Test provider description"
 
 	resource.Test(t, resource.TestCase{
@@ -57,7 +62,7 @@ func TestAccProviderDataSource_withDescription(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a provider with description and fetch it
 			{
-				Config: testAccProviderDataSourceConfig_withDescription(rName, identifier, description),
+				Config: testAccProviderDataSourceConfig_withDescription(rName, issuer, description),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
 						"data.keycard_provider.test", "id",
@@ -76,7 +81,7 @@ func TestAccProviderDataSource_withDescription(t *testing.T) {
 
 func TestAccProviderDataSource_withOAuth2(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	identifier := fmt.Sprintf("https://%s.example.com", rName)
+	issuer := fmt.Sprintf("https://%s.example.com", rName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -84,7 +89,7 @@ func TestAccProviderDataSource_withOAuth2(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a provider with OAuth2 configuration and fetch it
 			{
-				Config: testAccProviderDataSourceConfig_withOAuth2(rName, identifier),
+				Config: testAccProviderDataSourceConfig_withOAuth2(rName, issuer),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
 						"data.keycard_provider.test", "id",
@@ -95,6 +100,10 @@ func TestAccProviderDataSource_withOAuth2(t *testing.T) {
 						"keycard_provider.test", "client_id",
 					),
 					resource.TestCheckResourceAttrPair(
+						"data.keycard_provider.test", "oauth2.issuer",
+						"keycard_provider.test", "oauth2.issuer",
+					),
+					resource.TestCheckResourceAttrPair(
 						"data.keycard_provider.test", "oauth2.authorization_endpoint",
 						"keycard_provider.test", "oauth2.authorization_endpoint",
 					),
@@ -103,8 +112,9 @@ func TestAccProviderDataSource_withOAuth2(t *testing.T) {
 						"keycard_provider.test", "oauth2.token_endpoint",
 					),
 					resource.TestCheckResourceAttr("data.keycard_provider.test", "client_id", "test-client-id"),
-					resource.TestCheckResourceAttr("data.keycard_provider.test", "oauth2.authorization_endpoint", identifier+"/authorize"),
-					resource.TestCheckResourceAttr("data.keycard_provider.test", "oauth2.token_endpoint", identifier+"/token"),
+					resource.TestCheckResourceAttr("data.keycard_provider.test", "oauth2.issuer", issuer),
+					resource.TestCheckResourceAttr("data.keycard_provider.test", "oauth2.authorization_endpoint", issuer+"/authorize"),
+					resource.TestCheckResourceAttr("data.keycard_provider.test", "oauth2.token_endpoint", issuer+"/token"),
 				),
 			},
 		},
@@ -127,26 +137,29 @@ func TestAccProviderDataSource_notFound(t *testing.T) {
 	})
 }
 
-func testAccProviderDataSourceConfig_basic(name, identifier string) string {
+func testAccProviderDataSourceConfig_basic(name, issuer string) string {
 	return fmt.Sprintf(`
 resource "keycard_zone" "test" {
   name = %[1]q
 }
 
 resource "keycard_provider" "test" {
-  name       = %[1]q
-  zone_id    = keycard_zone.test.id
-  identifier = %[2]q
+  name    = %[1]q
+  zone_id = keycard_zone.test.id
+
+  oauth2 = {
+    issuer = %[2]q
+  }
 }
 
 data "keycard_provider" "test" {
   zone_id = keycard_provider.test.zone_id
   id      = keycard_provider.test.id
 }
-`, name, identifier)
+`, name, issuer)
 }
 
-func testAccProviderDataSourceConfig_withDescription(name, identifier, description string) string {
+func testAccProviderDataSourceConfig_withDescription(name, issuer, description string) string {
 	return fmt.Sprintf(`
 resource "keycard_zone" "test" {
   name = %[1]q
@@ -155,18 +168,21 @@ resource "keycard_zone" "test" {
 resource "keycard_provider" "test" {
   name        = %[1]q
   zone_id     = keycard_zone.test.id
-  identifier  = %[2]q
   description = %[3]q
+
+  oauth2 = {
+    issuer = %[2]q
+  }
 }
 
 data "keycard_provider" "test" {
   zone_id = keycard_provider.test.zone_id
   id      = keycard_provider.test.id
 }
-`, name, identifier, description)
+`, name, issuer, description)
 }
 
-func testAccProviderDataSourceConfig_withOAuth2(name, identifier string) string {
+func testAccProviderDataSourceConfig_withOAuth2(name, issuer string) string {
 	return fmt.Sprintf(`
 resource "keycard_zone" "test" {
   name = %[1]q
@@ -175,11 +191,11 @@ resource "keycard_zone" "test" {
 resource "keycard_provider" "test" {
   name          = %[1]q
   zone_id       = keycard_zone.test.id
-  identifier    = %[2]q
   client_id     = "test-client-id"
   client_secret = "test-client-secret"
 
   oauth2 = {
+    issuer                 = %[2]q
     authorization_endpoint = "%[2]s/authorize"
     token_endpoint         = "%[2]s/token"
   }
@@ -189,7 +205,7 @@ data "keycard_provider" "test" {
   zone_id = keycard_provider.test.zone_id
   id      = keycard_provider.test.id
 }
-`, name, identifier)
+`, name, issuer)
 }
 
 func testAccProviderDataSourceConfig_notFound(name string) string {

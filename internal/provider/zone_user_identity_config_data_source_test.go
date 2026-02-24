@@ -88,7 +88,10 @@ resource "keycard_zone" "test" {
 resource "keycard_provider" "test" {
   name       = %[2]q
   zone_id    = keycard_zone.test.id
-  identifier = %[3]q
+
+  oauth2 = {
+    issuer = %[3]q
+  }
 }
 
 resource "keycard_zone_user_identity_config" "test" {

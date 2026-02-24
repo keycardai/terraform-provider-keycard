@@ -115,7 +115,10 @@ resource "keycard_zone" "test" {
 
 resource "keycard_provider" "test" {
   name        = "k8s-provider-%[2]s"
-  identifier  = "https://kubernetes.default.svc.cluster.local"
+
+  oauth2 = {
+    issuer = "https://kubernetes.default.svc.cluster.local"
+  }
   zone_id     = keycard_zone.test.id
 }
 
@@ -147,7 +150,10 @@ resource "keycard_zone" "test" {
 
 resource "keycard_provider" "test" {
   name        = "k8s-provider-%[2]s"
-  identifier  = "https://kubernetes.default.svc.cluster.local"
+
+  oauth2 = {
+    issuer = "https://kubernetes.default.svc.cluster.local"
+  }
   zone_id     = keycard_zone.test.id
 }
 

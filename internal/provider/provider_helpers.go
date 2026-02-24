@@ -30,6 +30,7 @@ func updateProviderModelFromAPIResponse(ctx context.Context, provider *client.Pr
 		oauth2, err := protocols.Oauth2.Get()
 		if err == nil {
 			oauth2Model := OAuth2ProviderModel{
+				Issuer:                types.StringValue(oauth2.Issuer),
 				AuthorizationEndpoint: NullableStringValue(oauth2.AuthorizationEndpoint),
 				TokenEndpoint:         NullableStringValue(oauth2.TokenEndpoint),
 			}
@@ -67,6 +68,7 @@ func updateProviderDataSourceModelFromAPIResponse(ctx context.Context, provider 
 		oauth2, err := protocols.Oauth2.Get()
 		if err == nil {
 			oauth2Model := OAuth2ProviderModel{
+				Issuer:                types.StringValue(oauth2.Issuer),
 				AuthorizationEndpoint: NullableStringValue(oauth2.AuthorizationEndpoint),
 				TokenEndpoint:         NullableStringValue(oauth2.TokenEndpoint),
 			}
