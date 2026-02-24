@@ -26,8 +26,6 @@ type SSOLoginURLDataSource struct {
 	client *client.ClientWithResponses
 }
 
-const defaultTargetLinkURI = "https://console.keycard.ai"
-
 type SSOLoginURLDataSourceModel struct {
 	Issuer        types.String `tfsdk:"issuer"`
 	TargetLinkURI types.String `tfsdk:"target_link_uri"`
@@ -42,8 +40,7 @@ func (d *SSOLoginURLDataSource) Schema(ctx context.Context, req datasource.Schem
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "Computes the IdP-initiated login URL for an SSO connection. " +
 			"Use this to configure the `login_uri` on your identity provider's OAuth app " +
-			"(e.g., Okta) to enable IdP-initiated login to Keycard. " +
-			"The organization ID is resolved automatically from the configured service account credentials.",
+			"(e.g., Okta) to enable IdP-initiated login to Keycard.",
 
 		Attributes: map[string]schema.Attribute{
 			"issuer": schema.StringAttribute{
@@ -54,7 +51,7 @@ func (d *SSOLoginURLDataSource) Schema(ctx context.Context, req datasource.Schem
 				},
 			},
 			"target_link_uri": schema.StringAttribute{
-				MarkdownDescription: "The URI the user is redirected to after login. Defaults to `" + defaultTargetLinkURI + "`.",
+				MarkdownDescription: "The URI the user is redirected to after login. Defaults to the Keycard Console.",
 				Optional:            true,
 				Computed:            true,
 			},
@@ -91,15 +88,28 @@ func (d *SSOLoginURLDataSource) Read(ctx context.Context, req datasource.ReadReq
 		return
 	}
 
+	endpoint := d.client.Endpoint()
+
+	idURL, err := identityURL(endpoint)
+	if err != nil {
+		resp.Diagnostics.AddError("Configuration Error", fmt.Sprintf("Unable to derive identity URL from endpoint: %s", err))
+		return
+	}
+
 	orgID, err := GetOrganizationID(ctx, d.client)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get organization ID: %s", err))
 		return
 	}
 
-	targetLinkURI := defaultTargetLinkURI
-	if !data.TargetLinkURI.IsNull() && !data.TargetLinkURI.IsUnknown() {
-		targetLinkURI = data.TargetLinkURI.ValueString()
+	targetLinkURI := data.TargetLinkURI.ValueString()
+	if data.TargetLinkURI.IsNull() || data.TargetLinkURI.IsUnknown() {
+		defaultURI, err := consoleURL(endpoint)
+		if err != nil {
+			resp.Diagnostics.AddError("Configuration Error", fmt.Sprintf("Unable to derive console URL from endpoint: %s", err))
+			return
+		}
+		targetLinkURI = defaultURI
 	}
 	data.TargetLinkURI = types.StringValue(targetLinkURI)
 
@@ -108,7 +118,7 @@ func (d *SSOLoginURLDataSource) Read(ctx context.Context, req datasource.ReadReq
 	params.Set("target_link_uri", targetLinkURI)
 	params.Set("tenant", orgID)
 
-	data.URL = types.StringValue("https://id.keycard.ai/openid/connect/login?" + params.Encode())
+	data.URL = types.StringValue(idURL + "/openid/connect/login?" + params.Encode())
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

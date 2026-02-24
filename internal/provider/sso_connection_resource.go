@@ -17,12 +17,23 @@ import (
 )
 
 // ssoLoginURL builds the IdP-initiated login URL for this SSO connection.
-func ssoLoginURL(issuer, orgID string) string {
+// The identity and console URLs are derived from the API endpoint.
+func ssoLoginURL(issuer, orgID, apiEndpoint string) (string, error) {
+	idURL, err := identityURL(apiEndpoint)
+	if err != nil {
+		return "", fmt.Errorf("unable to derive identity URL: %w", err)
+	}
+
+	consoleBaseURL, err := consoleURL(apiEndpoint)
+	if err != nil {
+		return "", fmt.Errorf("unable to derive console URL: %w", err)
+	}
+
 	params := url.Values{}
 	params.Set("iss", issuer)
-	params.Set("target_link_uri", "https://console.keycard.ai")
+	params.Set("target_link_uri", consoleBaseURL)
 	params.Set("tenant", orgID)
-	return "https://id.keycard.ai/openid/connect/login?" + params.Encode()
+	return idURL + "/openid/connect/login?" + params.Encode(), nil
 }
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -163,7 +174,12 @@ func (r *SSOConnectionResource) Create(ctx context.Context, req resource.CreateR
 		data.ClientID = types.StringValue(ssoConn.ClientId.MustGet())
 	}
 	// client_secret is write-only, preserve the configured value
-	data.LoginURL = types.StringValue(ssoLoginURL(ssoConn.Identifier, orgID))
+	loginURL, err := ssoLoginURL(ssoConn.Identifier, orgID, r.client.Endpoint())
+	if err != nil {
+		resp.Diagnostics.AddError("Configuration Error", err.Error())
+		return
+	}
+	data.LoginURL = types.StringValue(loginURL)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -213,7 +229,12 @@ func (r *SSOConnectionResource) Read(ctx context.Context, req resource.ReadReque
 		data.ClientID = types.StringValue(ssoConn.ClientId.MustGet())
 	}
 	// client_secret is write-only, preserve state value
-	data.LoginURL = types.StringValue(ssoLoginURL(ssoConn.Identifier, orgID))
+	loginURL, err := ssoLoginURL(ssoConn.Identifier, orgID, r.client.Endpoint())
+	if err != nil {
+		resp.Diagnostics.AddError("Configuration Error", err.Error())
+		return
+	}
+	data.LoginURL = types.StringValue(loginURL)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -275,7 +296,12 @@ func (r *SSOConnectionResource) Update(ctx context.Context, req resource.UpdateR
 		data.ClientID = types.StringValue(ssoConn.ClientId.MustGet())
 	}
 	// client_secret is write-only, preserve the configured value
-	data.LoginURL = types.StringValue(ssoLoginURL(ssoConn.Identifier, orgID))
+	loginURL, err := ssoLoginURL(ssoConn.Identifier, orgID, r.client.Endpoint())
+	if err != nil {
+		resp.Diagnostics.AddError("Configuration Error", err.Error())
+		return
+	}
+	data.LoginURL = types.StringValue(loginURL)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -346,5 +372,10 @@ func (r *SSOConnectionResource) ImportState(ctx context.Context, req resource.Im
 	if ssoConn.ClientId.IsSpecified() && !ssoConn.ClientId.IsNull() {
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("client_id"), ssoConn.ClientId.MustGet())...)
 	}
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("login_url"), ssoLoginURL(ssoConn.Identifier, orgID))...)
+	loginURL, err := ssoLoginURL(ssoConn.Identifier, orgID, r.client.Endpoint())
+	if err != nil {
+		resp.Diagnostics.AddError("Configuration Error", err.Error())
+		return
+	}
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("login_url"), loginURL)...)
 }

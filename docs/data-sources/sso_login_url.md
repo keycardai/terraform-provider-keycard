@@ -3,12 +3,12 @@
 page_title: "keycard_sso_login_url Data Source - keycard"
 subcategory: ""
 description: |-
-  Computes the IdP-initiated login URL for an SSO connection. Use this to configure the login_uri on your identity provider's OAuth app (e.g., Okta) to enable IdP-initiated login to Keycard. The organization ID is resolved automatically from the configured service account credentials.
+  Computes the IdP-initiated login URL for an SSO connection. Use this to configure the login_uri on your identity provider's OAuth app (e.g., Okta) to enable IdP-initiated login to Keycard.
 ---
 
 # keycard_sso_login_url (Data Source)
 
-Computes the IdP-initiated login URL for an SSO connection. Use this to configure the `login_uri` on your identity provider's OAuth app (e.g., Okta) to enable IdP-initiated login to Keycard. The organization ID is resolved automatically from the configured service account credentials.
+Computes the IdP-initiated login URL for an SSO connection. Use this to configure the `login_uri` on your identity provider's OAuth app (e.g., Okta) to enable IdP-initiated login to Keycard.
 
 ## Example Usage
 
@@ -35,7 +35,7 @@ data "keycard_sso_login_url" "okta_custom_target" {
 
 ### Optional
 
-- `target_link_uri` (String) The URI the user is redirected to after login. Defaults to `https://console.keycard.ai`.
+- `target_link_uri` (String) The URI the user is redirected to after login. Defaults to the Keycard Console.
 
 ### Read-Only
 
