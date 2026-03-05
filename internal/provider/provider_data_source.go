@@ -90,6 +90,11 @@ func (d *ProviderDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 						MarkdownDescription: "OAuth 2.0 Token endpoint URL. May be empty.",
 						Computed:            true,
 					},
+					"authorization_parameters": schema.MapAttribute{
+						MarkdownDescription: "Custom query parameters appended to authorization redirect URLs. May be empty.",
+						Computed:            true,
+						ElementType:         types.StringType,
+					},
 				},
 			},
 		},
