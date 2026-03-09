@@ -1,6 +1,6 @@
 module github.com/keycardai/terraform-provider-keycard
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/getkin/kin-openapi v0.133.0
@@ -14,7 +14,7 @@ require (
 	github.com/hashicorp/terraform-plugin-testing v1.14.0
 	github.com/oapi-codegen/nullable v1.1.0
 	github.com/oapi-codegen/runtime v1.1.2
-	golang.org/x/oauth2 v0.35.0
+	golang.org/x/oauth2 v0.36.0
 )
 
 require (
