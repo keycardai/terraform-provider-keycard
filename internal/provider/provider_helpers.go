@@ -29,10 +29,22 @@ func updateProviderModelFromAPIResponse(ctx context.Context, provider *client.Pr
 	if err == nil {
 		oauth2, err := protocols.Oauth2.Get()
 		if err == nil {
+			authParams := types.MapNull(types.StringType)
+			apiParams, paramsErr := oauth2.AuthorizationParameters.Get()
+			if paramsErr == nil && apiParams != nil {
+				mapValue, mapDiags := types.MapValueFrom(ctx, types.StringType, apiParams)
+				diags.Append(mapDiags...)
+				if diags.HasError() {
+					return diags
+				}
+				authParams = mapValue
+			}
+
 			oauth2Model := OAuth2ProviderModel{
-				Issuer:                types.StringValue(oauth2.Issuer),
-				AuthorizationEndpoint: NullableStringValue(oauth2.AuthorizationEndpoint),
-				TokenEndpoint:         NullableStringValue(oauth2.TokenEndpoint),
+				Issuer:                  types.StringValue(oauth2.Issuer),
+				AuthorizationEndpoint:   NullableStringValue(oauth2.AuthorizationEndpoint),
+				TokenEndpoint:           NullableStringValue(oauth2.TokenEndpoint),
+				AuthorizationParameters: authParams,
 			}
 			oauth2Obj, oauth2Diags := types.ObjectValueFrom(ctx, oauth2Model.AttributeTypes(), oauth2Model)
 			diags.Append(oauth2Diags...)
@@ -67,10 +79,22 @@ func updateProviderDataSourceModelFromAPIResponse(ctx context.Context, provider 
 	if err == nil {
 		oauth2, err := protocols.Oauth2.Get()
 		if err == nil {
+			authParams := types.MapNull(types.StringType)
+			apiParams, paramsErr := oauth2.AuthorizationParameters.Get()
+			if paramsErr == nil && apiParams != nil {
+				mapValue, mapDiags := types.MapValueFrom(ctx, types.StringType, apiParams)
+				diags.Append(mapDiags...)
+				if diags.HasError() {
+					return diags
+				}
+				authParams = mapValue
+			}
+
 			oauth2Model := OAuth2ProviderModel{
-				Issuer:                types.StringValue(oauth2.Issuer),
-				AuthorizationEndpoint: NullableStringValue(oauth2.AuthorizationEndpoint),
-				TokenEndpoint:         NullableStringValue(oauth2.TokenEndpoint),
+				Issuer:                  types.StringValue(oauth2.Issuer),
+				AuthorizationEndpoint:   NullableStringValue(oauth2.AuthorizationEndpoint),
+				TokenEndpoint:           NullableStringValue(oauth2.TokenEndpoint),
+				AuthorizationParameters: authParams,
 			}
 			oauth2Obj, oauth2Diags := types.ObjectValueFrom(ctx, oauth2Model.AttributeTypes(), oauth2Model)
 			diags.Append(oauth2Diags...)

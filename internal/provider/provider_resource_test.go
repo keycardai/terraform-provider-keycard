@@ -362,6 +362,57 @@ func TestAccProviderResource_invalidIssuerURI(t *testing.T) {
 	})
 }
 
+func TestAccProviderResource_authorizationParameters(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	issuer := fmt.Sprintf("https://%s.example.com", rName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create with authorization_parameters
+			{
+				Config: testAccProviderResourceConfig_withAuthorizationParameters(rName, issuer,
+					`prompt = "consent"`, `access_type = "offline"`),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_provider.test", "oauth2.authorization_parameters.%", "2"),
+					resource.TestCheckResourceAttr("keycard_provider.test", "oauth2.authorization_parameters.prompt", "consent"),
+					resource.TestCheckResourceAttr("keycard_provider.test", "oauth2.authorization_parameters.access_type", "offline"),
+				),
+			},
+			// ImportState testing
+			{
+				ResourceName:      "keycard_provider.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(state *terraform.State) (string, error) {
+					rs := state.RootModule().Resources["keycard_provider.test"]
+					return fmt.Sprintf("zones/%s/providers/%s", rs.Primary.Attributes["zone_id"], rs.Primary.ID), nil
+				},
+				ImportStateVerifyIgnore: []string{"client_secret"},
+			},
+			// Update: change parameters
+			{
+				Config: testAccProviderResourceConfig_withAuthorizationParameters(rName, issuer,
+					`prompt = "login"`),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_provider.test", "oauth2.authorization_parameters.%", "1"),
+					resource.TestCheckResourceAttr("keycard_provider.test", "oauth2.authorization_parameters.prompt", "login"),
+					resource.TestCheckNoResourceAttr("keycard_provider.test", "oauth2.authorization_parameters.access_type"),
+				),
+			},
+			// Remove: switch to basic config without authorization_parameters
+			{
+				Config: testAccProviderResourceConfig_basic(rName, issuer),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_provider.test", "oauth2.issuer", issuer),
+					resource.TestCheckNoResourceAttr("keycard_provider.test", "oauth2.authorization_parameters.%"),
+				),
+			},
+		},
+	})
+}
+
 func testAccProviderResourceConfig_basic(name, issuer string) string {
 	return fmt.Sprintf(`
 resource "keycard_zone" "test" {
@@ -516,4 +567,27 @@ resource "keycard_provider" "test" {
   zone_id = keycard_zone.test.id
 }
 `, name)
+}
+
+func testAccProviderResourceConfig_withAuthorizationParameters(name, issuer string, params ...string) string {
+	paramLines := ""
+	for _, p := range params {
+		paramLines += "      " + p + "\n"
+	}
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+}
+
+resource "keycard_provider" "test" {
+  name    = %[1]q
+  zone_id = keycard_zone.test.id
+
+  oauth2 = {
+    issuer = %[2]q
+    authorization_parameters = {
+%[3]s    }
+  }
+}
+`, name, issuer, paramLines)
 }

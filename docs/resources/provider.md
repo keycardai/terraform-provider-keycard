@@ -142,6 +142,7 @@ Required:
 Optional:
 
 - `authorization_endpoint` (String) OAuth 2.0 Authorization endpoint URL.
+- `authorization_parameters` (Map of String) Custom query parameters appended to authorization redirect URLs. Use for non-standard providers that require extra parameters (e.g. Google: prompt=consent, access_type=offline).
 - `token_endpoint` (String) OAuth 2.0 Token endpoint URL.
 
 ## Import
