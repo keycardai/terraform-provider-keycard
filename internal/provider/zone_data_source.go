@@ -64,6 +64,16 @@ func (d *ZoneDataSource) Schema(ctx context.Context, req datasource.SchemaReques
 					},
 				},
 			},
+			"zone_provider": schema.SingleNestedAttribute{
+				MarkdownDescription: "The built-in zone provider that is automatically created with the zone.",
+				Computed:            true,
+				Attributes: map[string]schema.Attribute{
+					"id": schema.StringAttribute{
+						MarkdownDescription: "Unique identifier of the zone provider.",
+						Computed:            true,
+					},
+				},
+			},
 			"encryption_key": schema.SingleNestedAttribute{
 				MarkdownDescription: "Encryption key configuration for the zone.",
 				Computed:            true,
@@ -144,6 +154,12 @@ func (d *ZoneDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 
 	// Update the model with the response data
 	resp.Diagnostics.Append(updateZoneModelFromAPIResponse(ctx, getResp.JSON200, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Fetch the zone provider
+	resp.Diagnostics.Append(fetchZoneProvider(ctx, d.client, data.ID.ValueString(), &data)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}

@@ -44,6 +44,18 @@ type ZoneResourceModel struct {
 	Description   types.String `tfsdk:"description"`
 	OAuth2        types.Object `tfsdk:"oauth2"`
 	EncryptionKey types.Object `tfsdk:"encryption_key"`
+	ZoneProvider  types.Object `tfsdk:"zone_provider"`
+}
+
+// ZoneProviderModel describes the nested zone_provider block data model.
+type ZoneProviderModel struct {
+	ID types.String `tfsdk:"id"`
+}
+
+func (m ZoneProviderModel) AttributeTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"id": types.StringType,
+	}
 }
 
 // OAuth2Model describes the nested oauth2 block data model.
@@ -154,6 +166,19 @@ func (r *ZoneResource) Schema(ctx context.Context, req resource.SchemaRequest, r
 					objectplanmodifier.UseStateForUnknown(),
 				},
 			},
+			"zone_provider": schema.SingleNestedAttribute{
+				MarkdownDescription: "The built-in zone provider that is automatically created with the zone.",
+				Computed:            true,
+				PlanModifiers: []planmodifier.Object{
+					objectplanmodifier.UseStateForUnknown(),
+				},
+				Attributes: map[string]schema.Attribute{
+					"id": schema.StringAttribute{
+						MarkdownDescription: "Unique identifier of the zone provider.",
+						Computed:            true,
+					},
+				},
+			},
 			"encryption_key": schema.SingleNestedAttribute{
 				MarkdownDescription: "Customer managed encryption key for the zone. When not specified, uses the default Keycard Cloud encryption key. Requires access to both the old and new key when updating. Do not revoke any permissions on the existing key until after the plan has been applied successfully.",
 				Optional:            true,
@@ -241,6 +266,44 @@ func updateZoneModelFromAPIResponse(ctx context.Context, zone *client.Zone, data
 		// No encryption_key in API response
 		data.EncryptionKey = types.ObjectNull(EncryptionKeyConfigModel{}.AttributeTypes())
 	}
+
+	return diags
+}
+
+// fetchZoneProvider calls ListProviders with the keycard-sts type filter to find the built-in zone provider.
+func fetchZoneProvider(ctx context.Context, apiClient *client.ClientWithResponses, zoneID string, data *ZoneResourceModel) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	providerType := client.ListProvidersParamsTypeKeycardSts
+	params := &client.ListProvidersParams{
+		Type: &providerType,
+	}
+
+	listResp, err := apiClient.ListProvidersWithResponse(ctx, zoneID, params)
+	if err != nil {
+		diags.AddError("Client Error", fmt.Sprintf("Unable to list providers for zone, got error: %s", err))
+		return diags
+	}
+
+	if listResp.StatusCode() != 200 {
+		diags.AddError(
+			"API Error",
+			fmt.Sprintf("Unable to list providers for zone, got status %d: %s", listResp.StatusCode(), string(listResp.Body)),
+		)
+		return diags
+	}
+
+	if listResp.JSON200 == nil || len(listResp.JSON200.Items) == 0 {
+		data.ZoneProvider = types.ObjectNull(ZoneProviderModel{}.AttributeTypes())
+		return diags
+	}
+
+	zoneProviderData := ZoneProviderModel{
+		ID: types.StringValue(listResp.JSON200.Items[0].Id),
+	}
+	zoneProviderObj, objDiags := types.ObjectValueFrom(ctx, zoneProviderData.AttributeTypes(), zoneProviderData)
+	diags.Append(objDiags...)
+	data.ZoneProvider = zoneProviderObj
 
 	return diags
 }
@@ -340,6 +403,12 @@ func (r *ZoneResource) Create(ctx context.Context, req resource.CreateRequest, r
 		return
 	}
 
+	// Fetch the zone provider
+	resp.Diagnostics.Append(fetchZoneProvider(ctx, r.client, data.ID.ValueString(), &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -382,6 +451,12 @@ func (r *ZoneResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 
 	// Update the model with the response data
 	resp.Diagnostics.Append(updateZoneModelFromAPIResponse(ctx, getResp.JSON200, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Fetch the zone provider
+	resp.Diagnostics.Append(fetchZoneProvider(ctx, r.client, data.ID.ValueString(), &data)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -492,6 +567,12 @@ func (r *ZoneResource) Update(ctx context.Context, req resource.UpdateRequest, r
 
 	// Update the model with the response data
 	resp.Diagnostics.Append(updateZoneModelFromAPIResponse(ctx, updateResp.JSON200, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Fetch the zone provider
+	resp.Diagnostics.Append(fetchZoneProvider(ctx, r.client, data.ID.ValueString(), &data)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}

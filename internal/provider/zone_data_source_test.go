@@ -37,6 +37,8 @@ func TestAccZoneDataSource_basic(t *testing.T) {
 					// Verify OAuth2 protocol URIs are fetched
 					resource.TestCheckResourceAttrSet("data.keycard_zone.test", "oauth2.issuer_uri"),
 					resource.TestCheckResourceAttrSet("data.keycard_zone.test", "oauth2.redirect_uri"),
+					// Verify zone provider is populated
+					resource.TestCheckResourceAttrSet("data.keycard_zone.test", "zone_provider.id"),
 				),
 			},
 		},

@@ -60,6 +60,8 @@ func TestAccZoneResource_basic(t *testing.T) {
 					// Verify OAuth2 protocol URIs are populated by the API
 					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.issuer_uri"),
 					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.redirect_uri"),
+					// Verify zone provider is populated
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "zone_provider.id"),
 				),
 			},
 			// ImportState testing
@@ -80,6 +82,8 @@ func TestAccZoneResource_basic(t *testing.T) {
 					// Verify OAuth2 protocol URIs remain stable after update
 					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.issuer_uri"),
 					resource.TestCheckResourceAttrSet("keycard_zone.test", "oauth2.redirect_uri"),
+					// Verify zone provider persists after update
+					resource.TestCheckResourceAttrSet("keycard_zone.test", "zone_provider.id"),
 				),
 			},
 			// Delete testing automatically occurs in TestCase
