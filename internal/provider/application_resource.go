@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -41,6 +42,7 @@ type ApplicationModel struct {
 	ID          types.String `tfsdk:"id"`
 	ZoneID      types.String `tfsdk:"zone_id"`
 	Name        types.String `tfsdk:"name"`
+	Consent     types.String `tfsdk:"consent"`
 	Description types.String `tfsdk:"description"`
 	Identifier  types.String `tfsdk:"identifier"`
 	Metadata    types.Object `tfsdk:"metadata"`
@@ -96,6 +98,16 @@ func (r *ApplicationResource) Schema(ctx context.Context, req resource.SchemaReq
 			"name": schema.StringAttribute{
 				MarkdownDescription: "Human-readable name for the application.",
 				Required:            true,
+			},
+			"consent": schema.StringAttribute{
+				MarkdownDescription: "Consent mode for the application. `implicit` means consent is automatically granted, `required` means explicit user consent is needed. Defaults to `required`.",
+				Optional:            true,
+				Computed:            true,
+				Default:             stringdefault.StaticString("required"),
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+					stringvalidator.OneOf("implicit", "required"),
+				},
 			},
 			"description": schema.StringAttribute{
 				MarkdownDescription: "Optional description of the application's purpose.",
@@ -180,6 +192,12 @@ func (r *ApplicationResource) Create(ctx context.Context, req resource.CreateReq
 	createReq := client.ApplicationCreate{
 		Name:       data.Name.ValueString(),
 		Identifier: data.Identifier.ValueString(),
+	}
+
+	// Set consent (always present due to default)
+	if !data.Consent.IsNull() && !data.Consent.IsUnknown() {
+		consent := client.ApplicationCreateConsent(data.Consent.ValueString())
+		createReq.Consent = &consent
 	}
 
 	// Set description if provided
@@ -334,6 +352,12 @@ func (r *ApplicationResource) Update(ctx context.Context, req resource.UpdateReq
 
 	// Build the update request
 	updateReq := client.ApplicationUpdate{}
+
+	// Set consent (always present due to default)
+	if !data.Consent.IsNull() && !data.Consent.IsUnknown() {
+		consent := client.ApplicationUpdateConsent(data.Consent.ValueString())
+		updateReq.Consent = &consent
+	}
 
 	// Set name if changed
 	if !data.Name.IsNull() && !data.Name.IsUnknown() {

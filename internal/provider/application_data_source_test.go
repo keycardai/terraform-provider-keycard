@@ -158,6 +158,28 @@ func TestAccApplicationDataSource_withTraits(t *testing.T) {
 	})
 }
 
+func TestAccApplicationDataSource_withConsent(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccApplicationDataSourceConfig_withConsent(zoneName, rName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrPair(
+						"data.keycard_application.test", "consent",
+						"keycard_application.test", "consent",
+					),
+					resource.TestCheckResourceAttr("data.keycard_application.test", "consent", "implicit"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccApplicationDataSource_complete(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
@@ -177,6 +199,10 @@ func TestAccApplicationDataSource_complete(t *testing.T) {
 					resource.TestCheckResourceAttrPair(
 						"data.keycard_application.test", "name",
 						"keycard_application.test", "name",
+					),
+					resource.TestCheckResourceAttrPair(
+						"data.keycard_application.test", "consent",
+						"keycard_application.test", "consent",
 					),
 					resource.TestCheckResourceAttrPair(
 						"data.keycard_application.test", "description",
@@ -199,6 +225,7 @@ func TestAccApplicationDataSource_complete(t *testing.T) {
 						"keycard_application.test", "traits.#",
 					),
 					resource.TestCheckResourceAttr("data.keycard_application.test", "name", rName),
+					resource.TestCheckResourceAttr("data.keycard_application.test", "consent", "implicit"),
 					resource.TestCheckResourceAttr("data.keycard_application.test", "description", "Complete application with all fields"),
 					resource.TestCheckResourceAttr("data.keycard_application.test", "metadata.docs_url", "https://docs.example.com/complete"),
 					resource.TestCheckResourceAttr("data.keycard_application.test", "oauth2.redirect_uris.#", "2"),
@@ -335,6 +362,26 @@ data "keycard_application" "test" {
 `, zoneName, appName)
 }
 
+func testAccApplicationDataSourceConfig_withConsent(zoneName, appName string) string {
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+}
+
+resource "keycard_application" "test" {
+  name       = %[2]q
+  consent    = "implicit"
+  identifier = "https://%[2]s.example.com"
+  zone_id    = keycard_zone.test.id
+}
+
+data "keycard_application" "test" {
+  zone_id = keycard_application.test.zone_id
+  id      = keycard_application.test.id
+}
+`, zoneName, appName)
+}
+
 func testAccApplicationDataSourceConfig_complete(zoneName, appName string) string {
 	return fmt.Sprintf(`
 resource "keycard_zone" "test" {
@@ -343,6 +390,7 @@ resource "keycard_zone" "test" {
 
 resource "keycard_application" "test" {
   name        = %[2]q
+  consent     = "implicit"
   description = "Complete application with all fields"
   identifier  = "https://%[2]s.example.com"
   zone_id     = keycard_zone.test.id

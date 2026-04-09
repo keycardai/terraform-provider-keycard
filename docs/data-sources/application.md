@@ -41,6 +41,7 @@ resource "keycard_application_client_secret" "local_dev" {
 
 ### Read-Only
 
+- `consent` (String) Consent mode for the application. `implicit` means consent is automatically granted, `required` means explicit user consent is needed.
 - `description` (String) Optional description of the application's purpose. May be empty.
 - `metadata` (Attributes) Metadata associated with the application. May be empty. (see [below for nested schema](#nestedatt--metadata))
 - `name` (String) Human-readable name for the application.

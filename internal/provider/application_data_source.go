@@ -49,6 +49,10 @@ func (d *ApplicationDataSource) Schema(ctx context.Context, req datasource.Schem
 				MarkdownDescription: "Human-readable name for the application.",
 				Computed:            true,
 			},
+			"consent": schema.StringAttribute{
+				MarkdownDescription: "Consent mode for the application. `implicit` means consent is automatically granted, `required` means explicit user consent is needed.",
+				Computed:            true,
+			},
 			"description": schema.StringAttribute{
 				MarkdownDescription: "Optional description of the application's purpose. May be empty.",
 				Computed:            true,

@@ -28,11 +28,13 @@ resource "keycard_application" "okta_mcp_server" {
 
 # Backend service application
 # Typically accesses resources using service credentials
+# consent = "implicit" means users won't be prompted for consent
 resource "keycard_application" "backend_service" {
   name        = "Backend Service"
   identifier  = "https://backend.example.com"
   zone_id     = keycard_zone.dev.id
   description = "Internal backend service"
+  consent     = "implicit"
 }
 
 # Mobile application with multiple redirect URIs

@@ -2295,6 +2295,13 @@ components:
           nullable: true
           items:
             $ref: '#/components/schemas/ApplicationTrait'
+        consent:
+          description: Consent mode for the application. 'implicit' means consent is automatically granted, 'required' means explicit user consent is needed.
+          type: string
+          enum:
+            - implicit
+            - required
+          default: required
         created_at:
           description: Entity creation timestamp
           type: string
@@ -2311,6 +2318,7 @@ components:
         - identifier
         - name
         - dependencies_count
+        - consent
         - created_at
         - updated_at
       title: Application
@@ -2361,6 +2369,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ApplicationTrait'
+        consent:
+          description: Consent mode for the application. Defaults to 'required'.
+          type: string
+          enum:
+            - implicit
+            - required
+          default: required
       required:
         - name
         - identifier
@@ -2394,6 +2409,12 @@ components:
           nullable: true
           items:
             $ref: '#/components/schemas/ApplicationTrait'
+        consent:
+          description: Consent mode for the application. 'implicit' means consent is automatically granted, 'required' means explicit user consent is needed.
+          type: string
+          enum:
+            - implicit
+            - required
       title: Application Update
     ApplicationCredentialBaseFields:
       description: Common fields shared by all application credential types
