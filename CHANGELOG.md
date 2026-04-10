@@ -1,21 +1,24 @@
-## 0.6.0 (Unreleased)
+## 0.6.0
 
-This release decouples the provider identifier from the OIDC issuer URL, enabling multiple providers to share the same issuer within a zone. It also adds IdP-initiated login support and new data sources for SSO workflows.
+This release decouples the provider identifier from the OIDC issuer URL, enabling multiple providers to share the same issuer within a zone. It also adds IdP-initiated login support, application consent controls, and new data sources for SSO workflows.
 
 FEATURES:
 
 * **Provider Issuer Decoupling**: `keycard_provider` now supports an explicit `oauth2.issuer` field, separate from `identifier`. Existing configurations using `identifier` alone continue to work unchanged.
 * **IdP-Initiated Login**: `keycard_sso_connection` exposes a computed `login_url` for configuring IdP-initiated login on your identity provider.
+* **Application Consent**: `keycard_application` supports a `consent` attribute to control whether users are prompted with a consent screen (`required`) or consent is automatically granted (`implicit`) during authorization flows.
 
 RESOURCES:
 
 * `keycard_provider` - Added `oauth2.issuer` attribute for explicit OIDC issuer configuration. `identifier` is now optional when `oauth2.issuer` is provided and defaults to the issuer value. Schema upgraded to version 1 with automatic state migration.
 * `keycard_sso_connection` - Added computed `login_url` attribute.
+* `keycard_application` - Added `consent` attribute to control consent behavior during authorization flows. Defaults to `required`. ([#75](https://github.com/keycardai/terraform-provider-keycard/pull/75))
 
 DATA SOURCES:
 
 * `keycard_sso_login_url` - New data source to compute the IdP-initiated login URL from an issuer, with optional `target_link_uri`
 * `keycard_provider` - Added `oauth2.issuer` computed attribute
+* `keycard_application` - Added `consent` computed attribute ([#75](https://github.com/keycardai/terraform-provider-keycard/pull/75))
 
 DOCUMENTATION:
 
