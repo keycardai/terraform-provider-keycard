@@ -24,6 +24,7 @@ func TestAccApplicationResource_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_application.test", "name", rName),
 					resource.TestCheckResourceAttr("keycard_application.test", "identifier", "https://"+rName+".example.com"),
+					resource.TestCheckResourceAttr("keycard_application.test", "consent", "required"),
 					resource.TestCheckResourceAttrSet("keycard_application.test", "id"),
 					resource.TestCheckResourceAttrSet("keycard_application.test", "zone_id"),
 				),
@@ -181,6 +182,7 @@ func TestAccApplicationResource_complete(t *testing.T) {
 				Config: testAccApplicationResourceConfig_complete(zoneName, rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_application.test", "name", rName),
+					resource.TestCheckResourceAttr("keycard_application.test", "consent", "implicit"),
 					resource.TestCheckResourceAttr("keycard_application.test", "description", "Complete application with all fields"),
 					resource.TestCheckResourceAttr("keycard_application.test", "identifier", "https://"+rName+".example.com"),
 					resource.TestCheckResourceAttr("keycard_application.test", "metadata.docs_url", "https://docs.example.com/complete"),
@@ -226,6 +228,72 @@ func TestAccApplicationResource_zoneChange(t *testing.T) {
 					resource.TestCheckResourceAttr("keycard_application.test", "name", rName),
 					resource.TestCheckResourceAttrPair("keycard_application.test", "zone_id", "keycard_zone.test", "id"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccApplicationResource_withConsent(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create with consent = "implicit"
+			{
+				Config: testAccApplicationResourceConfig_withConsent(zoneName, rName, "implicit"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_application.test", "name", rName),
+					resource.TestCheckResourceAttr("keycard_application.test", "consent", "implicit"),
+				),
+			},
+			// Update consent to "required"
+			{
+				Config: testAccApplicationResourceConfig_withConsent(zoneName, rName, "required"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_application.test", "consent", "required"),
+				),
+			},
+			// Remove consent (should default to "required")
+			{
+				Config: testAccApplicationResourceConfig_basic(zoneName, rName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_application.test", "consent", "required"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccApplicationResource_invalidConsentValue(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccApplicationResourceConfig_withConsent(zoneName, rName, "invalid"),
+				ExpectError: regexp.MustCompile(`Attribute consent value must be one of`),
+			},
+		},
+	})
+}
+
+func TestAccApplicationResource_emptyConsentInvalid(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccApplicationResourceConfig_withConsent(zoneName, rName, ""),
+				ExpectError: regexp.MustCompile(`Attribute consent string length must be at least 1`),
 			},
 		},
 	})
@@ -446,6 +514,21 @@ resource "keycard_application" "test" {
 	return config
 }
 
+func testAccApplicationResourceConfig_withConsent(zoneName, appName, consent string) string {
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+}
+
+resource "keycard_application" "test" {
+  name       = %[2]q
+  consent    = %[3]q
+  identifier = "https://%[2]s.example.com"
+  zone_id    = keycard_zone.test.id
+}
+`, zoneName, appName, consent)
+}
+
 func testAccApplicationResourceConfig_complete(zoneName, appName string) string {
 	return fmt.Sprintf(`
 resource "keycard_zone" "test" {
@@ -454,6 +537,7 @@ resource "keycard_zone" "test" {
 
 resource "keycard_application" "test" {
   name        = %[2]q
+  consent     = "implicit"
   description = "Complete application with all fields"
   identifier  = "https://%[2]s.example.com"
   zone_id     = keycard_zone.test.id

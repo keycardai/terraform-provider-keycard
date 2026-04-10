@@ -130,6 +130,7 @@ func updateApplicationModelFromAPIResponse(ctx context.Context, app *client.Appl
 	data.Name = types.StringValue(app.Name)
 	data.Description = NullableStringValue(app.Description)
 	data.Identifier = types.StringValue(app.Identifier)
+	data.Consent = types.StringValue(string(app.Consent))
 
 	// Handle metadata
 	if app.Metadata != nil && app.Metadata.DocsUrl != nil {
