@@ -53,3 +53,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/yuin/goldmark v1.7.8 => github.com/yuin/goldmark v1.7.17
+
+replace github.com/cloudflare/circl v1.6.1 => github.com/cloudflare/circl v1.6.3
