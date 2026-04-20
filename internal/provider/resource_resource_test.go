@@ -25,6 +25,7 @@ func TestAccResourceResource_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_resource.test", "name", rName),
 					resource.TestCheckResourceAttr("keycard_resource.test", "identifier", "https://"+rName+".example.com"),
+					resource.TestCheckResourceAttr("keycard_resource.test", "prefix", "false"),
 					resource.TestCheckResourceAttrSet("keycard_resource.test", "id"),
 					resource.TestCheckResourceAttrSet("keycard_resource.test", "zone_id"),
 					resource.TestCheckResourceAttrSet("keycard_resource.test", "credential_provider_id"),
@@ -213,6 +214,7 @@ func TestAccResourceResource_complete(t *testing.T) {
 					resource.TestCheckResourceAttr("keycard_resource.test", "name", rName),
 					resource.TestCheckResourceAttr("keycard_resource.test", "description", "Complete resource with all fields"),
 					resource.TestCheckResourceAttr("keycard_resource.test", "identifier", "https://"+rName+".example.com"),
+					resource.TestCheckResourceAttr("keycard_resource.test", "prefix", "true"),
 					resource.TestCheckResourceAttr("keycard_resource.test", "metadata.docs_url", "https://docs.example.com/complete"),
 					resource.TestCheckResourceAttr("keycard_resource.test", "oauth2.scopes.#", "2"),
 					resource.TestCheckResourceAttrSet("keycard_resource.test", "id"),
@@ -227,6 +229,41 @@ func TestAccResourceResource_complete(t *testing.T) {
 				ImportState:       true,
 				ImportStateIdFunc: testAccResourceImportStateIdFunc("keycard_resource.test"),
 				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccResourceResource_withPrefix(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+	providerName := acctest.RandomWithPrefix("tftest-provider")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create with prefix = true
+			{
+				Config: testAccResourceResourceConfig_withPrefix(zoneName, providerName, rName, true),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_resource.test", "name", rName),
+					resource.TestCheckResourceAttr("keycard_resource.test", "prefix", "true"),
+				),
+			},
+			// Toggle prefix to false
+			{
+				Config: testAccResourceResourceConfig_withPrefix(zoneName, providerName, rName, false),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_resource.test", "prefix", "false"),
+				),
+			},
+			// Remove prefix (should default to false)
+			{
+				Config: testAccResourceResourceConfig_basic(zoneName, providerName, rName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_resource.test", "prefix", "false"),
+				),
 			},
 		},
 	})
@@ -508,6 +545,7 @@ resource "keycard_resource" "test" {
   zone_id                = keycard_zone.test.id
   credential_provider_id = keycard_provider.test.id
   application_id         = keycard_application.test.id
+  prefix                 = true
 
   metadata = {
     docs_url = "https://docs.example.com/complete"
@@ -518,6 +556,31 @@ resource "keycard_resource" "test" {
   }
 }
 `, zoneName, providerName, appName, resourceName)
+}
+
+func testAccResourceResourceConfig_withPrefix(zoneName, providerName, resourceName string, prefix bool) string {
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+}
+
+resource "keycard_provider" "test" {
+  name       = %[2]q
+
+  oauth2 = {
+    issuer = "https://%[2]s.example.com"
+  }
+  zone_id    = keycard_zone.test.id
+}
+
+resource "keycard_resource" "test" {
+  name                   = %[3]q
+  identifier             = "https://%[3]s.example.com"
+  zone_id                = keycard_zone.test.id
+  credential_provider_id = keycard_provider.test.id
+  prefix                 = %[4]t
+}
+`, zoneName, providerName, resourceName, prefix)
 }
 
 func testAccResourceResourceConfig_withApplicationId(zoneName, providerName, resourceName, applicationId string) string {

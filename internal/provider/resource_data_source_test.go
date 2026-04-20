@@ -43,8 +43,13 @@ func TestAccResourceDataSource_basic(t *testing.T) {
 						"data.keycard_resource.test", "credential_provider_id",
 						"keycard_resource.test", "credential_provider_id",
 					),
+					resource.TestCheckResourceAttrPair(
+						"data.keycard_resource.test", "prefix",
+						"keycard_resource.test", "prefix",
+					),
 					resource.TestCheckResourceAttr("data.keycard_resource.test", "name", rName),
 					resource.TestCheckResourceAttr("data.keycard_resource.test", "identifier", "https://"+rName+".example.com"),
+					resource.TestCheckResourceAttr("data.keycard_resource.test", "prefix", "false"),
 				),
 			},
 		},

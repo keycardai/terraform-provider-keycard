@@ -50,3 +50,15 @@ resource "keycard_resource" "application_specific" {
     scopes = ["internal:access"]
   }
 }
+
+# Prefix-matched resource
+# With prefix = true, any URL that begins with the identifier at a
+# path/query/fragment boundary is protected by this resource. Useful for API
+# roots or proxied hosts where sub-paths are not known in advance.
+resource "keycard_resource" "api_root" {
+  name                   = "Example API Root"
+  identifier             = "https://api.example.com/v1"
+  zone_id                = keycard_zone.production.id
+  credential_provider_id = keycard_provider.okta_credentials.id
+  prefix                 = true
+}
