@@ -29,6 +29,12 @@ DOCUMENTATION:
 * Okta integration guides updated to use `oauth2.issuer`
 * SSO guide updated to use `keycard_sso_login_url` data source for IdP-initiated login configuration
 
+SOFTWARE DEPENDENCY CHANGES:
+
+* Upgraded google.golang.org/grpc from 1.75.1 to 1.79.3
+* Upgraded github.com/cloudflare/circl go.mod 1.6.1 to 1.6.3 
+* Upgraded github.com/yuin/goldmark tools/go.mod 1.7.8 to 1.7.17
+
 ## 0.5.0
 
 This release adds support for public application credentials, enabling OAuth2 public client flows for single-page apps, mobile apps, and other clients that cannot securely store a client secret.
