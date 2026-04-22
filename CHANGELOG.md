@@ -1,3 +1,12 @@
+## 0.6.1
+This release includes some security patches
+
+SECURITY PATCHES:
+
+* Upgraded google.golang.org/grpc from 1.75.1 to 1.79.3 to patch an authorization bypass vulnerability from CVE-2026-33186.
+* Upgraded github.com/cloudflare/circl go.mod 1.6.1 to 1.6.3 to fix an issue where the CombinedMult function would produce an incorrect value for specific inputs from CVE-2026-1229.
+* Upgraded github.com/yuin/goldmark tools/go.mod 1.7.8 to 1.7.17 to patch a Cross-site Scripting vulnerability from CVE-2026-5160.
+
 ## 0.6.0
 
 This release decouples the provider identifier from the OIDC issuer URL, enabling multiple providers to share the same issuer within a zone. It also adds IdP-initiated login support, application consent controls, resource prefix matching, and new data sources for SSO workflows.
@@ -28,12 +37,6 @@ DOCUMENTATION:
 * Added "Identifier and Issuer" section to provider resource documentation with three usage patterns
 * Okta integration guides updated to use `oauth2.issuer`
 * SSO guide updated to use `keycard_sso_login_url` data source for IdP-initiated login configuration
-
-SOFTWARE DEPENDENCY CHANGES:
-
-* Upgraded google.golang.org/grpc from 1.75.1 to 1.79.3
-* Upgraded github.com/cloudflare/circl go.mod 1.6.1 to 1.6.3 
-* Upgraded github.com/yuin/goldmark tools/go.mod 1.7.8 to 1.7.17
 
 ## 0.5.0
 
