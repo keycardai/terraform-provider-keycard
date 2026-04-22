@@ -66,6 +66,10 @@ func (d *ResourceDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 				MarkdownDescription: "The application that provides this resource. May be empty.",
 				Computed:            true,
 			},
+			"prefix": schema.BoolAttribute{
+				MarkdownDescription: "When true, the resource identifier is treated as a URI prefix, protecting all URLs that share the identifier as a prefix at path/query/fragment boundaries. Protocol and hostname must match exactly. When multiple prefix resources satisfy an identifier query, the resource with the longest prefix is matched.",
+				Computed:            true,
+			},
 			"metadata": schema.SingleNestedAttribute{
 				MarkdownDescription: "Metadata associated with the resource. May be empty.",
 				Computed:            true,

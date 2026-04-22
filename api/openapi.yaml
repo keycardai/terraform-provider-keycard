@@ -2146,6 +2146,9 @@ components:
           type: array
           items:
             type: string
+        prefix:
+          description: 'When true, the resource identifier is treated as a URI prefix, protecting all URLs that share the identifier as a prefix at path/query/fragment boundaries. Protocol and hostname must match exactly. When multiple prefix resources satisfy an identifier query, the resource with the longest prefix is matched.'
+          type: boolean
         metadata:
           $ref: '#/components/schemas/Metadata'
         created_at:
@@ -2163,6 +2166,7 @@ components:
         - slug
         - identifier
         - name
+        - prefix
         - created_at
         - updated_at
       title: Resource
@@ -2196,6 +2200,10 @@ components:
         application_id:
           description: ID of the application that provides this resource
           type: string
+        prefix:
+          description: 'When true, the resource identifier is treated as a URI prefix and protects all URLs that share the identifier as a prefix. Defaults to false: resources only match by exact identifier unless explicitly enabled.'
+          type: boolean
+          default: false
         metadata:
           $ref: '#/components/schemas/Metadata'
       required:
@@ -2239,6 +2247,9 @@ components:
           description: ID of the application that provides this resource (set to null to unset)
           type: string
           nullable: true
+        prefix:
+          description: 'When true, the resource identifier is treated as a URI prefix, protecting all URLs that share the identifier as a prefix.'
+          type: boolean
         metadata:
           $ref: '#/components/schemas/MetadataUpdate'
       title: Resource Update

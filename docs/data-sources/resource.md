@@ -48,6 +48,7 @@ resource "keycard_application_dependency" "calendar_dependency" {
 - `metadata` (Attributes) Metadata associated with the resource. May be empty. (see [below for nested schema](#nestedatt--metadata))
 - `name` (String) Human-readable name for the resource.
 - `oauth2` (Attributes) OAuth2 configuration for the resource. May be empty. (see [below for nested schema](#nestedatt--oauth2))
+- `prefix` (Boolean) When true, the resource identifier is treated as a URI prefix, protecting all URLs that share the identifier as a prefix at path/query/fragment boundaries. Protocol and hostname must match exactly. When multiple prefix resources satisfy an identifier query, the resource with the longest prefix is matched.
 
 <a id="nestedatt--metadata"></a>
 ### Nested Schema for `metadata`

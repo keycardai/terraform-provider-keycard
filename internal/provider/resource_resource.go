@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -44,6 +45,7 @@ type ResourceModel struct {
 	Identifier           types.String `tfsdk:"identifier"`
 	CredentialProviderID types.String `tfsdk:"credential_provider_id"`
 	ApplicationID        types.String `tfsdk:"application_id"`
+	Prefix               types.Bool   `tfsdk:"prefix"`
 	Metadata             types.Object `tfsdk:"metadata"`
 	OAuth2               types.Object `tfsdk:"oauth2"`
 }
@@ -119,6 +121,12 @@ func (r *ResourceResource) Schema(ctx context.Context, req resource.SchemaReques
 					stringvalidator.LengthAtLeast(1),
 				},
 			},
+			"prefix": schema.BoolAttribute{
+				MarkdownDescription: "When true, the resource identifier is treated as a URI prefix, protecting all URLs that share the identifier as a prefix at path/query/fragment boundaries. Protocol and hostname must match exactly. When multiple prefix resources satisfy an identifier query, the resource with the longest prefix is matched. Defaults to `false`.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
+			},
 			"metadata": schema.SingleNestedAttribute{
 				MarkdownDescription: "Metadata associated with the resource.",
 				Optional:            true,
@@ -193,6 +201,11 @@ func (r *ResourceResource) Create(ctx context.Context, req resource.CreateReques
 	// Set application_id if provided
 	if !data.ApplicationID.IsNull() && !data.ApplicationID.IsUnknown() {
 		createReq.ApplicationId = data.ApplicationID.ValueStringPointer()
+	}
+
+	// Set prefix (always present due to default)
+	if !data.Prefix.IsNull() && !data.Prefix.IsUnknown() {
+		createReq.Prefix = data.Prefix.ValueBoolPointer()
 	}
 
 	// Set metadata if provided
@@ -348,6 +361,11 @@ func (r *ResourceResource) Update(ctx context.Context, req resource.UpdateReques
 		updateReq.ApplicationId = StringValueNullable(data.ApplicationID)
 	}
 
+	// Set prefix (always present due to default)
+	if !data.Prefix.IsNull() && !data.Prefix.IsUnknown() {
+		updateReq.Prefix = data.Prefix.ValueBoolPointer()
+	}
+
 	// Set metadata if provided
 	if !data.Metadata.IsUnknown() {
 		if data.Metadata.IsNull() {
@@ -483,6 +501,7 @@ func updateResourceModelFromAPIResponse(ctx context.Context, apiResource *client
 	data.Description = NullableStringValue(apiResource.Description)
 	data.CredentialProviderID = types.StringPointerValue(apiResource.CredentialProviderId)
 	data.ApplicationID = types.StringPointerValue(apiResource.ApplicationId)
+	data.Prefix = types.BoolValue(apiResource.Prefix)
 
 	// Set metadata
 	if apiResource.Metadata != nil && apiResource.Metadata.DocsUrl != nil {
