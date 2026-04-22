@@ -1,5 +1,5 @@
 ## 0.6.1
-This release includes some security patches
+This release includes some security patches in our software dependencies.
 
 SECURITY FIXES:
 
