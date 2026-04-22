@@ -1,7 +1,7 @@
 ## 0.6.1
 This release includes some security patches
 
-SECURITY PATCHES:
+SECURITY FIXES:
 
 * Upgraded google.golang.org/grpc from 1.75.1 to 1.79.3 to patch an authorization bypass vulnerability from CVE-2026-33186.
 * Upgraded github.com/cloudflare/circl go.mod 1.6.1 to 1.6.3 to fix an issue where the CombinedMult function would produce an incorrect value for specific inputs from CVE-2026-1229.
