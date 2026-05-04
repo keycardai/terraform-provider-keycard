@@ -11,7 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-log/tflogtest"
-	"github.com/keycardai/terraform-provider-keycard/internal/client"
+	"github.com/keycardai/terraform-provider-keycard/client"
 )
 
 func TestLoggingHTTPClient(t *testing.T) {

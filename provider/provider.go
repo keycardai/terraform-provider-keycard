@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/keycardai/terraform-provider-keycard/internal/client"
+	"github.com/keycardai/terraform-provider-keycard/client"
 )
 
 // Default endpoint to production API.
