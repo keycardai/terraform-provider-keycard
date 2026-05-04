@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/keycardai/terraform-provider-keycard/internal/client"
+	"github.com/keycardai/terraform-provider-keycard/client"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.

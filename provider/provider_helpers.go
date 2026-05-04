@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"github.com/keycardai/terraform-provider-keycard/internal/client"
+	"github.com/keycardai/terraform-provider-keycard/client"
 	"github.com/oapi-codegen/nullable"
 )
 

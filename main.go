@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
-	"github.com/keycardai/terraform-provider-keycard/internal/provider"
+	"github.com/keycardai/terraform-provider-keycard/provider"
 )
 
 // these will be set by the goreleaser configuration
