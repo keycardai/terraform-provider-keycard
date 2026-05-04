@@ -1,4 +1,4 @@
-//go:generate go tool oapi-codegen -config ../../configs/oapi/client.yaml ../../api/openapi.yaml
+//go:generate go tool oapi-codegen -config ../configs/oapi/client.yaml ../api/openapi.yaml
 package client
 
 // Endpoint returns the server base URL that this client was configured with.
