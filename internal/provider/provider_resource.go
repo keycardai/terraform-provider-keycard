@@ -51,16 +51,22 @@ type ProviderResourceModel struct {
 
 // OAuth2ProviderModel describes the nested oauth2 block data model.
 type OAuth2ProviderModel struct {
-	Issuer                types.String `tfsdk:"issuer"`
-	AuthorizationEndpoint types.String `tfsdk:"authorization_endpoint"`
-	TokenEndpoint         types.String `tfsdk:"token_endpoint"`
+	Issuer                          types.String `tfsdk:"issuer"`
+	AuthorizationEndpoint           types.String `tfsdk:"authorization_endpoint"`
+	TokenEndpoint                   types.String `tfsdk:"token_endpoint"`
+	ScopeParameter                  types.String `tfsdk:"scope_parameter"`
+	ScopeSeparator                  types.String `tfsdk:"scope_separator"`
+	TokenResponseAccessTokenPointer types.String `tfsdk:"token_response_access_token_pointer"`
 }
 
 func (m OAuth2ProviderModel) AttributeTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"issuer":                 types.StringType,
-		"authorization_endpoint": types.StringType,
-		"token_endpoint":         types.StringType,
+		"issuer":                              types.StringType,
+		"authorization_endpoint":              types.StringType,
+		"token_endpoint":                      types.StringType,
+		"scope_parameter":                     types.StringType,
+		"scope_separator":                     types.StringType,
+		"token_response_access_token_pointer": types.StringType,
 	}
 }
 
@@ -148,6 +154,39 @@ func (r *ProviderResource) Schema(ctx context.Context, req resource.SchemaReques
 					},
 					"token_endpoint": schema.StringAttribute{
 						MarkdownDescription: "OAuth 2.0 Token endpoint URL.",
+						Optional:            true,
+						Computed:            true,
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
+					},
+					"scope_parameter": schema.StringAttribute{
+						MarkdownDescription: "Query parameter name for scopes in the authorization URL. Defaults to `scope` (Slack v2 uses `user_scope`).",
+						Optional:            true,
+						Computed:            true,
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
+					},
+					"scope_separator": schema.StringAttribute{
+						MarkdownDescription: "Character used to separate scope values. Defaults to a space (Slack v2 uses `,`).",
+						Optional:            true,
+						Computed:            true,
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
+					},
+					"token_response_access_token_pointer": schema.StringAttribute{
+						MarkdownDescription: "Dot-separated path to the access token in the token response. Defaults to `access_token` (Slack v2 uses `authed_user.access_token`).",
 						Optional:            true,
 						Computed:            true,
 						Validators: []validator.String{
@@ -263,6 +302,18 @@ func (r *ProviderResource) Create(ctx context.Context, req resource.CreateReques
 
 		if !oauth2Data.TokenEndpoint.IsNull() && !oauth2Data.TokenEndpoint.IsUnknown() {
 			createReq.Protocols.Oauth2.TokenEndpoint = oauth2Data.TokenEndpoint.ValueStringPointer()
+		}
+
+		if !oauth2Data.ScopeParameter.IsNull() && !oauth2Data.ScopeParameter.IsUnknown() {
+			createReq.Protocols.Oauth2.ScopeParameter = oauth2Data.ScopeParameter.ValueStringPointer()
+		}
+
+		if !oauth2Data.ScopeSeparator.IsNull() && !oauth2Data.ScopeSeparator.IsUnknown() {
+			createReq.Protocols.Oauth2.ScopeSeparator = oauth2Data.ScopeSeparator.ValueStringPointer()
+		}
+
+		if !oauth2Data.TokenResponseAccessTokenPointer.IsNull() && !oauth2Data.TokenResponseAccessTokenPointer.IsUnknown() {
+			createReq.Protocols.Oauth2.TokenResponseAccessTokenPointer = oauth2Data.TokenResponseAccessTokenPointer.ValueStringPointer()
 		}
 	}
 
@@ -412,6 +463,18 @@ func (r *ProviderResource) Update(ctx context.Context, req resource.UpdateReques
 
 			if !oauth2Data.TokenEndpoint.IsNull() && !oauth2Data.TokenEndpoint.IsUnknown() {
 				oauth2Update.TokenEndpoint = StringValueNullable(oauth2Data.TokenEndpoint)
+			}
+
+			if !oauth2Data.ScopeParameter.IsNull() && !oauth2Data.ScopeParameter.IsUnknown() {
+				oauth2Update.ScopeParameter = StringValueNullable(oauth2Data.ScopeParameter)
+			}
+
+			if !oauth2Data.ScopeSeparator.IsNull() && !oauth2Data.ScopeSeparator.IsUnknown() {
+				oauth2Update.ScopeSeparator = StringValueNullable(oauth2Data.ScopeSeparator)
+			}
+
+			if !oauth2Data.TokenResponseAccessTokenPointer.IsNull() && !oauth2Data.TokenResponseAccessTokenPointer.IsUnknown() {
+				oauth2Update.TokenResponseAccessTokenPointer = StringValueNullable(oauth2Data.TokenResponseAccessTokenPointer)
 			}
 
 			protocolUpdate := client.ProviderProtocolUpdate{

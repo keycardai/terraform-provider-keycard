@@ -90,6 +90,18 @@ func (d *ProviderDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 						MarkdownDescription: "OAuth 2.0 Token endpoint URL. May be empty.",
 						Computed:            true,
 					},
+					"scope_parameter": schema.StringAttribute{
+						MarkdownDescription: "Query parameter name for scopes in the authorization URL. May be empty.",
+						Computed:            true,
+					},
+					"scope_separator": schema.StringAttribute{
+						MarkdownDescription: "Character used to separate scope values. May be empty.",
+						Computed:            true,
+					},
+					"token_response_access_token_pointer": schema.StringAttribute{
+						MarkdownDescription: "Dot-separated path to the access token in the token response. May be empty.",
+						Computed:            true,
+					},
 				},
 			},
 		},

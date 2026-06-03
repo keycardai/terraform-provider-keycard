@@ -108,6 +108,9 @@ func TestAccProviderResource_oauth2Config(t *testing.T) {
 					resource.TestCheckResourceAttr("keycard_provider.test", "client_id", "test-client-id"),
 					resource.TestCheckResourceAttr("keycard_provider.test", "oauth2.authorization_endpoint", issuer+"/authorize"),
 					resource.TestCheckResourceAttr("keycard_provider.test", "oauth2.token_endpoint", issuer+"/token"),
+					resource.TestCheckResourceAttr("keycard_provider.test", "oauth2.scope_parameter", "user_scope"),
+					resource.TestCheckResourceAttr("keycard_provider.test", "oauth2.scope_separator", ","),
+					resource.TestCheckResourceAttr("keycard_provider.test", "oauth2.token_response_access_token_pointer", "authed_user.access_token"),
 				),
 			},
 			// ImportState testing
@@ -428,9 +431,12 @@ resource "keycard_provider" "test" {
   client_secret = "test-client-secret"
 
   oauth2 = {
-    issuer                 = %[2]q
-    authorization_endpoint = "%[2]s/authorize"
-    token_endpoint         = "%[2]s/token"
+    issuer                              = %[2]q
+    authorization_endpoint              = "%[2]s/authorize"
+    token_endpoint                      = "%[2]s/token"
+    scope_parameter                     = "user_scope"
+    scope_separator                     = ","
+    token_response_access_token_pointer = "authed_user.access_token"
   }
 }
 `, name, issuer)

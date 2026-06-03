@@ -1,3 +1,15 @@
+## Unreleased
+
+This release exposes additional OAuth 2.0 provider customization fields for non-standard authorization servers (e.g. Slack v2).
+
+RESOURCES:
+
+* `keycard_provider` - Added `oauth2.scope_parameter`, `oauth2.scope_separator`, and `oauth2.token_response_access_token_pointer` attributes. All are optional and computed; when unset the API value (if any) is read back.
+
+DATA SOURCES:
+
+* `keycard_provider` - Added computed `oauth2.scope_parameter`, `oauth2.scope_separator`, and `oauth2.token_response_access_token_pointer` attributes.
+
 ## 0.6.1
 
 This release adds support for resource prefix matching and includes some security patches in our software dependencies.

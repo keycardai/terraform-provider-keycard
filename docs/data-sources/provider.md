@@ -59,4 +59,7 @@ Read-Only:
 
 - `authorization_endpoint` (String) OAuth 2.0 Authorization endpoint URL. May be empty.
 - `issuer` (String) OIDC issuer URL used for discovery and token validation.
+- `scope_parameter` (String) Query parameter name for scopes in the authorization URL. May be empty.
+- `scope_separator` (String) Character used to separate scope values. May be empty.
 - `token_endpoint` (String) OAuth 2.0 Token endpoint URL. May be empty.
+- `token_response_access_token_pointer` (String) Dot-separated path to the access token in the token response. May be empty.
