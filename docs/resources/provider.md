@@ -142,7 +142,10 @@ Required:
 Optional:
 
 - `authorization_endpoint` (String) OAuth 2.0 Authorization endpoint URL.
+- `scope_parameter` (String) Query parameter name for scopes in the authorization URL. Defaults to `scope` (Slack v2 uses `user_scope`).
+- `scope_separator` (String) Character used to separate scope values. Defaults to a space (Slack v2 uses `,`).
 - `token_endpoint` (String) OAuth 2.0 Token endpoint URL.
+- `token_response_access_token_pointer` (String) Dot-separated path to the access token in the token response. Defaults to `access_token` (Slack v2 uses `authed_user.access_token`).
 
 ## Import
 

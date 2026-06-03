@@ -1663,6 +1663,18 @@ components:
           items:
             type: string
           nullable: true
+        scope_parameter:
+          description: 'Query parameter name for scopes in the authorization URL. Defaults to "scope" (Slack v2 uses "user_scope").'
+          type: string
+          nullable: true
+        scope_separator:
+          description: 'Character used to separate scope values. Defaults to a space (Slack v2 uses ",").'
+          type: string
+          nullable: true
+        token_response_access_token_pointer:
+          description: 'Dot-separated path to the access token in the token response. Defaults to "access_token" (Slack v2 uses "authed_user.access_token").'
+          type: string
+          nullable: true
       nullable: true
       title: Provider OAuth 2.0 Protocol
     ProviderOpenIDProtocol:
@@ -1703,6 +1715,15 @@ components:
           type: array
           items:
             type: string
+        scope_parameter:
+          description: 'Query parameter name for scopes in the authorization URL. Defaults to "scope" (Slack v2 uses "user_scope").'
+          type: string
+        scope_separator:
+          description: 'Character used to separate scope values. Defaults to a space (Slack v2 uses ",").'
+          type: string
+        token_response_access_token_pointer:
+          description: 'Dot-separated path to the access token in the token response. Defaults to "access_token" (Slack v2 uses "authed_user.access_token").'
+          type: string
       title: Provider OAuth 2.0 Protocol Create
     ProviderOpenIDProtocolCreate:
       description: OpenID Connect protocol configuration for provider creation
@@ -1754,6 +1775,18 @@ components:
           type: array
           items:
             type: string
+          nullable: true
+        scope_parameter:
+          description: 'Query parameter name for scopes in the authorization URL. Defaults to "scope" (Slack v2 uses "user_scope").'
+          type: string
+          nullable: true
+        scope_separator:
+          description: 'Character used to separate scope values. Defaults to a space (Slack v2 uses ",").'
+          type: string
+          nullable: true
+        token_response_access_token_pointer:
+          description: 'Dot-separated path to the access token in the token response. Defaults to "access_token" (Slack v2 uses "authed_user.access_token").'
+          type: string
           nullable: true
       nullable: true
       title: Provider OAuth 2.0 Protocol Update
