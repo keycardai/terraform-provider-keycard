@@ -1,6 +1,6 @@
 module tools
 
-go 1.24.0
+go 1.25.0
 
 require github.com/hashicorp/terraform-plugin-docs v0.24.0
 
@@ -46,9 +46,9 @@ require (
 	go.abhg.dev/goldmark/frontmatter v0.2.0 // indirect
 	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df // indirect
-	golang.org/x/mod v0.29.0 // indirect
-	golang.org/x/sys v0.38.0 // indirect
-	golang.org/x/text v0.31.0 // indirect
+	golang.org/x/mod v0.35.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
@@ -57,3 +57,5 @@ require (
 replace github.com/yuin/goldmark v1.7.8 => github.com/yuin/goldmark v1.7.17
 
 replace github.com/cloudflare/circl v1.6.1 => github.com/cloudflare/circl v1.6.3
+
+replace golang.org/x/crypto v0.45.0 => golang.org/x/crypto v0.52.0
