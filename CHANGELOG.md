@@ -1,3 +1,17 @@
+## Unreleased
+
+DEPENDENCIES:
+
+* Upgraded github.com/getkin/kin-openapi from 0.133.0 to 0.140.0
+* Upgraded github.com/hashicorp/terraform-plugin-framework from 1.17.0 to 1.19.0
+* Upgraded github.com/hashicorp/terraform-plugin-go from 0.29.0 to 0.31.0
+* Upgraded github.com/hashicorp/terraform-plugin-testing from 1.14.0 to 1.16.0
+* Upgraded github.com/oapi-codegen/runtime from 1.1.2 to 1.4.2 and the oapi-codegen tool from 2.5.0 to 2.7.2 (client regenerated)
+* Upgraded golang.org/x/oauth2 from 0.35.0 to 0.36.0
+* Upgraded google.golang.org/grpc to 1.79.3 and github.com/cloudflare/circl to 1.6.4 directly, removing the temporary `replace` directives
+* Upgraded github.com/hashicorp/terraform-plugin-docs (tools) from 0.24.0 to 0.25.0, removing the goldmark and circl `replace` directives
+* Updated all pinned GitHub Actions to current releases (checkout v7.0.0, setup-go v6.5.0, ghaction-import-gpg v7.0.0, goreleaser-action v7.2.3, setup-terraform v4.0.1, upload-artifact v7.0.1, golangci-lint-action v9.3.0)
+
 ## 0.6.1
 
 This release adds support for resource prefix matching and includes some security patches in our software dependencies.
