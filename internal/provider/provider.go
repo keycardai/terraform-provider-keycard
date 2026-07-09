@@ -164,6 +164,7 @@ func (p *KeycardProvider) DataSources(ctx context.Context) []func() datasource.D
 		NewApplicationWorkloadIdentityDataSource,
 		NewResourceDataSource,
 		NewAwsKmsKeyPolicyDataSource,
+		NewPolicySchemaDataSource,
 	}
 }
 

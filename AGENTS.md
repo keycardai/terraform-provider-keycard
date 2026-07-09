@@ -59,6 +59,8 @@ When API changes:
 3. Update `provider_helpers.go` mapping functions as needed
 4. Update affected resources/data sources
 
+`api/openapi.yaml` is hand-curated to just the operations the provider uses. The canonical published API surface lives in the keycard-api repo (`api/references/*.yaml`, aggregated from the service repos); when adding operations, copy the request/response shapes from there and keep them in sync manually.
+
 ## Local Development
 
 Configure `~/.terraformrc` with dev overrides:
