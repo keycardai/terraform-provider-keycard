@@ -43,7 +43,7 @@ func TestAccZoneResource_basic(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	var zoneID string
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -91,7 +91,7 @@ func TestAccZoneResource_withDescription(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	var zoneID string
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -127,7 +127,7 @@ func TestAccZoneResource_withDescription(t *testing.T) {
 func TestAccZoneResource_emptyDescriptionInvalid(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -143,7 +143,7 @@ func TestAccZoneResource_complete(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	var zoneID string
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -177,7 +177,7 @@ func TestAccZoneResource_oauth2Custom(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	var zoneID string
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -208,7 +208,7 @@ func TestAccZoneResource_oauth2Updates(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	var zoneID string
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -260,7 +260,7 @@ func TestAccZoneResource_oauth2Defaults(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	var zoneID string
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -334,7 +334,7 @@ func TestAccZoneResource_encryptionKeyUpdate(t *testing.T) {
 	kmsArn2 := os.Getenv("KEYCARD_TEST_KMS_KEY_2")
 	var zoneID string
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -365,7 +365,7 @@ func TestAccZoneResource_encryptionKeyAddRemove(t *testing.T) {
 	kmsArn := os.Getenv("KEYCARD_TEST_KMS_KEY_1")
 	var zoneID string
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{

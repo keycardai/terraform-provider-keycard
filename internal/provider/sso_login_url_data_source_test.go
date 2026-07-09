@@ -11,7 +11,7 @@ import (
 func TestAccSSOLoginURLDataSource_basic(t *testing.T) {
 	issuer := fmt.Sprintf("https://%s.example.com", acctest.RandomWithPrefix("tftest"))
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheckBasic(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -31,7 +31,7 @@ func TestAccSSOLoginURLDataSource_customTargetLinkURI(t *testing.T) {
 	issuer := fmt.Sprintf("https://%s.example.com", acctest.RandomWithPrefix("tftest"))
 	targetLinkURI := "https://staging.console.keycard.ai"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheckBasic(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{

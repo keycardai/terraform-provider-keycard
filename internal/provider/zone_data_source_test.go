@@ -13,7 +13,7 @@ import (
 func TestAccZoneDataSource_basic(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -47,7 +47,7 @@ func TestAccZoneDataSource_withDescription(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	description := "Test zone description"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -73,7 +73,7 @@ func TestAccZoneDataSource_withDescription(t *testing.T) {
 func TestAccZoneDataSource_oauth2(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -111,7 +111,7 @@ func TestAccZoneDataSource_oauth2(t *testing.T) {
 }
 
 func TestAccZoneDataSource_notFound(t *testing.T) {
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -178,7 +178,7 @@ func TestAccZoneDataSource_withEncryptionKey(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	kmsArn := os.Getenv("KEYCARD_TEST_KMS_KEY_1")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -204,7 +204,7 @@ func TestAccZoneDataSource_withEncryptionKey(t *testing.T) {
 func TestAccZoneDataSource_withoutEncryptionKey(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
