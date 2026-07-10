@@ -14,7 +14,7 @@ func TestAccZoneUserIdentityConfigResource_basic(t *testing.T) {
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 	identifier := fmt.Sprintf("https://%s.example.com", providerName)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -54,7 +54,7 @@ func TestAccZoneUserIdentityConfigResource_updateProvider(t *testing.T) {
 	identifier1 := fmt.Sprintf("https://%s.example.com", provider1Name)
 	identifier2 := fmt.Sprintf("https://%s.example.com", provider2Name)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -96,7 +96,7 @@ func TestAccZoneUserIdentityConfigResource_replaceOnZoneChange(t *testing.T) {
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 	identifier := fmt.Sprintf("https://%s.example.com", providerName)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{

@@ -16,7 +16,7 @@ func TestAccApplicationWorkloadIdentityResource_basic(t *testing.T) {
 	namespace := acctest.RandomWithPrefix("ns")
 	serviceAccount := acctest.RandomWithPrefix("sa")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -76,7 +76,7 @@ func TestAccApplicationWorkloadIdentityResource_updateSubject(t *testing.T) {
 	namespace2 := acctest.RandomWithPrefix("ns2")
 	serviceAccount2 := acctest.RandomWithPrefix("sa2")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -114,7 +114,7 @@ func TestAccApplicationWorkloadIdentityResource_removeSubject(t *testing.T) {
 	namespace := acctest.RandomWithPrefix("ns")
 	serviceAccount := acctest.RandomWithPrefix("sa")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -149,7 +149,7 @@ func TestAccApplicationWorkloadIdentityResource_githubActions(t *testing.T) {
 	repo := acctest.RandomWithPrefix("repo")
 	branch := "main"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -174,7 +174,7 @@ func TestAccApplicationWorkloadIdentityResource_awsEks(t *testing.T) {
 	namespace := "kube-system"
 	serviceAccount := "aws-node"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -199,7 +199,7 @@ func TestAccApplicationWorkloadIdentityResource_providerChange(t *testing.T) {
 	namespace := acctest.RandomWithPrefix("ns")
 	serviceAccount := acctest.RandomWithPrefix("sa")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -237,7 +237,7 @@ func TestAccApplicationWorkloadIdentityResource_multipleIdentities(t *testing.T)
 	namespace2 := "staging"
 	serviceAccount2 := "app-staging"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -274,7 +274,7 @@ func TestAccApplicationWorkloadIdentityResource_emptySubjectInvalid(t *testing.T
 	rName := acctest.RandomWithPrefix("tftest")
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{

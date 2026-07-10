@@ -14,7 +14,7 @@ func TestAccZoneUserIdentityConfigDataSource_basic(t *testing.T) {
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 	identifier := fmt.Sprintf("https://%s.example.com", providerName)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -52,7 +52,7 @@ func TestAccZoneUserIdentityConfigDataSource_basic(t *testing.T) {
 func TestAccZoneUserIdentityConfigDataSource_noProviderConfigured(t *testing.T) {
 	zoneName := acctest.RandomWithPrefix("tftest")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -66,7 +66,7 @@ func TestAccZoneUserIdentityConfigDataSource_noProviderConfigured(t *testing.T) 
 }
 
 func TestAccZoneUserIdentityConfigDataSource_zoneNotFound(t *testing.T) {
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{

@@ -15,7 +15,7 @@ func TestAccResourceResource_basic(t *testing.T) {
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -56,7 +56,7 @@ func TestAccResourceResource_withDescription(t *testing.T) {
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -91,7 +91,7 @@ func TestAccResourceResource_withMetadata(t *testing.T) {
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -126,7 +126,7 @@ func TestAccResourceResource_withScopes(t *testing.T) {
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -173,7 +173,7 @@ func TestAccResourceResource_withApplication(t *testing.T) {
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 	appName := acctest.RandomWithPrefix("tftest-app")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -203,7 +203,7 @@ func TestAccResourceResource_complete(t *testing.T) {
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 	appName := acctest.RandomWithPrefix("tftest-app")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -239,7 +239,7 @@ func TestAccResourceResource_withPrefix(t *testing.T) {
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -275,7 +275,7 @@ func TestAccResourceResource_zoneChange(t *testing.T) {
 	zoneName2 := acctest.RandomWithPrefix("tftest-zone2")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -304,7 +304,7 @@ func TestAccResourceResource_emptyDescriptionInvalid(t *testing.T) {
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -321,7 +321,7 @@ func TestAccResourceResource_emptyDocsUrlInvalid(t *testing.T) {
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -338,7 +338,7 @@ func TestAccResourceResource_emptyApplicationIdInvalid(t *testing.T) {
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{

@@ -13,7 +13,7 @@ func TestAccSSOConnectionResource_basic(t *testing.T) {
 	identifier := fmt.Sprintf("https://%s.example.com", acctest.RandomWithPrefix("tftest"))
 	clientID := acctest.RandomWithPrefix("client")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheckBasic(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -45,7 +45,7 @@ func TestAccSSOConnectionResource_update(t *testing.T) {
 	clientID1 := acctest.RandomWithPrefix("client1")
 	clientID2 := acctest.RandomWithPrefix("client2")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheckBasic(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -74,7 +74,7 @@ func TestAccSSOConnectionResource_withClientSecret(t *testing.T) {
 	clientID := acctest.RandomWithPrefix("client")
 	clientSecret := acctest.RandomWithPrefix("secret")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheckBasic(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -101,7 +101,7 @@ func TestAccSSOConnectionResource_withClientSecret(t *testing.T) {
 func TestAccSSOConnectionResource_emptyClientIdInvalid(t *testing.T) {
 	identifier := fmt.Sprintf("https://%s.example.com", acctest.RandomWithPrefix("tftest"))
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheckBasic(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -116,7 +116,7 @@ func TestAccSSOConnectionResource_emptyClientIdInvalid(t *testing.T) {
 func TestAccSSOConnectionResource_emptyIdentifierInvalid(t *testing.T) {
 	clientID := acctest.RandomWithPrefix("client")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheckBasic(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -132,7 +132,7 @@ func TestAccSSOConnectionResource_emptyClientSecretInvalid(t *testing.T) {
 	identifier := fmt.Sprintf("https://%s.example.com", acctest.RandomWithPrefix("tftest"))
 	clientID := acctest.RandomWithPrefix("client")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheckBasic(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{

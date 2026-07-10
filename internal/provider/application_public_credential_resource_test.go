@@ -15,7 +15,7 @@ func TestAccApplicationPublicCredentialResource_basic(t *testing.T) {
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	identifier := "client-" + rName
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -64,7 +64,7 @@ func TestAccApplicationPublicCredentialResource_applicationChange(t *testing.T) 
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	identifier := "client-" + acctest.RandomWithPrefix("tftest")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -100,7 +100,7 @@ func TestAccApplicationPublicCredentialResource_zoneChange(t *testing.T) {
 	zoneName2 := acctest.RandomWithPrefix("tftest-zone2")
 	identifier := "client-" + rName
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -136,7 +136,7 @@ func TestAccApplicationPublicCredentialResource_multipleCredentials(t *testing.T
 	identifier1 := "client1-" + rName
 	identifier2 := "client2-" + rName
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{

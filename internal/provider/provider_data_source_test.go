@@ -13,7 +13,7 @@ func TestAccProviderDataSource_basic(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	issuer := fmt.Sprintf("https://%s.example.com", rName)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -56,7 +56,7 @@ func TestAccProviderDataSource_withDescription(t *testing.T) {
 	issuer := fmt.Sprintf("https://%s.example.com", rName)
 	description := "Test provider description"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -83,7 +83,7 @@ func TestAccProviderDataSource_withOAuth2(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	issuer := fmt.Sprintf("https://%s.example.com", rName)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -124,7 +124,7 @@ func TestAccProviderDataSource_withOAuth2(t *testing.T) {
 func TestAccProviderDataSource_notFound(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{

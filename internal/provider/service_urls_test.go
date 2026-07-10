@@ -5,6 +5,8 @@ import (
 )
 
 func TestDeriveServiceURL(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name      string
 		endpoint  string
@@ -52,6 +54,8 @@ func TestDeriveServiceURL(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			got, err := deriveServiceURL(tt.endpoint, tt.subdomain)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("deriveServiceURL() error = %v, wantErr %v", err, tt.wantErr)

@@ -15,7 +15,7 @@ func TestAccApplicationDependencyResource_basic(t *testing.T) {
 	appName := acctest.RandomWithPrefix("tftest-app")
 	resourceName := acctest.RandomWithPrefix("tftest-resource")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -48,7 +48,7 @@ func TestAccApplicationDependencyResource_multipleResources(t *testing.T) {
 	resourceName1 := acctest.RandomWithPrefix("tftest-resource1")
 	resourceName2 := acctest.RandomWithPrefix("tftest-resource2")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -73,7 +73,7 @@ func TestAccApplicationDependencyResource_resourceChange(t *testing.T) {
 	resourceName1 := acctest.RandomWithPrefix("tftest-resource1")
 	resourceName2 := acctest.RandomWithPrefix("tftest-resource2")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -103,7 +103,7 @@ func TestAccApplicationDependencyResource_whenAccessing(t *testing.T) {
 	additionalResourceName1 := acctest.RandomWithPrefix("tftest-additional1")
 	additionalResourceName2 := acctest.RandomWithPrefix("tftest-additional2")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -138,7 +138,7 @@ func TestAccApplicationDependencyResource_whenAccessingSingle(t *testing.T) {
 	resourceName := acctest.RandomWithPrefix("tftest-resource")
 	additionalResourceName := acctest.RandomWithPrefix("tftest-additional")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{

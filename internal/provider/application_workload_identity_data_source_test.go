@@ -15,7 +15,7 @@ func TestAccApplicationWorkloadIdentityDataSource_basic(t *testing.T) {
 	namespace := acctest.RandomWithPrefix("ns")
 	serviceAccount := acctest.RandomWithPrefix("sa")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -59,7 +59,7 @@ func TestAccApplicationWorkloadIdentityDataSource_noSubject(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -94,7 +94,7 @@ func TestAccApplicationWorkloadIdentityDataSource_noSubject(t *testing.T) {
 func TestAccApplicationWorkloadIdentityDataSource_notFound(t *testing.T) {
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{

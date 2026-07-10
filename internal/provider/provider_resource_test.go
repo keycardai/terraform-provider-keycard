@@ -14,7 +14,7 @@ func TestAccProviderResource_basic(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	issuer := fmt.Sprintf("https://%s.example.com", rName)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -59,7 +59,7 @@ func TestAccProviderResource_withDescription(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	issuer := fmt.Sprintf("https://%s.example.com", rName)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -94,7 +94,7 @@ func TestAccProviderResource_oauth2Config(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	issuer := fmt.Sprintf("https://%s.example.com", rName)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -129,7 +129,7 @@ func TestAccProviderResource_oauth2Updates(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	issuer := fmt.Sprintf("https://%s.example.com", rName)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -172,7 +172,7 @@ func TestAccProviderResource_customIdentifier(t *testing.T) {
 	issuer := fmt.Sprintf("https://%s.example.com", rName)
 	identifier := rName + "-custom-id"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -205,7 +205,7 @@ func TestAccProviderResource_identifierOnly(t *testing.T) {
 	identifier := fmt.Sprintf("https://%s.example.com", rName)
 	identifierV2 := fmt.Sprintf("https://%s-v2.example.com", rName)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -255,7 +255,7 @@ func TestAccProviderResource_identifierOnly(t *testing.T) {
 func TestAccProviderResource_missingIdentifierAndOAuth2Invalid(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -271,7 +271,7 @@ func TestAccProviderResource_emptyDescriptionInvalid(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	issuer := fmt.Sprintf("https://%s.example.com", rName)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -287,7 +287,7 @@ func TestAccProviderResource_emptyClientIdInvalid(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	issuer := fmt.Sprintf("https://%s.example.com", rName)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -303,7 +303,7 @@ func TestAccProviderResource_emptyClientSecretInvalid(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	issuer := fmt.Sprintf("https://%s.example.com", rName)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -319,7 +319,7 @@ func TestAccProviderResource_emptyAuthorizationEndpointInvalid(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	issuer := fmt.Sprintf("https://%s.example.com", rName)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -335,7 +335,7 @@ func TestAccProviderResource_emptyTokenEndpointInvalid(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	issuer := fmt.Sprintf("https://%s.example.com", rName)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -350,7 +350,7 @@ func TestAccProviderResource_emptyTokenEndpointInvalid(t *testing.T) {
 func TestAccProviderResource_invalidIssuerURI(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{

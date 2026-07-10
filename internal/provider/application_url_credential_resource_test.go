@@ -14,7 +14,7 @@ func TestAccApplicationURLCredentialResource_basic(t *testing.T) {
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	urlValue := fmt.Sprintf("https://%s.example.com", rName)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -63,7 +63,7 @@ func TestAccApplicationURLCredentialResource_urlChange(t *testing.T) {
 	urlValue1 := fmt.Sprintf("https://%s-1.example.com", rName)
 	urlValue2 := fmt.Sprintf("https://%s-2.example.com", rName)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -93,7 +93,7 @@ func TestAccApplicationURLCredentialResource_applicationChange(t *testing.T) {
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	urlValue := "https://example.com/credential"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -129,7 +129,7 @@ func TestAccApplicationURLCredentialResource_zoneChange(t *testing.T) {
 	zoneName2 := acctest.RandomWithPrefix("tftest-zone2")
 	urlValue := "https://example.com/credential"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -165,7 +165,7 @@ func TestAccApplicationURLCredentialResource_multipleCredentials(t *testing.T) {
 	urlValue1 := fmt.Sprintf("https://%s-1.example.com", rName)
 	urlValue2 := fmt.Sprintf("https://%s-2.example.com", rName)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{

@@ -11,7 +11,7 @@ import (
 func TestAccAwsKmsKeyPolicyDataSource_basic(t *testing.T) {
 	accountID := "123456789012"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -58,7 +58,7 @@ func TestAccAwsKmsKeyPolicyDataSource_invalidAccountId(t *testing.T) {
 
 	for _, accountID := range invalidAccountIDs {
 		t.Run(fmt.Sprintf("accountID_%s", accountID), func(t *testing.T) {
-			resource.Test(t, resource.TestCase{
+			resource.ParallelTest(t, resource.TestCase{
 				PreCheck:                 func() { testAccPreCheck(t) },
 				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				Steps: []resource.TestStep{
