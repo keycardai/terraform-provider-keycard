@@ -152,6 +152,7 @@ func (p *KeycardProvider) Resources(ctx context.Context) []func() resource.Resou
 		NewResourceResource,
 		NewApplicationDependencyResource,
 		NewSSOConnectionResource,
+		NewPolicyResource,
 	}
 }
 
@@ -173,6 +174,7 @@ func (p *KeycardProvider) DataSources(ctx context.Context) []func() datasource.D
 		func() datasource.DataSource {
 			return NewPolicySchemaDataSource(p.policySchemaVersionRetryWindow)
 		},
+		NewPolicyDataSource,
 	}
 }
 

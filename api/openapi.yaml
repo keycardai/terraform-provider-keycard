@@ -1393,6 +1393,194 @@ paths:
         - bearerAuth: []
       tags:
         - Policy Schemas
+  '/zones/{zone_id}/policies':
+    get:
+      operationId: listPolicies
+      summary: List policies in a zone
+      description: Returns a paginated list of policies in the zone.
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: query[name]
+          in: query
+          description: Case-insensitive substring search on `name`. Repeatable; multiple terms are OR-ed.
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+        - name: after
+          in: query
+          description: Cursor for forward pagination
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A paginated list of policies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoliciesList'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Policies
+    post:
+      operationId: createPolicy
+      summary: Create a new policy
+      description: Creates a new policy container in the zone. Cedar content is managed separately through policy versions.
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePolicyRequest'
+      responses:
+        '201':
+          description: The newly created policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Policies
+  '/zones/{zone_id}/policies/{policy_id}':
+    get:
+      operationId: getPolicy
+      summary: Get a policy by ID
+      description: Returns details of a specific policy by ID
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: policy_id
+          in: path
+          required: true
+          description: The policy identifier
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The requested policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Policies
+    patch:
+      operationId: updatePolicy
+      summary: Update a policy
+      description: Updates a policy's name and description
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: policy_id
+          in: path
+          required: true
+          description: The policy identifier
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePolicyRequest'
+      responses:
+        '200':
+          description: The updated policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Policies
+    delete:
+      operationId: archivePolicy
+      summary: Archive a policy
+      description: Archives a policy, closing it to new versions
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: policy_id
+          in: path
+          required: true
+          description: The policy identifier
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The archived policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Policies
   /organizations/{organization_id}/sso-connection:
     post:
       operationId: enableSSOConnection
@@ -3058,6 +3246,92 @@ components:
         - items
         - pagination
       title: Policy Schemas List
+    Policy:
+      description: A policy container. Cedar content is managed separately through immutable policy versions.
+      type: object
+      properties:
+        id:
+          type: string
+        zone_id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        archived_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+        updated_by:
+          type: string
+          nullable: true
+        latest_version_id:
+          type: string
+          nullable: true
+        latest_version:
+          description: Human-readable version number of the latest version (e.g., 1, 2, 3)
+          type: integer
+          nullable: true
+        latest_schema_version:
+          description: Schema version the latest version was validated against. Null when the policy has no published versions.
+          type: string
+          nullable: true
+        owner_type:
+          description: 'Who manages this policy. platform: managed by the Keycard platform; customer: managed by the tenant.'
+          type: string
+          enum:
+            - platform
+            - customer
+      required:
+        - id
+        - zone_id
+        - name
+        - created_at
+        - updated_at
+        - created_by
+        - owner_type
+      title: Policy
+    PoliciesList:
+      description: A paginated list of policies
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Policy'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+      required:
+        - items
+        - pagination
+      title: Policies List
+    CreatePolicyRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+      required:
+        - name
+      title: Create Policy Request
+    UpdatePolicyRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+      title: Update Policy Request
   securitySchemes:
     bearerAuth:
       type: http

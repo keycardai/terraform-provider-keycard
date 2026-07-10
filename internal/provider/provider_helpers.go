@@ -119,6 +119,18 @@ func BoolValueNullable(val basetypes.BoolValue) nullable.Nullable[bool] {
 	}
 }
 
+// updatePolicyModelFromAPIResponse maps a Policy API response to the PolicyModel.
+// This is a shared helper function used by both the resource and data source.
+func updatePolicyModelFromAPIResponse(apiPolicy *client.Policy, data *PolicyModel) {
+	data.ID = types.StringValue(apiPolicy.Id)
+	data.ZoneID = types.StringValue(apiPolicy.ZoneId)
+	data.Name = types.StringValue(apiPolicy.Name)
+	data.Description = NullableStringValue(apiPolicy.Description)
+	data.OwnerType = types.StringValue(string(apiPolicy.OwnerType))
+	data.CreatedBy = types.StringValue(apiPolicy.CreatedBy)
+	data.LatestVersionID = NullableStringValue(apiPolicy.LatestVersionId)
+}
+
 // updateApplicationModelFromAPIResponse maps an Application API response to the ApplicationModel.
 // This is a shared helper function used by both the resource and data source.
 // It returns any diagnostics encountered during the mapping.
