@@ -156,6 +156,9 @@ func (p *KeycardProvider) Resources(ctx context.Context) []func() resource.Resou
 		func() resource.Resource {
 			return NewPolicyResource(p.notFoundRetryWindow)
 		},
+		func() resource.Resource {
+			return NewPolicyVersionResource(p.notFoundRetryWindow)
+		},
 	}
 }
 

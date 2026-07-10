@@ -2,8 +2,9 @@
 
 FEATURES:
 
-* **Policy Management**: New `keycard_policy` resource and data source manage Cedar authorization policies within a zone.
 * **Policy Schema Lookup**: New `keycard_policy_schema` data source resolves a zone's default Cedar policy schema version (or a specific version), laying the groundwork for declarative policy management.
+* **Policy Containers**: New `keycard_policy` resource and data source manage Cedar policy containers within a zone. Destroy archives the policy, which frees its name for reuse.
+* **Declarative Policy Authoring**: New `keycard_policy_version` resource publishes immutable Cedar policy content into a `keycard_policy`. Combined with the schema data source and `keycard_policy`, Cedar policies can now be authored end-to-end from Terraform, with a new immutable version created on every content change.
 
 NOTES:
 
@@ -11,12 +12,13 @@ NOTES:
 
 RESOURCES:
 
-* `keycard_policy` - New resource for managing a Cedar policy in a zone. Supports import via `zones/{zone-id}/policies/{policy-id}`.
+* `keycard_policy` - New resource for managing Cedar policy containers. Destroy archives the policy.
+* `keycard_policy_version` - New resource for publishing immutable Cedar policy versions. Content and schema are `RequiresReplace` (versions are immutable); destroy archives the version.
 
 DATA SOURCES:
 
-* `keycard_policy` - New data source for looking up a policy by `id` or `name` within a zone.
 * `keycard_policy_schema` - New data source for fetching a zone's Cedar policy schema by version or zone default.
+* `keycard_policy` - New data source for looking up a policy by ID or name within a zone.
 
 DEPENDENCIES:
 
