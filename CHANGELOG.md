@@ -1,5 +1,23 @@
 ## Unreleased
 
+FEATURES:
+
+* **Policy Management**: New `keycard_policy` resource and data source manage Cedar authorization policies within a zone.
+* **Policy Schema Lookup**: New `keycard_policy_schema` data source resolves a zone's default Cedar policy schema version (or a specific version), laying the groundwork for declarative policy management.
+
+NOTES:
+
+* `keycard_zone` - Create now blocks until the zone finishes provisioning across services (its PDP endpoints become reachable), waiting up to 2 minutes. This makes downstream resource creation and teardown reliable, but is a behavior change for configurations that create zones in isolation. Progress is logged at `INFO` (`TF_LOG=INFO`).
+
+RESOURCES:
+
+* `keycard_policy` - New resource for managing a Cedar policy in a zone. Supports import via `zones/{zone-id}/policies/{policy-id}`.
+
+DATA SOURCES:
+
+* `keycard_policy` - New data source for looking up a policy by `id` or `name` within a zone.
+* `keycard_policy_schema` - New data source for fetching a zone's Cedar policy schema by version or zone default.
+
 DEPENDENCIES:
 
 * Upgraded github.com/getkin/kin-openapi from 0.133.0 to 0.140.0
@@ -11,16 +29,6 @@ DEPENDENCIES:
 * Upgraded google.golang.org/grpc to 1.79.3 and github.com/cloudflare/circl to 1.6.4 directly, removing the temporary `replace` directives
 * Upgraded github.com/hashicorp/terraform-plugin-docs (tools) from 0.24.0 to 0.25.0, removing the goldmark and circl `replace` directives
 * Updated all pinned GitHub Actions to current releases (checkout v7.0.0, setup-go v6.5.0, ghaction-import-gpg v7.0.0, goreleaser-action v7.2.3, setup-terraform v4.0.1, upload-artifact v7.0.1, golangci-lint-action v9.3.0)
-
-## Unreleased
-
-FEATURES:
-
-* **Policy Schema Lookup**: New `keycard_policy_schema` data source resolves a zone's default Cedar policy schema version (or a specific version), laying the groundwork for declarative policy management.
-
-DATA SOURCES:
-
-* `keycard_policy_schema` - New data source for fetching a zone's Cedar policy schema by version or zone default.
 
 ## 0.6.1
 

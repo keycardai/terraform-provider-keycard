@@ -290,6 +290,24 @@ func (e PasswordCredentialUpdateType) Valid() bool {
 	}
 }
 
+// Defines values for PolicyOwnerType.
+const (
+	Customer PolicyOwnerType = "customer"
+	Platform PolicyOwnerType = "platform"
+)
+
+// Valid indicates whether the value is a known member of the PolicyOwnerType enum.
+func (e PolicyOwnerType) Valid() bool {
+	switch e {
+	case Customer:
+		return true
+	case Platform:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ProviderType.
 const (
 	ProviderTypeExternal     ProviderType = "external"
@@ -897,6 +915,12 @@ type ApplicationUpdate struct {
 // ApplicationUpdateConsent Consent mode for the application. 'implicit' means consent is automatically granted, 'required' means explicit user consent is needed.
 type ApplicationUpdateConsent string
 
+// CreatePolicyRequest defines model for CreatePolicyRequest.
+type CreatePolicyRequest struct {
+	Description *string `json:"description,omitempty"`
+	Name        string  `json:"name"`
+}
+
 // EncryptionKeyAwsKmsConfig AWS KMS configuration for zone encryption. When not specified, the default Keycard Cloud encryption key will be used.
 type EncryptionKeyAwsKmsConfig struct {
 	// Arn AWS KMS Key ARN for encrypting the zone's data
@@ -988,6 +1012,40 @@ type PasswordCredentialUpdate struct {
 
 // PasswordCredentialUpdateType defines model for PasswordCredentialUpdate.Type.
 type PasswordCredentialUpdateType string
+
+// PoliciesList A paginated list of policies
+type PoliciesList struct {
+	Items []Policy `json:"items"`
+
+	// Pagination Cursor-based pagination metadata returned by PDP list endpoints
+	Pagination Pagination `json:"pagination"`
+}
+
+// Policy A policy container. Cedar content is managed separately through immutable policy versions.
+type Policy struct {
+	ArchivedAt  nullable.Nullable[time.Time] `json:"archived_at,omitempty"`
+	CreatedAt   time.Time                    `json:"created_at"`
+	CreatedBy   string                       `json:"created_by"`
+	Description nullable.Nullable[string]    `json:"description,omitempty"`
+	Id          string                       `json:"id"`
+
+	// LatestSchemaVersion Schema version the latest version was validated against. Null when the policy has no published versions.
+	LatestSchemaVersion nullable.Nullable[string] `json:"latest_schema_version,omitempty"`
+
+	// LatestVersion Human-readable version number of the latest version (e.g., 1, 2, 3)
+	LatestVersion   nullable.Nullable[int]    `json:"latest_version,omitempty"`
+	LatestVersionId nullable.Nullable[string] `json:"latest_version_id,omitempty"`
+	Name            string                    `json:"name"`
+
+	// OwnerType Who manages this policy. platform: managed by the Keycard platform; customer: managed by the tenant.
+	OwnerType PolicyOwnerType           `json:"owner_type"`
+	UpdatedAt time.Time                 `json:"updated_at"`
+	UpdatedBy nullable.Nullable[string] `json:"updated_by,omitempty"`
+	ZoneId    string                    `json:"zone_id"`
+}
+
+// PolicyOwnerType Who manages this policy. platform: managed by the Keycard platform; customer: managed by the tenant.
+type PolicyOwnerType string
 
 // PolicySchemasList A paginated list of policy schemas
 type PolicySchemasList struct {
@@ -1371,6 +1429,12 @@ type TokenCredentialUpdate struct {
 // TokenCredentialUpdateType defines model for TokenCredentialUpdate.Type.
 type TokenCredentialUpdateType string
 
+// UpdatePolicyRequest defines model for UpdatePolicyRequest.
+type UpdatePolicyRequest struct {
+	Description *string `json:"description,omitempty"`
+	Name        *string `json:"name,omitempty"`
+}
+
 // UrlCredentialUpdate Schema for updating a URL credential
 type UrlCredentialUpdate struct {
 	// Identifier URL of the credential (must be a valid URL)
@@ -1610,6 +1674,16 @@ type ListResourcesParams struct {
 	Slug                 *string `form:"slug,omitempty" json:"slug,omitempty"`
 }
 
+// ListPoliciesParams defines parameters for ListPolicies.
+type ListPoliciesParams struct {
+	// QueryName Case-insensitive substring search on `name`. Repeatable; multiple terms are OR-ed.
+	QueryName *[]string `form:"query[name],omitempty" json:"query[name],omitempty"`
+
+	// After Cursor for forward pagination
+	After *string `form:"after,omitempty" json:"after,omitempty"`
+	Limit *int    `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListPolicySchemasParams defines parameters for ListPolicySchemas.
 type ListPolicySchemasParams struct {
 	// Format Schema representation format. `cedar` returns human-readable Cedar syntax in `cedar_schema`, `json` returns the Cedar JSON schema object in `cedar_schema_json`.
@@ -1670,6 +1744,12 @@ type CreateResourceJSONRequestBody = ResourceCreate
 
 // UpdateResourceJSONRequestBody defines body for UpdateResource for application/json ContentType.
 type UpdateResourceJSONRequestBody = ResourceUpdate
+
+// CreatePolicyJSONRequestBody defines body for CreatePolicy for application/json ContentType.
+type CreatePolicyJSONRequestBody = CreatePolicyRequest
+
+// UpdatePolicyJSONRequestBody defines body for UpdatePolicy for application/json ContentType.
+type UpdatePolicyJSONRequestBody = UpdatePolicyRequest
 
 // AsApplicationCredentialToken returns the union data inside the ApplicationCredential as a ApplicationCredentialToken
 func (t ApplicationCredential) AsApplicationCredentialToken() (ApplicationCredentialToken, error) {
@@ -2439,6 +2519,25 @@ type ClientInterface interface {
 
 	UpdateResource(ctx context.Context, zoneId string, id string, body UpdateResourceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListPolicies request
+	ListPolicies(ctx context.Context, zoneId string, params *ListPoliciesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreatePolicyWithBody request with any body
+	CreatePolicyWithBody(ctx context.Context, zoneId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreatePolicy(ctx context.Context, zoneId string, body CreatePolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ArchivePolicy request
+	ArchivePolicy(ctx context.Context, zoneId string, policyId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetPolicy request
+	GetPolicy(ctx context.Context, zoneId string, policyId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdatePolicyWithBody request with any body
+	UpdatePolicyWithBody(ctx context.Context, zoneId string, policyId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdatePolicy(ctx context.Context, zoneId string, policyId string, body UpdatePolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListPolicySchemas request
 	ListPolicySchemas(ctx context.Context, zoneId string, params *ListPolicySchemasParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -3024,6 +3123,90 @@ func (c *Client) UpdateResourceWithBody(ctx context.Context, zoneId string, id s
 
 func (c *Client) UpdateResource(ctx context.Context, zoneId string, id string, body UpdateResourceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateResourceRequest(c.Server, zoneId, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListPolicies(ctx context.Context, zoneId string, params *ListPoliciesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListPoliciesRequest(c.Server, zoneId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreatePolicyWithBody(ctx context.Context, zoneId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreatePolicyRequestWithBody(c.Server, zoneId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreatePolicy(ctx context.Context, zoneId string, body CreatePolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreatePolicyRequest(c.Server, zoneId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ArchivePolicy(ctx context.Context, zoneId string, policyId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewArchivePolicyRequest(c.Server, zoneId, policyId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetPolicy(ctx context.Context, zoneId string, policyId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPolicyRequest(c.Server, zoneId, policyId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdatePolicyWithBody(ctx context.Context, zoneId string, policyId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdatePolicyRequestWithBody(c.Server, zoneId, policyId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdatePolicy(ctx context.Context, zoneId string, policyId string, body UpdatePolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdatePolicyRequest(c.Server, zoneId, policyId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -5108,6 +5291,274 @@ func NewUpdateResourceRequestWithBody(server string, zoneId string, id string, c
 	return req, nil
 }
 
+// NewListPoliciesRequest generates requests for ListPolicies
+func NewListPoliciesRequest(server string, zoneId string, params *ListPoliciesParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "zone_id", zoneId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/policies", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.QueryName != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "query[name]", *params.QueryName, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "array", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.After != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "after", *params.After, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreatePolicyRequest calls the generic CreatePolicy builder with application/json body
+func NewCreatePolicyRequest(server string, zoneId string, body CreatePolicyJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreatePolicyRequestWithBody(server, zoneId, "application/json", bodyReader)
+}
+
+// NewCreatePolicyRequestWithBody generates requests for CreatePolicy with any type of body
+func NewCreatePolicyRequestWithBody(server string, zoneId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "zone_id", zoneId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/policies", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewArchivePolicyRequest generates requests for ArchivePolicy
+func NewArchivePolicyRequest(server string, zoneId string, policyId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "zone_id", zoneId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "policy_id", policyId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/policies/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetPolicyRequest generates requests for GetPolicy
+func NewGetPolicyRequest(server string, zoneId string, policyId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "zone_id", zoneId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "policy_id", policyId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/policies/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdatePolicyRequest calls the generic UpdatePolicy builder with application/json body
+func NewUpdatePolicyRequest(server string, zoneId string, policyId string, body UpdatePolicyJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdatePolicyRequestWithBody(server, zoneId, policyId, "application/json", bodyReader)
+}
+
+// NewUpdatePolicyRequestWithBody generates requests for UpdatePolicy with any type of body
+func NewUpdatePolicyRequestWithBody(server string, zoneId string, policyId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "zone_id", zoneId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "policy_id", policyId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/policies/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewListPolicySchemasRequest generates requests for ListPolicySchemas
 func NewListPolicySchemasRequest(server string, zoneId string, params *ListPolicySchemasParams) (*http.Request, error) {
 	var err error
@@ -5450,6 +5901,25 @@ type ClientWithResponsesInterface interface {
 	UpdateResourceWithBodyWithResponse(ctx context.Context, zoneId string, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateResourceResponse, error)
 
 	UpdateResourceWithResponse(ctx context.Context, zoneId string, id string, body UpdateResourceJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateResourceResponse, error)
+
+	// ListPoliciesWithResponse request
+	ListPoliciesWithResponse(ctx context.Context, zoneId string, params *ListPoliciesParams, reqEditors ...RequestEditorFn) (*ListPoliciesResponse, error)
+
+	// CreatePolicyWithBodyWithResponse request with any body
+	CreatePolicyWithBodyWithResponse(ctx context.Context, zoneId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePolicyResponse, error)
+
+	CreatePolicyWithResponse(ctx context.Context, zoneId string, body CreatePolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*CreatePolicyResponse, error)
+
+	// ArchivePolicyWithResponse request
+	ArchivePolicyWithResponse(ctx context.Context, zoneId string, policyId string, reqEditors ...RequestEditorFn) (*ArchivePolicyResponse, error)
+
+	// GetPolicyWithResponse request
+	GetPolicyWithResponse(ctx context.Context, zoneId string, policyId string, reqEditors ...RequestEditorFn) (*GetPolicyResponse, error)
+
+	// UpdatePolicyWithBodyWithResponse request with any body
+	UpdatePolicyWithBodyWithResponse(ctx context.Context, zoneId string, policyId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePolicyResponse, error)
+
+	UpdatePolicyWithResponse(ctx context.Context, zoneId string, policyId string, body UpdatePolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePolicyResponse, error)
 
 	// ListPolicySchemasWithResponse request
 	ListPolicySchemasWithResponse(ctx context.Context, zoneId string, params *ListPolicySchemasParams, reqEditors ...RequestEditorFn) (*ListPolicySchemasResponse, error)
@@ -6646,6 +7116,161 @@ func (r UpdateResourceResponse) ContentType() string {
 	return ""
 }
 
+type ListPoliciesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *PoliciesList
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r ListPoliciesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListPoliciesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListPoliciesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreatePolicyResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *Policy
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r CreatePolicyResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreatePolicyResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreatePolicyResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ArchivePolicyResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Policy
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r ArchivePolicyResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ArchivePolicyResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ArchivePolicyResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetPolicyResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Policy
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GetPolicyResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetPolicyResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetPolicyResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UpdatePolicyResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Policy
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdatePolicyResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdatePolicyResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdatePolicyResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type ListPolicySchemasResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -7135,6 +7760,67 @@ func (c *ClientWithResponses) UpdateResourceWithResponse(ctx context.Context, zo
 		return nil, err
 	}
 	return ParseUpdateResourceResponse(rsp)
+}
+
+// ListPoliciesWithResponse request returning *ListPoliciesResponse
+func (c *ClientWithResponses) ListPoliciesWithResponse(ctx context.Context, zoneId string, params *ListPoliciesParams, reqEditors ...RequestEditorFn) (*ListPoliciesResponse, error) {
+	rsp, err := c.ListPolicies(ctx, zoneId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListPoliciesResponse(rsp)
+}
+
+// CreatePolicyWithBodyWithResponse request with arbitrary body returning *CreatePolicyResponse
+func (c *ClientWithResponses) CreatePolicyWithBodyWithResponse(ctx context.Context, zoneId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePolicyResponse, error) {
+	rsp, err := c.CreatePolicyWithBody(ctx, zoneId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreatePolicyResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreatePolicyWithResponse(ctx context.Context, zoneId string, body CreatePolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*CreatePolicyResponse, error) {
+	rsp, err := c.CreatePolicy(ctx, zoneId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreatePolicyResponse(rsp)
+}
+
+// ArchivePolicyWithResponse request returning *ArchivePolicyResponse
+func (c *ClientWithResponses) ArchivePolicyWithResponse(ctx context.Context, zoneId string, policyId string, reqEditors ...RequestEditorFn) (*ArchivePolicyResponse, error) {
+	rsp, err := c.ArchivePolicy(ctx, zoneId, policyId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseArchivePolicyResponse(rsp)
+}
+
+// GetPolicyWithResponse request returning *GetPolicyResponse
+func (c *ClientWithResponses) GetPolicyWithResponse(ctx context.Context, zoneId string, policyId string, reqEditors ...RequestEditorFn) (*GetPolicyResponse, error) {
+	rsp, err := c.GetPolicy(ctx, zoneId, policyId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetPolicyResponse(rsp)
+}
+
+// UpdatePolicyWithBodyWithResponse request with arbitrary body returning *UpdatePolicyResponse
+func (c *ClientWithResponses) UpdatePolicyWithBodyWithResponse(ctx context.Context, zoneId string, policyId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePolicyResponse, error) {
+	rsp, err := c.UpdatePolicyWithBody(ctx, zoneId, policyId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdatePolicyResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdatePolicyWithResponse(ctx context.Context, zoneId string, policyId string, body UpdatePolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePolicyResponse, error) {
+	rsp, err := c.UpdatePolicy(ctx, zoneId, policyId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdatePolicyResponse(rsp)
 }
 
 // ListPolicySchemasWithResponse request returning *ListPolicySchemasResponse
@@ -8381,6 +9067,171 @@ func ParseUpdateResourceResponse(rsp *http.Response) (*UpdateResourceResponse, e
 	return response, nil
 }
 
+// ParseListPoliciesResponse parses an HTTP response from a ListPoliciesWithResponse call
+func ParseListPoliciesResponse(rsp *http.Response) (*ListPoliciesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListPoliciesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PoliciesList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreatePolicyResponse parses an HTTP response from a CreatePolicyWithResponse call
+func ParseCreatePolicyResponse(rsp *http.Response) (*CreatePolicyResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreatePolicyResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Policy
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseArchivePolicyResponse parses an HTTP response from a ArchivePolicyWithResponse call
+func ParseArchivePolicyResponse(rsp *http.Response) (*ArchivePolicyResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ArchivePolicyResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Policy
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetPolicyResponse parses an HTTP response from a GetPolicyWithResponse call
+func ParseGetPolicyResponse(rsp *http.Response) (*GetPolicyResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetPolicyResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Policy
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdatePolicyResponse parses an HTTP response from a UpdatePolicyWithResponse call
+func ParseUpdatePolicyResponse(rsp *http.Response) (*UpdatePolicyResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdatePolicyResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Policy
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListPolicySchemasResponse parses an HTTP response from a ListPolicySchemasWithResponse call
 func ParseListPolicySchemasResponse(rsp *http.Response) (*ListPolicySchemasResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -8452,138 +9303,149 @@ func ParseGetPolicySchemaResponse(rsp *http.Response) (*GetPolicySchemaResponse,
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

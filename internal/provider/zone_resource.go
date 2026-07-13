@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
 	"github.com/oapi-codegen/nullable"
 )
@@ -340,8 +341,48 @@ func (r *ZoneResource) Create(ctx context.Context, req resource.CreateRequest, r
 		return
 	}
 
-	// Save data into Terraform state
+	// Persist state before waiting so the zone is tracked (and destroyable)
+	// even if provisioning does not complete within the wait window.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// A zone bootstraps asynchronously across services after creation. Until
+	// that completes, the zone's PDP endpoints 404 and its child resources
+	// can't be created; a fast destroy also races the bootstrap job. Wait for
+	// the zone to become usable so downstream operations and teardown don't
+	// race provisioning.
+	if err := r.waitForZoneReady(ctx, createResp.JSON200.Id); err != nil {
+		resp.Diagnostics.AddError(
+			"Zone Provisioning Error",
+			fmt.Sprintf("Zone %s was created but did not finish provisioning: %s", createResp.JSON200.Id, err),
+		)
+	}
+}
+
+// waitForZoneReady polls a PDP-backed endpoint until the zone has finished
+// bootstrapping. The policy schema listing 404s ("zone not found") until the
+// zone's default Cedar schema exists, which only happens once bootstrap runs.
+func (r *ZoneResource) waitForZoneReady(ctx context.Context, zoneID string) error {
+	tflog.Info(ctx, "Waiting for zone to finish provisioning", map[string]any{
+		"zone_id":  zoneID,
+		"max_wait": apiRetryWindow.String(),
+	})
+
+	schemaResp, err := callWithRetry(ctx, func() (*client.ListPolicySchemasResponse, error) {
+		return r.client.ListPolicySchemasWithResponse(ctx, zoneID, &client.ListPolicySchemasParams{})
+	}, retryOnNotFound)
+	if err != nil {
+		return err
+	}
+
+	if schemaResp.StatusCode() != 200 {
+		return fmt.Errorf("policy schema lookup returned status %d: %s", schemaResp.StatusCode(), string(schemaResp.Body))
+	}
+
+	tflog.Info(ctx, "Zone finished provisioning", map[string]any{"zone_id": zoneID})
+	return nil
 }
 
 func (r *ZoneResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
