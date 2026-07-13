@@ -330,7 +330,7 @@ func (r *PolicyVersionResource) deprecatedSchemaWarning(ctx context.Context, zon
 	if err != nil || schemaResp.StatusCode() != 200 || schemaResp.JSON200 == nil {
 		return ""
 	}
-	if schemaResp.JSON200.Status != client.Deprecated {
+	if schemaResp.JSON200.Status != client.SchemaVersionWithZoneInfoStatusDeprecated {
 		return ""
 	}
 	return fmt.Sprintf("Schema version %q is deprecated. The policy version will still be created; consider pinning a current schema version.", schemaVersion)

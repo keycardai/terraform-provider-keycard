@@ -162,6 +162,9 @@ func (p *KeycardProvider) Resources(ctx context.Context) []func() resource.Resou
 		func() resource.Resource {
 			return NewPolicyVersionResource(p.notFoundRetryWindow)
 		},
+		func() resource.Resource {
+			return NewPolicySetResource(p.notFoundRetryWindow)
+		},
 	}
 }
 
@@ -185,6 +188,9 @@ func (p *KeycardProvider) DataSources(ctx context.Context) []func() datasource.D
 		},
 		func() datasource.DataSource {
 			return NewPolicyDataSource(p.notFoundRetryWindow)
+		},
+		func() datasource.DataSource {
+			return NewPolicySetDataSource(p.notFoundRetryWindow)
 		},
 	}
 }

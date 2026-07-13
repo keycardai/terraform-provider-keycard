@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -126,6 +127,27 @@ func BoolValueNullable(val basetypes.BoolValue) nullable.Nullable[bool] {
 	}
 }
 
+// etagValue extracts the ETag response header as a Terraform string, returning
+// null when the header is absent.
+func etagValue(resp *http.Response) basetypes.StringValue {
+	if resp == nil {
+		return types.StringNull()
+	}
+	if etag := resp.Header.Get("ETag"); etag != "" {
+		return types.StringValue(etag)
+	}
+	return types.StringNull()
+}
+
+func NullableInt64Value(val nullable.Nullable[int]) basetypes.Int64Value {
+	n, err := val.Get()
+	if err != nil {
+		return types.Int64Null()
+	}
+
+	return types.Int64Value(int64(n))
+}
+
 // updatePolicyModelFromAPIResponse maps a Policy API response to the PolicyModel.
 // This is a shared helper function used by both the resource and data source.
 func updatePolicyModelFromAPIResponse(apiPolicy *client.Policy, data *PolicyModel) {
@@ -136,6 +158,33 @@ func updatePolicyModelFromAPIResponse(apiPolicy *client.Policy, data *PolicyMode
 	data.OwnerType = types.StringValue(string(apiPolicy.OwnerType))
 	data.CreatedBy = types.StringValue(apiPolicy.CreatedBy)
 	data.LatestVersionID = NullableStringValue(apiPolicy.LatestVersionId)
+}
+
+// updatePolicySetModelFromAPIResponse maps a PolicySetWithBinding API response
+// to the PolicySetModel. Shared by the resource and data source. The ETag is
+// carried in an HTTP header, not the body, so callers set it separately.
+func updatePolicySetModelFromAPIResponse(aps *client.PolicySetWithBinding, data *PolicySetModel) {
+	data.ID = types.StringValue(aps.Id)
+	data.ZoneID = types.StringValue(aps.ZoneId)
+	data.Name = types.StringValue(aps.Name)
+	data.TargetType = types.StringValue(string(aps.TargetType))
+	data.OwnerType = types.StringValue(string(aps.OwnerType))
+	data.CreatedBy = types.StringValue(aps.CreatedBy)
+	data.CreatedAt = types.StringValue(aps.CreatedAt.Format(time.RFC3339))
+	data.UpdatedAt = types.StringValue(aps.UpdatedAt.Format(time.RFC3339))
+	data.LatestVersionID = NullableStringValue(aps.LatestVersionId)
+	data.LatestVersion = NullableInt64Value(aps.LatestVersion)
+	data.Active = types.BoolValue(aps.Active)
+	data.ActiveVersionID = NullableStringValue(aps.ActiveVersionId)
+	data.ActiveVersion = NullableInt64Value(aps.ActiveVersion)
+	data.ShadowVersionID = NullableStringValue(aps.ShadowVersionId)
+	data.ShadowVersion = NullableInt64Value(aps.ShadowVersion)
+	data.TargetID = NullableStringValue(aps.TargetId)
+	if mode, err := aps.Mode.Get(); err == nil {
+		data.Mode = types.StringValue(string(mode))
+	} else {
+		data.Mode = types.StringNull()
+	}
 }
 
 // updateApplicationModelFromAPIResponse maps an Application API response to the ApplicationModel.
