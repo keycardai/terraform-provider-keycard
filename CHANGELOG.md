@@ -5,6 +5,10 @@ FEATURES:
 * **Policy Management**: New `keycard_policy` resource and data source manage Cedar authorization policies within a zone.
 * **Policy Schema Lookup**: New `keycard_policy_schema` data source resolves a zone's default Cedar policy schema version (or a specific version), laying the groundwork for declarative policy management.
 
+NOTES:
+
+* `keycard_zone` - Create now blocks until the zone finishes provisioning across services (its PDP endpoints become reachable), waiting up to 2 minutes. This makes downstream resource creation and teardown reliable, but is a behavior change for configurations that create zones in isolation. Progress is logged at `INFO` (`TF_LOG=INFO`).
+
 RESOURCES:
 
 * `keycard_policy` - New resource for managing a Cedar policy in a zone. Supports import via `zones/{zone-id}/policies/{policy-id}`.

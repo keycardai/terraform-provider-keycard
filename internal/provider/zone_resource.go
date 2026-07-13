@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
 	"github.com/oapi-codegen/nullable"
 )
@@ -364,6 +365,11 @@ func (r *ZoneResource) Create(ctx context.Context, req resource.CreateRequest, r
 // bootstrapping. The policy schema listing 404s ("zone not found") until the
 // zone's default Cedar schema exists, which only happens once bootstrap runs.
 func (r *ZoneResource) waitForZoneReady(ctx context.Context, zoneID string) error {
+	tflog.Info(ctx, "Waiting for zone to finish provisioning", map[string]any{
+		"zone_id":  zoneID,
+		"max_wait": apiRetryWindow.String(),
+	})
+
 	schemaResp, err := callWithRetry(ctx, func() (*client.ListPolicySchemasResponse, error) {
 		return r.client.ListPolicySchemasWithResponse(ctx, zoneID, &client.ListPolicySchemasParams{})
 	}, retryOnNotFound)
@@ -375,6 +381,7 @@ func (r *ZoneResource) waitForZoneReady(ctx context.Context, zoneID string) erro
 		return fmt.Errorf("policy schema lookup returned status %d: %s", schemaResp.StatusCode(), string(schemaResp.Body))
 	}
 
+	tflog.Info(ctx, "Zone finished provisioning", map[string]any{"zone_id": zoneID})
 	return nil
 }
 
