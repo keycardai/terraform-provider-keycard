@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -13,13 +14,23 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ datasource.DataSource = &PolicySchemaDataSource{}
 
-func NewPolicySchemaDataSource() datasource.DataSource {
-	return &PolicySchemaDataSource{}
+// policySchemaVersionRetryWindow bounds retries when fetching a schema by
+// version. It covers replica propagation lag for a freshly written version
+// without making a lookup for a version that does not exist wait out the full
+// provisioning window.
+const policySchemaVersionRetryWindow = 30 * time.Second
+
+func NewPolicySchemaDataSource(versionRetryWindow time.Duration) datasource.DataSource {
+	if versionRetryWindow <= 0 {
+		versionRetryWindow = policySchemaVersionRetryWindow
+	}
+	return &PolicySchemaDataSource{versionRetryWindow: versionRetryWindow}
 }
 
 // PolicySchemaDataSource defines the data source implementation.
 type PolicySchemaDataSource struct {
-	client *client.ClientWithResponses
+	client             *client.ClientWithResponses
+	versionRetryWindow time.Duration
 }
 
 // PolicySchemaDataSourceModel describes the data source data model.
@@ -104,13 +115,14 @@ func (d *PolicySchemaDataSource) Read(ctx context.Context, req datasource.ReadRe
 		format := client.GetPolicySchemaParamsFormatCedar
 		// svc-pdp is eventually consistent: a 404 may mean the zone is still
 		// provisioning, or that the requested version row hasn't propagated to
-		// the replica serving this read yet. Retry transient 404s; a version
-		// that genuinely does not exist surfaces after the retry window.
+		// the replica serving this read yet. Retry transient 404s over a short
+		// window that covers propagation lag; here a 404 is most often a real
+		// miss, so surface it quickly instead of waiting out the full window.
 		getResp, err := callWithRetry(ctx, func() (*client.GetPolicySchemaResponse, error) {
 			return d.client.GetPolicySchemaWithResponse(ctx, data.ZoneID.ValueString(), data.Version.ValueString(), &client.GetPolicySchemaParams{
 				Format: &format,
 			})
-		}, retryOnNotFound)
+		}, retryOnNotFound, withRetryWindow(d.versionRetryWindow))
 		if err != nil {
 			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read policy schema, got error: %s", err))
 			return

@@ -3,6 +3,7 @@ package provider
 import (
 	"os"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
@@ -14,6 +15,17 @@ import (
 // reattach.
 var testAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
 	"keycard": providerserver.NewProtocol6WithError(New("test")()),
+}
+
+// testAccProtoV6ProviderFactoriesShortRetry configures a provider whose policy
+// schema version retry window is short, for tests that exercise a genuine
+// not-found and would otherwise wait out the production window. Instance-scoped
+// so it is safe to use alongside the parallel default-factory tests.
+var testAccProtoV6ProviderFactoriesShortRetry = map[string]func() (tfprotov6.ProviderServer, error){
+	"keycard": providerserver.NewProtocol6WithError(&KeycardProvider{
+		version:                        "test",
+		policySchemaVersionRetryWindow: 2 * time.Second,
+	}),
 }
 
 func testAccPreCheckBasic(t *testing.T) {

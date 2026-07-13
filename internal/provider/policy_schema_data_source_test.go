@@ -78,7 +78,7 @@ func TestAccPolicySchemaDataSource_versionNotFound(t *testing.T) {
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheckBasic(t) },
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactoriesShortRetry,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccPolicySchemaDataSourceConfig_zoneOnly(rName),
