@@ -12,6 +12,16 @@ DEPENDENCIES:
 * Upgraded github.com/hashicorp/terraform-plugin-docs (tools) from 0.24.0 to 0.25.0, removing the goldmark and circl `replace` directives
 * Updated all pinned GitHub Actions to current releases (checkout v7.0.0, setup-go v6.5.0, ghaction-import-gpg v7.0.0, goreleaser-action v7.2.3, setup-terraform v4.0.1, upload-artifact v7.0.1, golangci-lint-action v9.3.0)
 
+## Unreleased
+
+FEATURES:
+
+* **Policy Schema Lookup**: New `keycard_policy_schema` data source resolves a zone's default Cedar policy schema version (or a specific version), laying the groundwork for declarative policy management.
+
+DATA SOURCES:
+
+* `keycard_policy_schema` - New data source for fetching a zone's Cedar policy schema by version or zone default.
+
 ## 0.6.1
 
 This release adds support for resource prefix matching and includes some security patches in our software dependencies.

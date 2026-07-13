@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"os"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
@@ -30,6 +31,11 @@ type KeycardProvider struct {
 	// provider is built and ran locally, and "test" when running acceptance
 	// testing.
 	version string
+
+	// policySchemaVersionRetryWindow overrides the schema-version retry window
+	// for the policy schema data source. Zero uses the production default; it
+	// exists so acceptance tests can shorten the window on the not-found path.
+	policySchemaVersionRetryWindow time.Duration
 }
 
 // KeycardProviderModel describes the provider data model.
@@ -164,6 +170,9 @@ func (p *KeycardProvider) DataSources(ctx context.Context) []func() datasource.D
 		NewApplicationWorkloadIdentityDataSource,
 		NewResourceDataSource,
 		NewAwsKmsKeyPolicyDataSource,
+		func() datasource.DataSource {
+			return NewPolicySchemaDataSource(p.policySchemaVersionRetryWindow)
+		},
 	}
 }
 

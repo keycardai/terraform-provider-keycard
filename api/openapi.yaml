@@ -1294,6 +1294,105 @@ paths:
         - bearerAuth: []
       tags:
         - Resources
+  '/zones/{zone_id}/policy-schemas':
+    get:
+      operationId: listPolicySchemas
+      summary: List policy schemas
+      description: Returns a paginated list of Cedar policy schemas available to the zone
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: format
+          in: query
+          description: Schema representation format. `cedar` returns human-readable Cedar syntax in `cedar_schema`, `json` returns the Cedar JSON schema object in `cedar_schema_json`.
+          required: false
+          schema:
+            type: string
+            enum:
+              - cedar
+              - json
+            default: json
+        - name: is_default
+          in: query
+          description: Filter schemas by default status. When `true`, returns only the zone's default schema. When `false`, returns only non-default schemas. Omit to return all schemas.
+          required: false
+          schema:
+            type: boolean
+        - name: after
+          in: query
+          description: Cursor for forward pagination
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A paginated list of policy schemas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicySchemasList'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Policy Schemas
+  '/zones/{zone_id}/policy-schemas/{version}':
+    get:
+      operationId: getPolicySchema
+      summary: Get policy schema
+      description: Returns a Cedar policy schema by version
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: version
+          in: path
+          required: true
+          description: The schema version string
+          schema:
+            type: string
+        - name: format
+          in: query
+          description: Schema representation format. `cedar` returns human-readable Cedar syntax in `cedar_schema`, `json` returns the Cedar JSON schema object in `cedar_schema_json`.
+          required: false
+          schema:
+            type: string
+            enum:
+              - cedar
+              - json
+            default: json
+      responses:
+        '200':
+          description: The requested policy schema
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchemaVersionWithZoneInfo'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Policy Schemas
   /organizations/{organization_id}/sso-connection:
     post:
       operationId: enableSSOConnection
@@ -2883,6 +2982,82 @@ components:
           description: OAuth 2.0 client secret (set to null to remove)
           type: string
       title: SSO Connection Update
+    SchemaVersionWithZoneInfo:
+      description: A versioned Cedar schema that defines the entity model, actions, and context shape used for policy evaluation. Mirrors the published PDP management API (keycard-api).
+      type: object
+      properties:
+        version:
+          description: Schema version string (e.g. 2026-02-24)
+          type: string
+        status:
+          description: 'Schema lifecycle status. active: new policy versions can be created against it; deprecated: superseded but still accepts new policy versions; archived: closed to new policy versions.'
+          type: string
+          enum:
+            - active
+            - deprecated
+            - archived
+        cedar_schema:
+          description: Cedar schema in human-readable syntax. Populated when format=cedar.
+          type: string
+          nullable: true
+        cedar_schema_json:
+          description: Cedar schema as JSON object. Populated when format=json (default).
+          type: object
+          nullable: true
+        is_default:
+          description: Whether this is the zone's default schema
+          type: boolean
+        deprecated_at:
+          type: string
+          format: date-time
+          nullable: true
+        archived_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - version
+        - status
+        - is_default
+        - created_at
+        - updated_at
+      title: Policy Schema Version
+    Pagination:
+      description: Cursor-based pagination metadata returned by PDP list endpoints
+      type: object
+      properties:
+        after_cursor:
+          description: Cursor of the last item on the current page. Null when there is no next page.
+          type: string
+          nullable: true
+        before_cursor:
+          description: Cursor of the first item on the current page. Null when there is no previous page.
+          type: string
+          nullable: true
+      required:
+        - after_cursor
+        - before_cursor
+      title: Pagination
+    PolicySchemasList:
+      description: A paginated list of policy schemas
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SchemaVersionWithZoneInfo'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+      required:
+        - items
+        - pagination
+      title: Policy Schemas List
   securitySchemes:
     bearerAuth:
       type: http

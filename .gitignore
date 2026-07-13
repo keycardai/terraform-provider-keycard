@@ -27,10 +27,7 @@ website/node_modules
 
 # Local secrets
 .env
-
-# Claude Code local files
-CLAUDE.md
-.claude/
+mise.toml
 
 website/vendor
 
