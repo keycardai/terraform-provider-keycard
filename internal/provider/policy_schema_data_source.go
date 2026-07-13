@@ -14,23 +14,17 @@ import (
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ datasource.DataSource = &PolicySchemaDataSource{}
 
-// policySchemaVersionRetryWindow bounds retries when fetching a schema by
-// version. It covers replica propagation lag for a freshly written version
-// without making a lookup for a version that does not exist wait out the full
-// provisioning window.
-const policySchemaVersionRetryWindow = 30 * time.Second
-
-func NewPolicySchemaDataSource(versionRetryWindow time.Duration) datasource.DataSource {
-	if versionRetryWindow <= 0 {
-		versionRetryWindow = policySchemaVersionRetryWindow
+func NewPolicySchemaDataSource(retryWindow time.Duration) datasource.DataSource {
+	if retryWindow <= 0 {
+		retryWindow = notFoundRetryWindow
 	}
-	return &PolicySchemaDataSource{versionRetryWindow: versionRetryWindow}
+	return &PolicySchemaDataSource{notFoundRetryWindow: retryWindow}
 }
 
 // PolicySchemaDataSource defines the data source implementation.
 type PolicySchemaDataSource struct {
-	client             *client.ClientWithResponses
-	versionRetryWindow time.Duration
+	client              *client.ClientWithResponses
+	notFoundRetryWindow time.Duration
 }
 
 // PolicySchemaDataSourceModel describes the data source data model.
@@ -122,7 +116,7 @@ func (d *PolicySchemaDataSource) Read(ctx context.Context, req datasource.ReadRe
 			return d.client.GetPolicySchemaWithResponse(ctx, data.ZoneID.ValueString(), data.Version.ValueString(), &client.GetPolicySchemaParams{
 				Format: &format,
 			})
-		}, retryOnNotFound, withRetryWindow(d.versionRetryWindow))
+		}, retryOnNotFound, withRetryWindow(d.notFoundRetryWindow))
 		if err != nil {
 			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read policy schema, got error: %s", err))
 			return

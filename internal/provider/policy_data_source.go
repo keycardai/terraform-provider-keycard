@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/datasourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -17,13 +18,17 @@ var (
 	_ datasource.DataSourceWithConfigValidators = &PolicyDataSource{}
 )
 
-func NewPolicyDataSource() datasource.DataSource {
-	return &PolicyDataSource{}
+func NewPolicyDataSource(retryWindow time.Duration) datasource.DataSource {
+	if retryWindow <= 0 {
+		retryWindow = notFoundRetryWindow
+	}
+	return &PolicyDataSource{notFoundRetryWindow: retryWindow}
 }
 
 // PolicyDataSource defines the data source implementation.
 type PolicyDataSource struct {
-	client *client.ClientWithResponses
+	client              *client.ClientWithResponses
+	notFoundRetryWindow time.Duration
 }
 
 func (d *PolicyDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -110,10 +115,11 @@ func (d *PolicyDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 
 	if !data.ID.IsNull() {
 		// svc-pdp is eventually consistent, so a policy just created (or its
-		// zone still provisioning) can 404 on a read replica briefly.
+		// zone still provisioning) can 404 on a read replica briefly. A
+		// persistent 404 is a genuine miss, so bound retries to a short window.
 		getResp, err := callWithRetry(ctx, func() (*client.GetPolicyResponse, error) {
 			return d.client.GetPolicyWithResponse(ctx, data.ZoneID.ValueString(), data.ID.ValueString())
-		}, retryOnNotFound)
+		}, retryOnNotFound, withRetryWindow(d.notFoundRetryWindow))
 		if err != nil {
 			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read policy, got error: %s", err))
 			return

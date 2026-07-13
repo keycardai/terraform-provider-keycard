@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -22,13 +23,17 @@ var (
 	_ resource.ResourceWithImportState = &PolicyResource{}
 )
 
-func NewPolicyResource() resource.Resource {
-	return &PolicyResource{}
+func NewPolicyResource(retryWindow time.Duration) resource.Resource {
+	if retryWindow <= 0 {
+		retryWindow = notFoundRetryWindow
+	}
+	return &PolicyResource{notFoundRetryWindow: retryWindow}
 }
 
 // PolicyResource defines the resource implementation.
 type PolicyResource struct {
-	client *client.ClientWithResponses
+	client              *client.ClientWithResponses
+	notFoundRetryWindow time.Duration
 }
 
 // PolicyModel describes the policy data model, shared by the resource and data source.
@@ -166,10 +171,11 @@ func (r *PolicyResource) Read(ctx context.Context, req resource.ReadRequest, res
 
 	// svc-pdp is eventually consistent: a policy just created (or its zone
 	// still provisioning) can 404 on a read replica for a short window.
-	// Retry transient 404s; a persistent one means the policy is gone.
+	// Retry transient 404s; a persistent one means the policy is gone, so use
+	// a short window to remove it from state promptly instead of blocking.
 	getResp, err := callWithRetry(ctx, func() (*client.GetPolicyResponse, error) {
 		return r.client.GetPolicyWithResponse(ctx, data.ZoneID.ValueString(), data.ID.ValueString())
-	}, retryOnNotFound)
+	}, retryOnNotFound, withRetryWindow(r.notFoundRetryWindow))
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read policy, got error: %s", err))
 		return

@@ -65,6 +65,21 @@ func TestAccPolicyDataSource_notFound(t *testing.T) {
 	})
 }
 
+func TestAccPolicyDataSource_idNotFound(t *testing.T) {
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheckBasic(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactoriesShortRetry,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccPolicyDataSourceConfig_idNotFound(zoneName),
+				ExpectError: regexp.MustCompile(`Policy Not Found`),
+			},
+		},
+	})
+}
+
 func TestAccPolicyDataSource_idAndNameConflict(t *testing.T) {
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
@@ -126,6 +141,19 @@ resource "keycard_zone" "test" {
 data "keycard_policy" "test" {
   zone_id = keycard_zone.test.id
   name    = "does-not-exist-policy"
+}
+`, zoneName)
+}
+
+func testAccPolicyDataSourceConfig_idNotFound(zoneName string) string {
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+}
+
+data "keycard_policy" "test" {
+  zone_id = keycard_zone.test.id
+  id      = "does-not-exist-policy-id"
 }
 `, zoneName)
 }

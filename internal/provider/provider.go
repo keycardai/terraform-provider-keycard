@@ -32,10 +32,11 @@ type KeycardProvider struct {
 	// testing.
 	version string
 
-	// policySchemaVersionRetryWindow overrides the schema-version retry window
-	// for the policy schema data source. Zero uses the production default; it
-	// exists so acceptance tests can shorten the window on the not-found path.
-	policySchemaVersionRetryWindow time.Duration
+	// notFoundRetryWindow overrides the retry window on the policy-family
+	// not-found paths (schema-by-version, policy resource, policy data source).
+	// Zero uses the production default; it exists so acceptance tests can
+	// shorten it. Instance-scoped, so parallel tests stay isolated.
+	notFoundRetryWindow time.Duration
 }
 
 // KeycardProviderModel describes the provider data model.
@@ -152,7 +153,9 @@ func (p *KeycardProvider) Resources(ctx context.Context) []func() resource.Resou
 		NewResourceResource,
 		NewApplicationDependencyResource,
 		NewSSOConnectionResource,
-		NewPolicyResource,
+		func() resource.Resource {
+			return NewPolicyResource(p.notFoundRetryWindow)
+		},
 	}
 }
 
@@ -172,9 +175,11 @@ func (p *KeycardProvider) DataSources(ctx context.Context) []func() datasource.D
 		NewResourceDataSource,
 		NewAwsKmsKeyPolicyDataSource,
 		func() datasource.DataSource {
-			return NewPolicySchemaDataSource(p.policySchemaVersionRetryWindow)
+			return NewPolicySchemaDataSource(p.notFoundRetryWindow)
 		},
-		NewPolicyDataSource,
+		func() datasource.DataSource {
+			return NewPolicyDataSource(p.notFoundRetryWindow)
+		},
 	}
 }
 
