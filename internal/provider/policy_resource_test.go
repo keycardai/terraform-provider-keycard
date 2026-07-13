@@ -1,9 +1,11 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -132,6 +134,74 @@ func TestAccPolicyResource_emptyDescriptionInvalid(t *testing.T) {
 			},
 		},
 	})
+}
+
+// TestAccPolicyResource_recreatedWhenArchivedOutOfBand verifies the drift path:
+// when a policy is archived behind Terraform's back, the next refresh sees a
+// 404, drops it from state, and plans to recreate it. Uses the short-retry
+// factory so the Read's 404 retry is bounded to seconds rather than the full
+// production window.
+func TestAccPolicyResource_recreatedWhenArchivedOutOfBand(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheckBasic(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactoriesShortRetry,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPolicyResourceConfig_basic(zoneName, rName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("keycard_policy.test", "id"),
+					testAccCheckPolicyArchivedOutOfBand(t, "keycard_policy.test"),
+				),
+				ExpectNonEmptyPlan: true,
+			},
+		},
+	})
+}
+
+// testAccCheckPolicyArchivedOutOfBand archives the policy directly through the
+// API, then polls until the archive has propagated so the subsequent refresh
+// reliably observes the 404.
+func testAccCheckPolicyArchivedOutOfBand(t *testing.T, resourceName string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("resource not found: %s", resourceName)
+		}
+		zoneID := rs.Primary.Attributes["zone_id"]
+		policyID := rs.Primary.ID
+
+		c := testAccAPIClient(t)
+		ctx := context.Background()
+
+		archiveResp, err := c.ArchivePolicyWithResponse(ctx, zoneID, policyID)
+		if err != nil {
+			return fmt.Errorf("out-of-band archive failed: %w", err)
+		}
+		if archiveResp.StatusCode() != 200 && archiveResp.StatusCode() != 404 {
+			return fmt.Errorf("out-of-band archive returned status %d: %s", archiveResp.StatusCode(), string(archiveResp.Body))
+		}
+
+		// Require several consecutive 404s: reads can hit divergent replicas
+		// right after the archive, so a single 404 does not mean the provider's
+		// next refresh will also see the miss.
+		consecutive404 := 0
+		for i := 0; i < 30; i++ {
+			getResp, err := c.GetPolicyWithResponse(ctx, zoneID, policyID)
+			if err == nil && getResp.StatusCode() == 404 {
+				consecutive404++
+				if consecutive404 >= 3 {
+					return nil
+				}
+			} else {
+				consecutive404 = 0
+			}
+			time.Sleep(time.Second)
+		}
+		return fmt.Errorf("policy %s still readable after out-of-band archive", policyID)
+	}
 }
 
 // Helper function to generate import state ID in format zones/{zone-id}/policies/{policy-id}.
