@@ -59,9 +59,10 @@ func callWithRetry[R apiResponse](ctx context.Context, call func() (R, error), r
 	}
 }
 
-// retryOnNotFound retries 404 responses. Use only on calls where a 404
-// can only mean the containing scope has not finished provisioning (e.g.
-// zone-scoped list endpoints), never where it is a real lookup miss.
+// retryOnNotFound retries 404 responses. Use on calls where a 404 may be
+// transient (e.g. a scope still provisioning or an eventually-consistent
+// replica lagging). Genuine misses still surface, just after the retry
+// window elapses, so keep that window short where a real miss is likely.
 func retryOnNotFound[R apiResponse](resp R) bool {
 	return resp.StatusCode() == 404
 }
