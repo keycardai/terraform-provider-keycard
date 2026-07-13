@@ -23,17 +23,21 @@ var (
 	_ resource.ResourceWithImportState = &PolicyVersionResource{}
 )
 
+// NewPolicyVersionResource builds the resource with the given Read retry window.
+// Zero selects the full apiRetryWindow: a false 404 on a resource Read removes
+// the resource from state and forces a destructive recreate, so production must
+// wait out replica lag. Tests exercising a genuine miss inject a short window.
 func NewPolicyVersionResource(retryWindow time.Duration) resource.Resource {
 	if retryWindow <= 0 {
-		retryWindow = notFoundRetryWindow
+		retryWindow = apiRetryWindow
 	}
-	return &PolicyVersionResource{notFoundRetryWindow: retryWindow}
+	return &PolicyVersionResource{retryWindow: retryWindow}
 }
 
 // PolicyVersionResource defines the resource implementation.
 type PolicyVersionResource struct {
-	client              *client.ClientWithResponses
-	notFoundRetryWindow time.Duration
+	client      *client.ClientWithResponses
+	retryWindow time.Duration
 }
 
 // PolicyVersionResourceModel describes the policy version data model.
@@ -202,13 +206,14 @@ func (r *PolicyVersionResource) Read(ctx context.Context, req resource.ReadReque
 	}
 
 	// svc-pdp is eventually consistent: a version just created (or its zone still
-	// provisioning) can 404 on a read replica for a short window. Retry transient
-	// 404s; a persistent one means the version is gone, so use a short window to
-	// remove it from state promptly instead of blocking. The default response
-	// populates cedar_raw, which import relies on.
+	// provisioning) can 404 on a read replica for a while. Retry transient 404s
+	// over the configured window; acting on a false 404 here removes the resource
+	// from state and forces a destructive recreate, so production waits out
+	// replica lag rather than surfacing a genuine miss quickly. The default
+	// response populates cedar_raw, which import relies on.
 	getResp, err := callWithRetry(ctx, func() (*client.GetPolicyVersionResponse, error) {
 		return r.client.GetPolicyVersionWithResponse(ctx, data.ZoneID.ValueString(), data.PolicyID.ValueString(), data.ID.ValueString())
-	}, retryOnNotFound, withRetryWindow(r.notFoundRetryWindow))
+	}, retryOnNotFound, withRetryWindow(r.retryWindow))
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read policy version, got error: %s", err))
 		return
