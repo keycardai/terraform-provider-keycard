@@ -24,7 +24,7 @@ var testAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServe
 var testAccProtoV6ProviderFactoriesShortRetry = map[string]func() (tfprotov6.ProviderServer, error){
 	"keycard": providerserver.NewProtocol6WithError(&KeycardProvider{
 		version:             "test",
-		notFoundRetryWindow: 2 * time.Second,
+		retryWindowOverride: 2 * time.Second,
 	}),
 }
 

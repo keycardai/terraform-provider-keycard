@@ -32,14 +32,14 @@ type KeycardProvider struct {
 	// testing.
 	version string
 
-	// notFoundRetryWindow overrides the not-found retry window on the policy
+	// retryWindowOverride overrides the not-found retry window on the policy
 	// resources and data sources. Zero selects each consumer's production
 	// default: resources use the full window (a false 404 on Read would remove
 	// the resource and force a destructive recreate), while data-source lookups
 	// use a short window (a genuine miss is surfaced as an error, not a state
 	// mutation). It exists so acceptance tests exercising a genuine miss can
 	// shorten it. Instance-scoped, so parallel tests stay isolated.
-	notFoundRetryWindow time.Duration
+	retryWindowOverride time.Duration
 }
 
 // KeycardProviderModel describes the provider data model.
@@ -157,13 +157,13 @@ func (p *KeycardProvider) Resources(ctx context.Context) []func() resource.Resou
 		NewApplicationDependencyResource,
 		NewSSOConnectionResource,
 		func() resource.Resource {
-			return NewPolicyResource(p.notFoundRetryWindow)
+			return NewPolicyResource(p.retryWindowOverride)
 		},
 		func() resource.Resource {
-			return NewPolicyVersionResource(p.notFoundRetryWindow)
+			return NewPolicyVersionResource(p.retryWindowOverride)
 		},
 		func() resource.Resource {
-			return NewPolicySetResource(p.notFoundRetryWindow)
+			return NewPolicySetResource(p.retryWindowOverride)
 		},
 	}
 }
@@ -184,13 +184,13 @@ func (p *KeycardProvider) DataSources(ctx context.Context) []func() datasource.D
 		NewResourceDataSource,
 		NewAwsKmsKeyPolicyDataSource,
 		func() datasource.DataSource {
-			return NewPolicySchemaDataSource(p.notFoundRetryWindow)
+			return NewPolicySchemaDataSource(p.retryWindowOverride)
 		},
 		func() datasource.DataSource {
-			return NewPolicyDataSource(p.notFoundRetryWindow)
+			return NewPolicyDataSource(p.retryWindowOverride)
 		},
 		func() datasource.DataSource {
-			return NewPolicySetDataSource(p.notFoundRetryWindow)
+			return NewPolicySetDataSource(p.retryWindowOverride)
 		},
 	}
 }
