@@ -1,8 +1,10 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -108,6 +110,82 @@ func TestAccPolicyVersionResource_normalizationRoundTrip(t *testing.T) {
 			},
 		},
 	})
+}
+
+// TestAccPolicyVersionResource_recreatedWhenArchivedOutOfBand verifies the
+// drift path: when a version is archived behind Terraform's back, the next
+// refresh observes the archive (404 or 200 with archived_at set), drops it
+// from state, and plans to recreate it. Uses the short-retry factory so the
+// Read's 404 retry is bounded to seconds rather than the full production window.
+func TestAccPolicyVersionResource_recreatedWhenArchivedOutOfBand(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheckBasic(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactoriesShortRetry,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPolicyResourceConfig_basic(zoneName, rName),
+			},
+			{
+				PreConfig: waitForZoneBootstrap,
+				Config:    testAccPolicyVersionConfig(zoneName, rName, "permit (principal, action, resource);\n", false),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("keycard_policy_version.test", "id"),
+					testAccCheckPolicyVersionArchivedOutOfBand(t, "keycard_policy_version.test"),
+				),
+				ExpectNonEmptyPlan: true,
+			},
+		},
+	})
+}
+
+// testAccCheckPolicyVersionArchivedOutOfBand archives the version directly
+// through the API, then polls until the archive has propagated so the
+// subsequent refresh reliably observes it (either a 404 or a 200 with
+// archived_at set).
+func testAccCheckPolicyVersionArchivedOutOfBand(t *testing.T, resourceName string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("resource not found: %s", resourceName)
+		}
+		zoneID := rs.Primary.Attributes["zone_id"]
+		policyID := rs.Primary.Attributes["policy_id"]
+		versionID := rs.Primary.ID
+
+		c := testAccAPIClient(t)
+		ctx := context.Background()
+
+		archiveResp, err := c.ArchivePolicyVersionWithResponse(ctx, zoneID, policyID, versionID)
+		if err != nil {
+			return fmt.Errorf("out-of-band archive failed: %w", err)
+		}
+		if archiveResp.StatusCode() != 200 && archiveResp.StatusCode() != 404 {
+			return fmt.Errorf("out-of-band archive returned status %d: %s", archiveResp.StatusCode(), string(archiveResp.Body))
+		}
+
+		// Require several consecutive archived observations: reads can hit
+		// divergent replicas right after the archive, so a single hit does not
+		// mean the provider's next refresh will also see it.
+		consecutiveArchived := 0
+		for range 30 {
+			getResp, err := c.GetPolicyVersionWithResponse(ctx, zoneID, policyID, versionID)
+			archived := err == nil && (getResp.StatusCode() == 404 ||
+				(getResp.StatusCode() == 200 && getResp.JSON200 != nil && isArchived(getResp.JSON200.ArchivedAt)))
+			if archived {
+				consecutiveArchived++
+				if consecutiveArchived >= 3 {
+					return nil
+				}
+			} else {
+				consecutiveArchived = 0
+			}
+			time.Sleep(time.Second)
+		}
+		return fmt.Errorf("policy version %s still readable after out-of-band archive", versionID)
+	}
 }
 
 // Helper to generate the import ID in format zone_id/policy_id/version_id.

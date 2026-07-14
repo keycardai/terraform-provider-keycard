@@ -206,6 +206,13 @@ func (r *PolicyResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
+	// Archiving is a soft-delete: reads of an archived policy may return 200
+	// with archived_at set rather than 404.
+	if isArchived(getResp.JSON200.ArchivedAt) {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
 	updatePolicyModelFromAPIResponse(getResp.JSON200, &data)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

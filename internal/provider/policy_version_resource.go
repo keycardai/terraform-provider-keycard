@@ -238,6 +238,13 @@ func (r *PolicyVersionResource) Read(ctx context.Context, req resource.ReadReque
 		return
 	}
 
+	// Archiving is a soft-delete: reads of an archived version may return 200
+	// with archived_at set rather than 404.
+	if isArchived(getResp.JSON200.ArchivedAt) {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
 	updatePolicyVersionComputedFromAPIResponse(getResp.JSON200, &data)
 
 	// Preserve the configured cedar value to tolerate server-side normalization.

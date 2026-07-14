@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -86,6 +87,12 @@ func updateProviderDataSourceModelFromAPIResponse(ctx context.Context, provider 
 	}
 
 	return diags
+}
+
+// isArchived reports whether an archived_at timestamp is present and non-null,
+// i.e. the resource has been soft-deleted server-side.
+func isArchived(archivedAt nullable.Nullable[time.Time]) bool {
+	return archivedAt.IsSpecified() && !archivedAt.IsNull()
 }
 
 func NullableStringValue(val nullable.Nullable[string]) basetypes.StringValue {

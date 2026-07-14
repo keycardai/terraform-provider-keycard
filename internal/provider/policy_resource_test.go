@@ -137,10 +137,10 @@ func TestAccPolicyResource_emptyDescriptionInvalid(t *testing.T) {
 }
 
 // TestAccPolicyResource_recreatedWhenArchivedOutOfBand verifies the drift path:
-// when a policy is archived behind Terraform's back, the next refresh sees a
-// 404, drops it from state, and plans to recreate it. Uses the short-retry
-// factory so the Read's 404 retry is bounded to seconds rather than the full
-// production window.
+// when a policy is archived behind Terraform's back, the next refresh observes
+// the archive (404 or 200 with archived_at set), drops it from state, and plans
+// to recreate it. Uses the short-retry factory so the Read's 404 retry is
+// bounded to seconds rather than the full production window.
 func TestAccPolicyResource_recreatedWhenArchivedOutOfBand(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
@@ -163,7 +163,7 @@ func TestAccPolicyResource_recreatedWhenArchivedOutOfBand(t *testing.T) {
 
 // testAccCheckPolicyArchivedOutOfBand archives the policy directly through the
 // API, then polls until the archive has propagated so the subsequent refresh
-// reliably observes the 404.
+// reliably observes it (either a 404 or a 200 with archived_at set).
 func testAccCheckPolicyArchivedOutOfBand(t *testing.T, resourceName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[resourceName]
@@ -184,19 +184,21 @@ func testAccCheckPolicyArchivedOutOfBand(t *testing.T, resourceName string) reso
 			return fmt.Errorf("out-of-band archive returned status %d: %s", archiveResp.StatusCode(), string(archiveResp.Body))
 		}
 
-		// Require several consecutive 404s: reads can hit divergent replicas
-		// right after the archive, so a single 404 does not mean the provider's
-		// next refresh will also see the miss.
-		consecutive404 := 0
-		for i := 0; i < 30; i++ {
+		// Require several consecutive archived observations: reads can hit
+		// divergent replicas right after the archive, so a single hit does not
+		// mean the provider's next refresh will also see it.
+		consecutiveArchived := 0
+		for range 30 {
 			getResp, err := c.GetPolicyWithResponse(ctx, zoneID, policyID)
-			if err == nil && getResp.StatusCode() == 404 {
-				consecutive404++
-				if consecutive404 >= 3 {
+			archived := err == nil && (getResp.StatusCode() == 404 ||
+				(getResp.StatusCode() == 200 && getResp.JSON200 != nil && isArchived(getResp.JSON200.ArchivedAt)))
+			if archived {
+				consecutiveArchived++
+				if consecutiveArchived >= 3 {
 					return nil
 				}
 			} else {
-				consecutive404 = 0
+				consecutiveArchived = 0
 			}
 			time.Sleep(time.Second)
 		}
