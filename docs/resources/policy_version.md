@@ -60,6 +60,7 @@ resource "keycard_policy_version" "admin_access" {
 ### Read-Only
 
 - `created_at` (String) Timestamp when the version was created (RFC 3339).
+- `created_by` (String) Identifier of the actor that created the version.
 - `id` (String) Unique identifier of the policy version.
 - `owner_type` (String) Who manages this policy version: `platform` (managed by Keycard) or `customer` (managed by the tenant).
 - `sha` (String) Hex-encoded hash of the stored (normalized) policy content.

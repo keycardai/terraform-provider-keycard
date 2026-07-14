@@ -1909,6 +1909,125 @@ paths:
         - bearerAuth: []
       tags:
         - Policy Sets
+  '/zones/{zone_id}/policy-sets/{policy_set_id}/versions':
+    post:
+      operationId: createPolicySetVersion
+      summary: Create a new immutable policy set version
+      description: Validates the manifest, computes SHA, and creates an immutable policy set version snapshot.
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: policy_set_id
+          in: path
+          required: true
+          description: The policy set identifier
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePolicySetVersionRequest'
+      responses:
+        '201':
+          description: The newly created policy set version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicySetVersion'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Policy Set Versions
+  '/zones/{zone_id}/policy-sets/{policy_set_id}/versions/{version_id}':
+    get:
+      operationId: getPolicySetVersion
+      summary: Get a specific policy set version
+      description: Returns a specific immutable policy set version by ID.
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: policy_set_id
+          in: path
+          required: true
+          description: The policy set identifier
+          schema:
+            type: string
+        - name: version_id
+          in: path
+          required: true
+          description: The policy set version identifier
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The requested policy set version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicySetVersion'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Policy Set Versions
+    delete:
+      operationId: archivePolicySetVersion
+      summary: Archive a policy set version
+      description: Archives an immutable policy set version. Fails if the version is currently bound.
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: policy_set_id
+          in: path
+          required: true
+          description: The policy set identifier
+          schema:
+            type: string
+        - name: version_id
+          in: path
+          required: true
+          description: The policy set version identifier
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The archived policy set version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicySetVersion'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Policy Set Versions
   /organizations/{organization_id}/sso-connection:
     post:
       operationId: enableSSOConnection
@@ -3845,6 +3964,97 @@ components:
       required:
         - schema_version
       title: Create Policy Version Request
+    PolicySetManifestEntry:
+      description: A single policy-version reference within a policy set manifest.
+      type: object
+      properties:
+        policy_id:
+          type: string
+        policy_version_id:
+          type: string
+        sha:
+          description: SHA-256 of the policy version content, populated by the server.
+          type: string
+      required:
+        - policy_id
+        - policy_version_id
+      title: Policy Set Manifest Entry
+    PolicySetManifest:
+      description: The ordered set of policy versions composing a policy set version.
+      type: object
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/PolicySetManifestEntry'
+      required:
+        - entries
+      title: Policy Set Manifest
+    PolicySetVersion:
+      description: An immutable manifest snapshot of a policy set.
+      type: object
+      properties:
+        id:
+          type: string
+        policy_set_id:
+          type: string
+        version:
+          description: Human-readable version number (e.g., 1, 2, 3)
+          type: integer
+        schema_version:
+          description: Schema version pinned to this policy set version. Determines the Cedar schema used for evaluation when activated.
+          type: string
+        manifest:
+          $ref: '#/components/schemas/PolicySetManifest'
+        manifest_sha:
+          description: Hex-encoded SHA-256 of the canonicalized manifest.
+          type: string
+        active:
+          description: Whether this policy set version is currently bound with mode 'active'. Always populated in responses; clients must treat absence as unknown rather than inferring 'not bound'.
+          type: boolean
+        archived_at:
+          description: Timestamp when the version was archived. Non-null only for archived versions; null or absent means not archived.
+          type: string
+          format: date-time
+          nullable: true
+        archived_by:
+          description: Identifier of the actor that archived the version. Null or absent means not archived.
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+        owner_type:
+          description: 'Who manages this policy set version. platform: managed by the Keycard platform; customer: managed by the tenant.'
+          type: string
+          enum:
+            - platform
+            - customer
+      required:
+        - id
+        - policy_set_id
+        - version
+        - schema_version
+        - manifest
+        - manifest_sha
+        - created_at
+        - created_by
+        - owner_type
+      title: Policy Set Version
+    CreatePolicySetVersionRequest:
+      type: object
+      properties:
+        manifest:
+          $ref: '#/components/schemas/PolicySetManifest'
+        schema_version:
+          description: Schema version to pin to this policy set version.
+          type: string
+      required:
+        - manifest
+        - schema_version
+      title: Create Policy Set Version Request
   securitySchemes:
     bearerAuth:
       type: http
