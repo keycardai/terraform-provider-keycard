@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
 )
 
@@ -299,6 +300,7 @@ func (r *PolicySetResource) Update(ctx context.Context, req resource.UpdateReque
 	// write self-heals. svc-pdp also returns a transient 404 when a PATCH lands
 	// on a replica that hasn't observed the create yet, so retry that too.
 	ifMatch := state.ETag.ValueString()
+	var etagRefreshErr error
 	updateResp, err := callWithRetry(ctx, func() (*client.UpdatePolicySetResponse, error) {
 		params := client.UpdatePolicySetParams{}
 		if ifMatch != "" {
@@ -306,10 +308,18 @@ func (r *PolicySetResource) Update(ctx context.Context, req resource.UpdateReque
 		}
 		resp, err := r.client.UpdatePolicySetWithResponse(ctx, zoneID, id, &params, updateReq)
 		if err == nil && resp.StatusCode() == 412 {
-			if getResp, gerr := r.client.GetPolicySetWithResponse(ctx, zoneID, id); gerr == nil && getResp.StatusCode() == 200 {
-				if etag := getResp.HTTPResponse.Header.Get("ETag"); etag != "" {
-					ifMatch = etag
-				}
+			// A refresh failure is not fatal: it may be as transient as the 412
+			// itself, and the next iteration re-attempts it. Record it so a
+			// retry loop stuck on a stale ETag can report the real cause.
+			etag, rerr := r.currentPolicySetETag(ctx, zoneID, id)
+			etagRefreshErr = rerr
+			if rerr != nil {
+				tflog.Warn(ctx, "Failed to refresh policy set ETag after 412; retrying with previous ETag", map[string]any{
+					"policy_set_id": id,
+					"error":         rerr.Error(),
+				})
+			} else {
+				ifMatch = etag
 			}
 		}
 		return resp, err
@@ -320,10 +330,11 @@ func (r *PolicySetResource) Update(ctx context.Context, req resource.UpdateReque
 	}
 
 	if updateResp.StatusCode() == 412 {
-		resp.Diagnostics.AddError(
-			"Conflict",
-			"The policy set was modified outside of Terraform since it was last read. Refresh state (terraform refresh or terraform apply -refresh-only) and retry.",
-		)
+		detail := "The policy set was modified outside of Terraform since it was last read. Refresh state (terraform refresh or terraform apply -refresh-only) and retry."
+		if etagRefreshErr != nil {
+			detail = fmt.Sprintf("%s Refreshing the ETag during retries also failed: %s.", detail, etagRefreshErr)
+		}
+		resp.Diagnostics.AddError("Conflict", detail)
 		return
 	}
 
@@ -344,6 +355,23 @@ func (r *PolicySetResource) Update(ctx context.Context, req resource.UpdateReque
 	plan.ETag = etagValue(updateResp.HTTPResponse)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+}
+
+// currentPolicySetETag fetches the policy set's current ETag, for retrying an
+// If-Match update whose state ETag went stale.
+func (r *PolicySetResource) currentPolicySetETag(ctx context.Context, zoneID, id string) (string, error) {
+	getResp, err := r.client.GetPolicySetWithResponse(ctx, zoneID, id)
+	if err != nil {
+		return "", err
+	}
+	if getResp.StatusCode() != 200 {
+		return "", fmt.Errorf("got status %d", getResp.StatusCode())
+	}
+	etag := getResp.HTTPResponse.Header.Get("ETag")
+	if etag == "" {
+		return "", fmt.Errorf("response has no ETag header")
+	}
+	return etag, nil
 }
 
 func (r *PolicySetResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
