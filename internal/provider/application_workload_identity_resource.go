@@ -235,7 +235,7 @@ func (r *ApplicationWorkloadIdentityResource) Update(ctx context.Context, req re
 	tokenUpdateType := client.Token
 	tokenUpdate := client.TokenCredentialUpdate{
 		Type:    &tokenUpdateType,
-		Subject: StringValueNullable(data.Subject),
+		Subject: stringValueNullable(data.Subject),
 	}
 
 	updateReq := client.ApplicationCredentialUpdate{}

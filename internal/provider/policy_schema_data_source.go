@@ -194,7 +194,7 @@ func (d *PolicySchemaDataSource) Read(ctx context.Context, req datasource.ReadRe
 	data.Version = types.StringValue(apiSchema.Version)
 	data.Status = types.StringValue(string(apiSchema.Status))
 	data.IsDefault = types.BoolValue(apiSchema.IsDefault)
-	data.CedarSchema = NullableStringValue(apiSchema.CedarSchema)
+	data.CedarSchema = nullableStringValue(apiSchema.CedarSchema)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

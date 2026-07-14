@@ -206,7 +206,7 @@ func updateZoneModelFromAPIResponse(ctx context.Context, zone *client.Zone, data
 
 	data.ID = types.StringValue(zone.Id)
 	data.Name = types.StringValue(zone.Name)
-	data.Description = NullableStringValue(zone.Description)
+	data.Description = nullableStringValue(zone.Description)
 
 	oauth2Data := OAuth2Model{
 		PkceRequired: types.BoolValue(zone.Protocols.Oauth2.PkceRequired),
@@ -452,7 +452,7 @@ func (r *ZoneResource) Update(ctx context.Context, req resource.UpdateRequest, r
 
 	// Set description (including null to remove it)
 	if !data.Description.IsUnknown() {
-		updateReq.Description = StringValueNullable(data.Description)
+		updateReq.Description = stringValueNullable(data.Description)
 	}
 
 	// Set OAuth2 configuration if provided
@@ -469,11 +469,11 @@ func (r *ZoneResource) Update(ctx context.Context, req resource.UpdateRequest, r
 		}
 
 		if !oauth2Data.PkceRequired.IsNull() && !oauth2Data.PkceRequired.IsUnknown() {
-			protocolUpdate.Oauth2.PkceRequired = BoolValueNullable(oauth2Data.PkceRequired)
+			protocolUpdate.Oauth2.PkceRequired = boolValueNullable(oauth2Data.PkceRequired)
 		}
 
 		if !oauth2Data.DcrEnabled.IsNull() && !oauth2Data.DcrEnabled.IsUnknown() {
-			protocolUpdate.Oauth2.DcrEnabled = BoolValueNullable(oauth2Data.DcrEnabled)
+			protocolUpdate.Oauth2.DcrEnabled = boolValueNullable(oauth2Data.DcrEnabled)
 		}
 
 		updateReq.Protocols = nullable.NewNullableWithValue(protocolUpdate)

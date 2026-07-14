@@ -1700,6 +1700,215 @@ paths:
         - bearerAuth: []
       tags:
         - Policy Versions
+  '/zones/{zone_id}/policy-sets':
+    get:
+      operationId: listPolicySets
+      summary: List policy sets in a zone
+      description: Returns a paginated list of policy sets in the zone, each with its current binding status.
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: query[name]
+          in: query
+          description: Case-insensitive substring search on `name`. Repeatable; multiple terms are OR-ed.
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+        - name: after
+          in: query
+          description: Cursor for forward pagination
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A paginated list of policy sets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicySetsList'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Policy Sets
+    post:
+      operationId: createPolicySet
+      summary: Create a new policy set
+      description: Creates an unbound policy set. Bind a version to it through policy set versions.
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePolicySetRequest'
+      responses:
+        '201':
+          description: The newly created policy set
+          headers:
+            ETag:
+              description: Entity tag for optimistic concurrency control. Pass this value back in the If-Match header on updatePolicySet.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicySetWithBinding'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Policy Sets
+  '/zones/{zone_id}/policy-sets/{policy_set_id}':
+    get:
+      operationId: getPolicySet
+      summary: Get a policy set by ID
+      description: Returns a policy set with its current binding status.
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: policy_set_id
+          in: path
+          required: true
+          description: The policy set identifier
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The requested policy set
+          headers:
+            ETag:
+              description: Entity tag for optimistic concurrency control. Pass this value back in the If-Match header on updatePolicySet.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicySetWithBinding'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Policy Sets
+    patch:
+      operationId: updatePolicySet
+      summary: Update a policy set
+      description: Updates a policy set's name.
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: policy_set_id
+          in: path
+          required: true
+          description: The policy set identifier
+          schema:
+            type: string
+        - name: If-Match
+          in: header
+          required: false
+          description: ETag from a prior response. When set, the update only succeeds if the policy set has not been modified since; otherwise 412 Precondition Failed is returned.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePolicySetRequest'
+      responses:
+        '200':
+          description: The updated policy set
+          headers:
+            ETag:
+              description: Entity tag for optimistic concurrency control. Pass this value back in the If-Match header on updatePolicySet.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicySetWithBinding'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Policy Sets
+    delete:
+      operationId: archivePolicySet
+      summary: Archive a policy set
+      description: Archives a policy set.
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: policy_set_id
+          in: path
+          required: true
+          description: The policy set identifier
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The archived policy set
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicySetWithBinding'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Policy Sets
   /organizations/{organization_id}/sso-connection:
     post:
       operationId: enableSSOConnection
@@ -3451,6 +3660,126 @@ components:
         description:
           type: string
       title: Update Policy Request
+    PolicySetWithBinding:
+      description: A policy set container with its current binding status. Versions and their bindings are managed separately through policy set versions.
+      type: object
+      properties:
+        id:
+          type: string
+        zone_id:
+          type: string
+        name:
+          type: string
+        target_type:
+          description: 'What this policy set targets. zone: applies to all requests in the zone; user: scoped to a specific user.'
+          type: string
+          enum:
+            - zone
+            - user
+        latest_version_id:
+          type: string
+          nullable: true
+        latest_version:
+          description: Human-readable version number of the latest version (e.g., 1, 2, 3). Null when the policy set has no versions.
+          type: integer
+          nullable: true
+        archived_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+        updated_by:
+          type: string
+          nullable: true
+        owner_type:
+          description: 'Who manages this policy set. platform: managed by the Keycard platform; customer: managed by the tenant.'
+          type: string
+          enum:
+            - platform
+            - customer
+        active:
+          description: Whether this policy set is currently bound to a scope.
+          type: boolean
+        mode:
+          description: Binding mode of the active binding, if any.
+          type: string
+          enum:
+            - active
+            - shadow
+          nullable: true
+        target_id:
+          description: Target entity ID. Equals zone_id for zone-targeted sets; the principal identifier for user-targeted sets. Null when unbound.
+          type: string
+          nullable: true
+        active_version_id:
+          description: Identifier of the currently active (bound) version. Null when unbound.
+          type: string
+          nullable: true
+        active_version:
+          description: Human-readable version number of the active version (e.g., 1, 2, 3). Null when unbound.
+          type: integer
+          nullable: true
+        shadow_version_id:
+          description: Identifier of the shadow (observed) version, if any.
+          type: string
+          nullable: true
+        shadow_version:
+          description: Human-readable version number of the shadow version, if any.
+          type: integer
+          nullable: true
+      required:
+        - id
+        - zone_id
+        - name
+        - target_type
+        - created_at
+        - updated_at
+        - created_by
+        - owner_type
+        - active
+      title: Policy Set With Binding
+    PolicySetsList:
+      description: A paginated list of policy sets
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PolicySetWithBinding'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+      required:
+        - items
+        - pagination
+      title: Policy Sets List
+    CreatePolicySetRequest:
+      description: 'target_type defaults to zone when omitted.'
+      type: object
+      properties:
+        name:
+          type: string
+        target_type:
+          description: 'What this policy set targets. zone: applies to all requests in the zone; user: scoped to a specific user. Defaults to zone.'
+          type: string
+          enum:
+            - zone
+            - user
+      required:
+        - name
+      title: Create Policy Set Request
+    UpdatePolicySetRequest:
+      type: object
+      properties:
+        name:
+          type: string
+      title: Update Policy Set Request
     PolicyVersion:
       description: An immutable Cedar policy version published under a policy.
       type: object

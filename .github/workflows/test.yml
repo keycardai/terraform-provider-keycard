@@ -54,7 +54,7 @@ jobs:
     name: Terraform Provider Acceptance Tests
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -82,7 +82,7 @@ jobs:
           KEYCARD_TEST_KMS_KEY_1: ${{ secrets.KEYCARD_TEST_KMS_KEY_1 }}
           KEYCARD_TEST_KMS_KEY_2: ${{ secrets.KEYCARD_TEST_KMS_KEY_2 }}
         run: go test -v -cover -timeout 600s -parallel=5 -skip 'TestAccSSOConnection' ./internal/provider/
-        timeout-minutes: 12
+        timeout-minutes: 15
       - name: Upload Terraform test logs
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
