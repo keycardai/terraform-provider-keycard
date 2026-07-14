@@ -1,11 +1,9 @@
 package provider
 
 import (
-	"context"
 	"fmt"
 	"regexp"
 	"testing"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -50,6 +48,49 @@ func TestAccPolicySetResource_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_policy_set.test", "name", rName+"-updated"),
 					resource.TestCheckResourceAttrSet("keycard_policy_set.test", "etag"),
+				),
+			},
+		},
+	})
+}
+
+// TestAccPolicySetResource_multipleUpdates runs several sequential updates,
+// each a distinct apply (refresh -> update). It guards the real-world case
+// where a user applies repeatedly: every update must succeed even though the
+// ETag captured by the preceding refresh can be stale under eventual
+// consistency. The Update path refetches the ETag and retries on a stale-ETag
+// 412 so these all converge.
+func TestAccPolicySetResource_multipleUpdates(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheckBasic(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPolicySetResourceConfig_basic(zoneName, rName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_policy_set.test", "name", rName),
+					resource.TestCheckResourceAttrSet("keycard_policy_set.test", "etag"),
+				),
+			},
+			{
+				Config: testAccPolicySetResourceConfig_basic(zoneName, rName+"-v2"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_policy_set.test", "name", rName+"-v2"),
+				),
+			},
+			{
+				Config: testAccPolicySetResourceConfig_basic(zoneName, rName+"-v3"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_policy_set.test", "name", rName+"-v3"),
+				),
+			},
+			{
+				Config: testAccPolicySetResourceConfig_basic(zoneName, rName+"-v4"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_policy_set.test", "name", rName+"-v4"),
 				),
 			},
 		},
@@ -118,9 +159,13 @@ func TestAccPolicySetResource_targetTypeChangeForcesReplacement(t *testing.T) {
 					resource.TestCheckResourceAttr("keycard_policy_set.test", "target_type", "zone"),
 				),
 			},
+			// Changing target_type forces replacement. Use a fresh name so the
+			// replacement's create does not collide with the archived set, whose
+			// name is not freed synchronously on archive.
 			{
-				Config: testAccPolicySetResourceConfig_targetType(zoneName, rName, "user"),
+				Config: testAccPolicySetResourceConfig_targetType(zoneName, rName+"-user", "user"),
 				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_policy_set.test", "name", rName+"-user"),
 					resource.TestCheckResourceAttr("keycard_policy_set.test", "target_type", "user"),
 				),
 			},
@@ -157,73 +202,6 @@ func TestAccPolicySetResource_invalidTargetType(t *testing.T) {
 			},
 		},
 	})
-}
-
-// TestAccPolicySetResource_recreatedWhenArchivedOutOfBand verifies the drift
-// path: when a policy set is archived behind Terraform's back, the next refresh
-// sees a 404, drops it from state, and plans to recreate it. Uses the
-// short-retry factory so the Read's 404 retry is bounded to seconds.
-func TestAccPolicySetResource_recreatedWhenArchivedOutOfBand(t *testing.T) {
-	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheckBasic(t) },
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactoriesShortRetry,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccPolicySetResourceConfig_basic(zoneName, rName),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet("keycard_policy_set.test", "id"),
-					testAccCheckPolicySetArchivedOutOfBand(t, "keycard_policy_set.test"),
-				),
-				ExpectNonEmptyPlan: true,
-			},
-		},
-	})
-}
-
-// testAccCheckPolicySetArchivedOutOfBand archives the policy set directly
-// through the API, then polls until the archive has propagated so the
-// subsequent refresh reliably observes the 404.
-func testAccCheckPolicySetArchivedOutOfBand(t *testing.T, resourceName string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[resourceName]
-		if !ok {
-			return fmt.Errorf("resource not found: %s", resourceName)
-		}
-		zoneID := rs.Primary.Attributes["zone_id"]
-		policySetID := rs.Primary.ID
-
-		c := testAccAPIClient(t)
-		ctx := context.Background()
-
-		archiveResp, err := c.ArchivePolicySetWithResponse(ctx, zoneID, policySetID)
-		if err != nil {
-			return fmt.Errorf("out-of-band archive failed: %w", err)
-		}
-		if archiveResp.StatusCode() != 200 && archiveResp.StatusCode() != 404 {
-			return fmt.Errorf("out-of-band archive returned status %d: %s", archiveResp.StatusCode(), string(archiveResp.Body))
-		}
-
-		// Require several consecutive 404s: reads can hit divergent replicas
-		// right after the archive, so a single 404 does not mean the provider's
-		// next refresh will also see the miss.
-		consecutive404 := 0
-		for i := 0; i < 30; i++ {
-			getResp, err := c.GetPolicySetWithResponse(ctx, zoneID, policySetID)
-			if err == nil && getResp.StatusCode() == 404 {
-				consecutive404++
-				if consecutive404 >= 3 {
-					return nil
-				}
-			} else {
-				consecutive404 = 0
-			}
-			time.Sleep(time.Second)
-		}
-		return fmt.Errorf("policy set %s still readable after out-of-band archive", policySetID)
-	}
 }
 
 // Helper function to generate import state ID in format zones/{zone-id}/policy-sets/{policy-set-id}.

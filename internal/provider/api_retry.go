@@ -72,3 +72,13 @@ func callWithRetry[R apiResponse](ctx context.Context, call func() (R, error), r
 func retryOnNotFound[R apiResponse](resp R) bool {
 	return resp.StatusCode() == 404
 }
+
+// retryOnNotFoundOrConflict retries 404 and 412 responses. Use on If-Match
+// updates against an eventually-consistent backend: a 412 usually means the
+// ETag in state is stale (the refresh read a lagging replica), not a genuine
+// concurrent modification, so the caller should refetch the ETag between
+// attempts and let the write self-heal. A truly stuck 412 still surfaces once
+// the retry window elapses.
+func retryOnNotFoundOrConflict[R apiResponse](resp R) bool {
+	return resp.StatusCode() == 404 || resp.StatusCode() == 412
+}

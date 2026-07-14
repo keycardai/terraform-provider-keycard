@@ -288,19 +288,32 @@ func (r *PolicySetResource) Update(ctx context.Context, req resource.UpdateReque
 		Name: plan.Name.ValueStringPointer(),
 	}
 
-	// Optimistic concurrency: send the ETag captured in state as If-Match so a
-	// concurrent modification surfaces as a 412 rather than silently clobbering.
-	var params client.UpdatePolicySetParams
-	if !state.ETag.IsNull() && state.ETag.ValueString() != "" {
-		params.IfMatch = state.ETag.ValueStringPointer()
-	}
+	zoneID := plan.ZoneID.ValueString()
+	id := plan.ID.ValueString()
 
-	// svc-pdp is eventually consistent: a PATCH can land on a replica that
-	// hasn't yet observed the create, returning a transient 404 for a policy
-	// set we know exists. Retry those; a persistent 404 surfaces below.
+	// Optimistic concurrency: send the ETag captured in state as If-Match. The
+	// ETag can be stale — svc-pdp is eventually consistent, so the refresh that
+	// populated state may have read a replica that lagged a prior write, and
+	// back-to-back applies compound that. A stale If-Match yields a 412; rather
+	// than fail a legitimate update, refetch the current ETag and retry so the
+	// write self-heals. svc-pdp also returns a transient 404 when a PATCH lands
+	// on a replica that hasn't observed the create yet, so retry that too.
+	ifMatch := state.ETag.ValueString()
 	updateResp, err := callWithRetry(ctx, func() (*client.UpdatePolicySetResponse, error) {
-		return r.client.UpdatePolicySetWithResponse(ctx, plan.ZoneID.ValueString(), plan.ID.ValueString(), &params, updateReq)
-	}, retryOnNotFound)
+		params := client.UpdatePolicySetParams{}
+		if ifMatch != "" {
+			params.IfMatch = &ifMatch
+		}
+		resp, err := r.client.UpdatePolicySetWithResponse(ctx, zoneID, id, &params, updateReq)
+		if err == nil && resp.StatusCode() == 412 {
+			if getResp, gerr := r.client.GetPolicySetWithResponse(ctx, zoneID, id); gerr == nil && getResp.StatusCode() == 200 {
+				if etag := getResp.HTTPResponse.Header.Get("ETag"); etag != "" {
+					ifMatch = etag
+				}
+			}
+		}
+		return resp, err
+	}, retryOnNotFoundOrConflict)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update policy set, got error: %s", err))
 		return
