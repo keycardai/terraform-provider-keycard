@@ -1,14 +1,12 @@
 package provider
 
 import (
-	"context"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
-	"github.com/keycardai/terraform-provider-keycard/internal/client"
 )
 
 // testAccProtoV6ProviderFactories are used to instantiate a provider during
@@ -28,22 +26,6 @@ var testAccProtoV6ProviderFactoriesShortRetry = map[string]func() (tfprotov6.Pro
 		version:             "test",
 		notFoundRetryWindow: 2 * time.Second,
 	}),
-}
-
-// testAccAPIClient builds a Keycard API client from the acceptance-test
-// environment, for tests that mutate state out-of-band (e.g. archiving a
-// resource behind Terraform's back to exercise the drift-detection path).
-func testAccAPIClient(t *testing.T) *client.ClientWithResponses {
-	t.Helper()
-	c, err := client.NewAPIClient(context.Background(), client.Config{
-		ClientID:     os.Getenv("KEYCARD_CLIENT_ID"),
-		ClientSecret: os.Getenv("KEYCARD_CLIENT_SECRET"),
-		Endpoint:     os.Getenv("KEYCARD_ENDPOINT"),
-	})
-	if err != nil {
-		t.Fatalf("failed to build test API client: %s", err)
-	}
-	return c
 }
 
 func testAccPreCheckBasic(t *testing.T) {
