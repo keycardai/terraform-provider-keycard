@@ -91,11 +91,18 @@ func (r *PolicyResource) Schema(ctx context.Context, req resource.SchemaRequest,
 			"owner_type": schema.StringAttribute{
 				MarkdownDescription: "Who manages this policy: `platform` (managed by Keycard) or `customer` (managed by the tenant).",
 				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"created_by": schema.StringAttribute{
 				MarkdownDescription: "Identifier of the actor that created the policy.",
 				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
+			// No UseStateForUnknown: this changes server-side whenever a version is published.
 			"latest_version_id": schema.StringAttribute{
 				MarkdownDescription: "Identifier of the policy's latest version. Null when the policy has no published versions.",
 				Computed:            true,
