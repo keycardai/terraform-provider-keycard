@@ -50,6 +50,7 @@ type PolicyVersionResourceModel struct {
 	Version       types.Int64  `tfsdk:"version"`
 	Sha           types.String `tfsdk:"sha"`
 	CreatedAt     types.String `tfsdk:"created_at"`
+	CreatedBy     types.String `tfsdk:"created_by"`
 	OwnerType     types.String `tfsdk:"owner_type"`
 }
 
@@ -115,6 +116,10 @@ func (r *PolicyVersionResource) Schema(ctx context.Context, req resource.SchemaR
 				MarkdownDescription: "Timestamp when the version was created (RFC 3339).",
 				Computed:            true,
 			},
+			"created_by": schema.StringAttribute{
+				MarkdownDescription: "Identifier of the actor that created the version.",
+				Computed:            true,
+			},
 			"owner_type": schema.StringAttribute{
 				MarkdownDescription: "Who manages this policy version: `platform` (managed by Keycard) or `customer` (managed by the tenant).",
 				Computed:            true,
@@ -158,7 +163,7 @@ func (r *PolicyVersionResource) Create(ctx context.Context, req resource.CreateR
 	// The server silently accepts deprecated schemas; warn at plan/apply time so
 	// pinning a superseded schema is visible. Best-effort: a lookup failure is not
 	// fatal to the create.
-	if warning := r.deprecatedSchemaWarning(ctx, zoneID, schemaVersion); warning != "" {
+	if warning := deprecatedSchemaWarning(ctx, r.client, zoneID, schemaVersion); warning != "" {
 		resp.Diagnostics.AddWarning("Deprecated Policy Schema", warning)
 	}
 
@@ -284,7 +289,7 @@ func (r *PolicyVersionResource) Delete(ctx context.Context, req resource.DeleteR
 
 	deleteResp, err := r.client.ArchivePolicyVersionWithResponse(ctx, data.ZoneID.ValueString(), data.PolicyID.ValueString(), data.ID.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete policy version, got error: %s", err))
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to archive policy version, got error: %s", err))
 		return
 	}
 
@@ -299,7 +304,7 @@ func (r *PolicyVersionResource) Delete(ctx context.Context, req resource.DeleteR
 	if deleteResp.StatusCode() != 200 && deleteResp.StatusCode() != 404 {
 		resp.Diagnostics.AddError(
 			"API Error",
-			fmt.Sprintf("Unable to delete policy version, got status %d: %s", deleteResp.StatusCode(), string(deleteResp.Body)),
+			fmt.Sprintf("Unable to archive policy version, got status %d: %s", deleteResp.StatusCode(), string(deleteResp.Body)),
 		)
 		return
 	}
@@ -325,15 +330,16 @@ func (r *PolicyVersionResource) ImportState(ctx context.Context, req resource.Im
 // deprecated, or an empty string otherwise (including when the lookup fails). This
 // is best-effort: a single, un-retried lookup, so it stays silent (rather than
 // blocking) when the zone is still bootstrapping or the schema does not exist.
-func (r *PolicyVersionResource) deprecatedSchemaWarning(ctx context.Context, zoneID, schemaVersion string) string {
-	schemaResp, err := r.client.GetPolicySchemaWithResponse(ctx, zoneID, schemaVersion, &client.GetPolicySchemaParams{})
+// Shared by the version-publishing resources that pin a schema_version.
+func deprecatedSchemaWarning(ctx context.Context, c *client.ClientWithResponses, zoneID, schemaVersion string) string {
+	schemaResp, err := c.GetPolicySchemaWithResponse(ctx, zoneID, schemaVersion, &client.GetPolicySchemaParams{})
 	if err != nil || schemaResp.StatusCode() != 200 || schemaResp.JSON200 == nil {
 		return ""
 	}
 	if schemaResp.JSON200.Status != client.SchemaVersionWithZoneInfoStatusDeprecated {
 		return ""
 	}
-	return fmt.Sprintf("Schema version %q is deprecated. The policy version will still be created; consider pinning a current schema version.", schemaVersion)
+	return fmt.Sprintf("Schema version %q is deprecated. The version will still be created; consider pinning a current schema version.", schemaVersion)
 }
 
 // updatePolicyVersionComputedFromAPIResponse maps the computed and identity fields
@@ -348,5 +354,6 @@ func updatePolicyVersionComputedFromAPIResponse(apiVersion *client.PolicyVersion
 	data.Version = types.Int64Value(int64(apiVersion.Version))
 	data.Sha = types.StringValue(apiVersion.Sha)
 	data.CreatedAt = types.StringValue(apiVersion.CreatedAt.Format(time.RFC3339))
+	data.CreatedBy = types.StringValue(apiVersion.CreatedBy)
 	data.OwnerType = types.StringValue(string(apiVersion.OwnerType))
 }

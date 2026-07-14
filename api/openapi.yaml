@@ -4010,13 +4010,15 @@ components:
           description: Hex-encoded SHA-256 of the canonicalized manifest.
           type: string
         active:
-          description: Whether this policy set version is currently bound with mode 'active'.
+          description: Whether this policy set version is currently bound with mode 'active'. Always populated in responses; clients must treat absence as unknown rather than inferring 'not bound'.
           type: boolean
         archived_at:
+          description: Timestamp when the version was archived. Non-null only for archived versions; null or absent means not archived.
           type: string
           format: date-time
           nullable: true
         archived_by:
+          description: Identifier of the actor that archived the version. Null or absent means not archived.
           type: string
           nullable: true
         created_at:

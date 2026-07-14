@@ -106,6 +106,8 @@ func (r *PolicySetResource) Schema(ctx context.Context, req resource.SchemaReque
 					stringvalidator.OneOf("zone", "user"),
 				},
 			},
+			// No UseStateForUnknown on etag, updated_at, or the version/binding
+			// attributes below: they change on every update or server-side.
 			"etag": schema.StringAttribute{
 				MarkdownDescription: "Entity tag for optimistic concurrency control, sent as `If-Match` on updates.",
 				Computed:            true,
@@ -113,14 +115,23 @@ func (r *PolicySetResource) Schema(ctx context.Context, req resource.SchemaReque
 			"owner_type": schema.StringAttribute{
 				MarkdownDescription: "Who manages this policy set: `platform` (managed by Keycard) or `customer` (managed by the tenant).",
 				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"created_by": schema.StringAttribute{
 				MarkdownDescription: "Identifier of the actor that created the policy set.",
 				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"created_at": schema.StringAttribute{
 				MarkdownDescription: "Timestamp when the policy set was created (RFC 3339).",
 				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"updated_at": schema.StringAttribute{
 				MarkdownDescription: "Timestamp when the policy set was last updated (RFC 3339).",
@@ -267,6 +278,13 @@ func (r *PolicySetResource) Read(ctx context.Context, req resource.ReadRequest, 
 
 	if getResp.JSON200 == nil {
 		resp.Diagnostics.AddError("API Error", "Unable to read policy set, no response body")
+		return
+	}
+
+	// Archiving is a soft-delete: defensive drift check should a read of an
+	// archived set ever return 200 with archived_at set rather than 404.
+	if isArchived(getResp.JSON200.ArchivedAt) {
+		resp.State.RemoveResource(ctx)
 		return
 	}
 

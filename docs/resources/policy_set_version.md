@@ -83,6 +83,7 @@ resource "keycard_policy_set_version" "app" {
 
 - `active` (Boolean) Whether this version is currently bound as the active policy set. Managed by `keycard_policy_set_activation`, not this resource.
 - `created_at` (String) Timestamp when the version was created (RFC 3339).
+- `created_by` (String) Identifier of the actor that created the version.
 - `id` (String) Unique identifier of the policy set version.
 - `manifest_sha` (String) Hex-encoded hash of the canonicalized manifest.
 - `owner_type` (String) Who manages this policy set version: `platform` (managed by Keycard) or `customer` (managed by the tenant).

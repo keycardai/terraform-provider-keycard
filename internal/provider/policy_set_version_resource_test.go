@@ -60,6 +60,8 @@ func TestAccPolicySetVersionResource_manifestChangeForcesNew(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
+	var originalID, originalSha string
+
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheckBasic(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -72,6 +74,8 @@ func TestAccPolicySetVersionResource_manifestChangeForcesNew(t *testing.T) {
 				Config:    testAccPolicySetVersionConfig(zoneName, rName, "permit (principal, action, resource);\n", true),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("keycard_policy_set_version.test", "manifest_sha"),
+					testAccCaptureResourceAttr("keycard_policy_set_version.test", "id", &originalID),
+					testAccCaptureResourceAttr("keycard_policy_set_version.test", "manifest_sha", &originalSha),
 				),
 			},
 			// Changing the manifest (via a new policy version) must replace the
@@ -84,7 +88,13 @@ func TestAccPolicySetVersionResource_manifestChangeForcesNew(t *testing.T) {
 					},
 				},
 				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("keycard_policy_set_version.test", "id"),
 					resource.TestCheckResourceAttrSet("keycard_policy_set_version.test", "manifest_sha"),
+					// Also a canary for the API contract: active maps to null
+					// when the server omits it, which would fail this check.
+					resource.TestCheckResourceAttrSet("keycard_policy_set_version.test", "active"),
+					testAccCheckResourceAttrDiffers("keycard_policy_set_version.test", "id", &originalID),
+					testAccCheckResourceAttrDiffers("keycard_policy_set_version.test", "manifest_sha", &originalSha),
 				),
 			},
 		},

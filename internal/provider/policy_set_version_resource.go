@@ -56,6 +56,7 @@ type PolicySetVersionResourceModel struct {
 	ManifestSha   types.String `tfsdk:"manifest_sha"`
 	Active        types.Bool   `tfsdk:"active"`
 	CreatedAt     types.String `tfsdk:"created_at"`
+	CreatedBy     types.String `tfsdk:"created_by"`
 	OwnerType     types.String `tfsdk:"owner_type"`
 }
 
@@ -156,6 +157,10 @@ func (r *PolicySetVersionResource) Schema(ctx context.Context, req resource.Sche
 				MarkdownDescription: "Timestamp when the version was created (RFC 3339).",
 				Computed:            true,
 			},
+			"created_by": schema.StringAttribute{
+				MarkdownDescription: "Identifier of the actor that created the version.",
+				Computed:            true,
+			},
 			"owner_type": schema.StringAttribute{
 				MarkdownDescription: "Who manages this policy set version: `platform` (managed by Keycard) or `customer` (managed by the tenant).",
 				Computed:            true,
@@ -204,6 +209,13 @@ func (r *PolicySetVersionResource) Create(ctx context.Context, req resource.Crea
 			PolicyId:        e.PolicyID.ValueString(),
 			PolicyVersionId: e.PolicyVersionID.ValueString(),
 		}
+	}
+
+	// The server silently accepts deprecated schemas; warn at apply time so
+	// pinning a superseded schema is visible. Best-effort: a lookup failure is
+	// not fatal to the create.
+	if warning := deprecatedSchemaWarning(ctx, r.client, data.ZoneID.ValueString(), data.SchemaVersion.ValueString()); warning != "" {
+		resp.Diagnostics.AddWarning("Deprecated Policy Schema", warning)
 	}
 
 	createReq := client.CreatePolicySetVersionRequest{
@@ -282,6 +294,14 @@ func (r *PolicySetVersionResource) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
+	// Archiving is a soft-delete: reads of an archived version return 200 with
+	// archived_at set, not 404 (the GET query only filters the parent set's
+	// archived_at), so this is the drift path for out-of-band archives.
+	if isArchived(getResp.JSON200.ArchivedAt) {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
 	resp.Diagnostics.Append(updatePolicySetVersionComputedFromAPIResponse(ctx, getResp.JSON200, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -308,9 +328,15 @@ func (r *PolicySetVersionResource) Delete(ctx context.Context, req resource.Dele
 		return
 	}
 
+	// No 404 retry here, unlike Create: a 404 from archive means "already
+	// archived" and is accepted as success below, and the provisioning lag
+	// Create must survive has long converged by the time a managed resource is
+	// destroyed. Retrying would make every already-gone destroy wait out the
+	// window without being able to tell the two apart. Same shape as the other
+	// archive-backed Deletes.
 	deleteResp, err := r.client.ArchivePolicySetVersionWithResponse(ctx, data.ZoneID.ValueString(), data.PolicySetID.ValueString(), data.ID.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete policy set version, got error: %s", err))
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to archive policy set version, got error: %s", err))
 		return
 	}
 
@@ -325,7 +351,7 @@ func (r *PolicySetVersionResource) Delete(ctx context.Context, req resource.Dele
 	if deleteResp.StatusCode() != 200 && deleteResp.StatusCode() != 404 {
 		resp.Diagnostics.AddError(
 			"API Error",
-			fmt.Sprintf("Unable to delete policy set version, got status %d: %s", deleteResp.StatusCode(), string(deleteResp.Body)),
+			fmt.Sprintf("Unable to archive policy set version, got status %d: %s", deleteResp.StatusCode(), string(deleteResp.Body)),
 		)
 		return
 	}
@@ -360,13 +386,12 @@ func updatePolicySetVersionComputedFromAPIResponse(ctx context.Context, apiVersi
 	data.Version = types.Int64Value(int64(apiVersion.Version))
 	data.ManifestSha = types.StringValue(apiVersion.ManifestSha)
 	data.CreatedAt = types.StringValue(apiVersion.CreatedAt.Format(time.RFC3339))
+	data.CreatedBy = types.StringValue(apiVersion.CreatedBy)
 	data.OwnerType = types.StringValue(string(apiVersion.OwnerType))
 
-	active := false
-	if apiVersion.Active != nil {
-		active = *apiVersion.Active
-	}
-	data.Active = types.BoolValue(active)
+	// nil means the API omitted the field, not "inactive" — surface unknown as
+	// null rather than fabricating false.
+	data.Active = types.BoolPointerValue(apiVersion.Active)
 
 	entries := make([]policySetVersionManifestEntryModel, len(apiVersion.Manifest.Entries))
 	for i, e := range apiVersion.Manifest.Entries {
