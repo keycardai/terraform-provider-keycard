@@ -333,7 +333,7 @@ func (r *PolicyVersionResource) deprecatedSchemaWarning(ctx context.Context, zon
 	if schemaResp.JSON200.Status != client.Deprecated {
 		return ""
 	}
-	return fmt.Sprintf("Schema version %q is deprecated. The version was still created, but consider pinning a current schema version.", schemaVersion)
+	return fmt.Sprintf("Schema version %q is deprecated. The policy version will still be created; consider pinning a current schema version.", schemaVersion)
 }
 
 // updatePolicyVersionComputedFromAPIResponse maps the computed and identity fields
