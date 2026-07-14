@@ -195,31 +195,11 @@ func (d *PolicySetDataSource) Read(ctx context.Context, req datasource.ReadReque
 		policySet = getResp.JSON200
 		etag = etagValue(getResp.HTTPResponse)
 	} else {
-		// Lookup by name. query[name] is a substring match, so filter results
-		// to the exact name client-side.
 		name := data.Name.ValueString()
-		// A zone is provisioned asynchronously, so the list endpoint may 404
-		// ("zone not found") briefly after the zone is created.
-		listResp, err := callWithRetry(ctx, func() (*client.ListPolicySetsResponse, error) {
-			return d.client.ListPolicySetsWithResponse(ctx, data.ZoneID.ValueString(), &client.ListPolicySetsParams{
-				QueryName: &[]string{name},
-			})
-		}, retryOnNotFound)
+		matches, err := findPolicySetsByName(ctx, d.client, data.ZoneID.ValueString(), name)
 		if err != nil {
 			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list policy sets: %s", err))
 			return
-		}
-
-		if listResp.JSON200 == nil {
-			resp.Diagnostics.AddError("API Error", "Received empty response from API")
-			return
-		}
-
-		var matches []client.PolicySetWithBinding
-		for _, ps := range listResp.JSON200.Items {
-			if ps.Name == name {
-				matches = append(matches, ps)
-			}
 		}
 
 		if len(matches) == 0 {
@@ -247,4 +227,48 @@ func (d *PolicySetDataSource) Read(ctx context.Context, req datasource.ReadReque
 	data.ETag = etag
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+// findPolicySetsByName returns the policy sets in the zone whose name equals
+// name exactly. query[name] is a case-insensitive substring match and the list
+// is cursor-paginated, so it walks every page and filters client-side: an
+// exact match can land beyond page 1 when other set names contain the
+// requested name as a substring. Stops early once two matches are found, since
+// callers treat that as an error.
+func findPolicySetsByName(ctx context.Context, c *client.ClientWithResponses, zoneID, name string) ([]client.PolicySetWithBinding, error) {
+	var matches []client.PolicySetWithBinding
+	var after *string
+	for {
+		// A zone is provisioned asynchronously, so the list endpoint may 404
+		// ("zone not found") briefly after the zone is created.
+		listResp, err := callWithRetry(ctx, func() (*client.ListPolicySetsResponse, error) {
+			return c.ListPolicySetsWithResponse(ctx, zoneID, &client.ListPolicySetsParams{
+				QueryName: &[]string{name},
+				After:     after,
+			})
+		}, retryOnNotFound)
+		if err != nil {
+			return nil, err
+		}
+
+		if listResp.JSON200 == nil {
+			return nil, fmt.Errorf("received empty response from API (status %d)", listResp.StatusCode())
+		}
+
+		for _, ps := range listResp.JSON200.Items {
+			if ps.Name == name {
+				matches = append(matches, ps)
+			}
+		}
+
+		if len(matches) > 1 {
+			return matches, nil
+		}
+		// A null or absent after_cursor means no next page.
+		cursor := NullableStringValue(listResp.JSON200.Pagination.AfterCursor)
+		if cursor.IsNull() || cursor.ValueString() == "" {
+			return matches, nil
+		}
+		after = cursor.ValueStringPointer()
+	}
 }

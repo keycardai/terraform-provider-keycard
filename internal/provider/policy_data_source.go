@@ -148,31 +148,11 @@ func (d *PolicyDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 
 		policy = getResp.JSON200
 	} else {
-		// Lookup by name. query[name] is a substring match, so filter results
-		// to the exact name client-side.
 		name := data.Name.ValueString()
-		// A zone is provisioned asynchronously, so the list endpoint may 404
-		// ("zone not found") briefly after the zone is created.
-		listResp, err := callWithRetry(ctx, func() (*client.ListPoliciesResponse, error) {
-			return d.client.ListPoliciesWithResponse(ctx, data.ZoneID.ValueString(), &client.ListPoliciesParams{
-				QueryName: &[]string{name},
-			})
-		}, retryOnNotFound)
+		matches, err := findPoliciesByName(ctx, d.client, data.ZoneID.ValueString(), name)
 		if err != nil {
 			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list policies: %s", err))
 			return
-		}
-
-		if listResp.JSON200 == nil {
-			resp.Diagnostics.AddError("API Error", "Received empty response from API")
-			return
-		}
-
-		var matches []client.Policy
-		for _, p := range listResp.JSON200.Items {
-			if p.Name == name {
-				matches = append(matches, p)
-			}
 		}
 
 		if len(matches) == 0 {
@@ -198,4 +178,48 @@ func (d *PolicyDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 	updatePolicyModelFromAPIResponse(policy, &data)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+// findPoliciesByName returns the policies in the zone whose name equals name
+// exactly. query[name] is a case-insensitive substring match and the list is
+// cursor-paginated, so it walks every page and filters client-side: an exact
+// match can land beyond page 1 when other policy names contain the requested
+// name as a substring. Stops early once two matches are found, since callers
+// treat that as an error.
+func findPoliciesByName(ctx context.Context, c *client.ClientWithResponses, zoneID, name string) ([]client.Policy, error) {
+	var matches []client.Policy
+	var after *string
+	for {
+		// A zone is provisioned asynchronously, so the list endpoint may 404
+		// ("zone not found") briefly after the zone is created.
+		listResp, err := callWithRetry(ctx, func() (*client.ListPoliciesResponse, error) {
+			return c.ListPoliciesWithResponse(ctx, zoneID, &client.ListPoliciesParams{
+				QueryName: &[]string{name},
+				After:     after,
+			})
+		}, retryOnNotFound)
+		if err != nil {
+			return nil, err
+		}
+
+		if listResp.JSON200 == nil {
+			return nil, fmt.Errorf("received empty response from API (status %d)", listResp.StatusCode())
+		}
+
+		for _, p := range listResp.JSON200.Items {
+			if p.Name == name {
+				matches = append(matches, p)
+			}
+		}
+
+		if len(matches) > 1 {
+			return matches, nil
+		}
+		// A null or absent after_cursor means no next page.
+		cursor := NullableStringValue(listResp.JSON200.Pagination.AfterCursor)
+		if cursor.IsNull() || cursor.ValueString() == "" {
+			return matches, nil
+		}
+		after = cursor.ValueStringPointer()
+	}
 }
