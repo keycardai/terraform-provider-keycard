@@ -216,7 +216,7 @@ func findPoliciesByName(ctx context.Context, c *client.ClientWithResponses, zone
 			return matches, nil
 		}
 		// A null or absent after_cursor means no next page.
-		cursor := NullableStringValue(listResp.JSON200.Pagination.AfterCursor)
+		cursor := nullableStringValue(listResp.JSON200.Pagination.AfterCursor)
 		if cursor.IsNull() || cursor.ValueString() == "" {
 			return matches, nil
 		}

@@ -167,7 +167,7 @@ func (r *PolicyVersionResource) Create(ctx context.Context, req resource.CreateR
 	// content validation entirely when it's empty, so the schema's Required +
 	// LengthAtLeast(1) are the only guards against publishing an empty version.
 	createReq := client.CreatePolicyVersionRequest{
-		CedarRaw:      StringValueNullable(data.Cedar),
+		CedarRaw:      stringValueNullable(data.Cedar),
 		SchemaVersion: schemaVersion,
 	}
 
@@ -259,7 +259,7 @@ func (r *PolicyVersionResource) Read(ctx context.Context, req resource.ReadReque
 	// Preserve the configured cedar value to tolerate server-side normalization.
 	// Only populate it from the response when unset (i.e. on import).
 	if data.Cedar.IsNull() || data.Cedar.IsUnknown() {
-		data.Cedar = NullableStringValue(getResp.JSON200.CedarRaw)
+		data.Cedar = nullableStringValue(getResp.JSON200.CedarRaw)
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

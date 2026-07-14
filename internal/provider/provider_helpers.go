@@ -21,9 +21,9 @@ func updateProviderModelFromAPIResponse(ctx context.Context, provider *client.Pr
 	// Map basic fields
 	data.ID = types.StringValue(provider.Id)
 	data.Name = types.StringValue(provider.Name)
-	data.Description = NullableStringValue(provider.Description)
+	data.Description = nullableStringValue(provider.Description)
 	data.Identifier = types.StringValue(provider.Identifier)
-	data.ClientID = NullableStringValue(provider.ClientId)
+	data.ClientID = nullableStringValue(provider.ClientId)
 
 	// Note: client_secret is not updated here as it's write-only in the API
 	// It should already be set from plan/state in the calling method
@@ -33,8 +33,8 @@ func updateProviderModelFromAPIResponse(ctx context.Context, provider *client.Pr
 		if err == nil {
 			oauth2Model := OAuth2ProviderModel{
 				Issuer:                types.StringValue(oauth2.Issuer),
-				AuthorizationEndpoint: NullableStringValue(oauth2.AuthorizationEndpoint),
-				TokenEndpoint:         NullableStringValue(oauth2.TokenEndpoint),
+				AuthorizationEndpoint: nullableStringValue(oauth2.AuthorizationEndpoint),
+				TokenEndpoint:         nullableStringValue(oauth2.TokenEndpoint),
 			}
 			oauth2Obj, oauth2Diags := types.ObjectValueFrom(ctx, oauth2Model.AttributeTypes(), oauth2Model)
 			diags.Append(oauth2Diags...)
@@ -60,9 +60,9 @@ func updateProviderDataSourceModelFromAPIResponse(ctx context.Context, provider 
 	// Map basic fields
 	data.ID = types.StringValue(provider.Id)
 	data.Name = types.StringValue(provider.Name)
-	data.Description = NullableStringValue(provider.Description)
+	data.Description = nullableStringValue(provider.Description)
 	data.Identifier = types.StringValue(provider.Identifier)
-	data.ClientID = NullableStringValue(provider.ClientId)
+	data.ClientID = nullableStringValue(provider.ClientId)
 
 	// Map protocols.oauth2 fields if present
 	protocols, err := provider.Protocols.Get()
@@ -71,8 +71,8 @@ func updateProviderDataSourceModelFromAPIResponse(ctx context.Context, provider 
 		if err == nil {
 			oauth2Model := OAuth2ProviderModel{
 				Issuer:                types.StringValue(oauth2.Issuer),
-				AuthorizationEndpoint: NullableStringValue(oauth2.AuthorizationEndpoint),
-				TokenEndpoint:         NullableStringValue(oauth2.TokenEndpoint),
+				AuthorizationEndpoint: nullableStringValue(oauth2.AuthorizationEndpoint),
+				TokenEndpoint:         nullableStringValue(oauth2.TokenEndpoint),
 			}
 			oauth2Obj, oauth2Diags := types.ObjectValueFrom(ctx, oauth2Model.AttributeTypes(), oauth2Model)
 			diags.Append(oauth2Diags...)
@@ -96,7 +96,7 @@ func isArchived(archivedAt nullable.Nullable[time.Time]) bool {
 	return archivedAt.IsSpecified() && !archivedAt.IsNull()
 }
 
-func NullableStringValue(val nullable.Nullable[string]) basetypes.StringValue {
+func nullableStringValue(val nullable.Nullable[string]) basetypes.StringValue {
 	str, err := val.Get()
 	if err != nil {
 		return types.StringNull()
@@ -105,7 +105,7 @@ func NullableStringValue(val nullable.Nullable[string]) basetypes.StringValue {
 	return types.StringValue(str)
 }
 
-func StringValueNullable(val basetypes.StringValue) nullable.Nullable[string] {
+func stringValueNullable(val basetypes.StringValue) nullable.Nullable[string] {
 	switch {
 	case val.IsNull():
 		return nullable.NewNullNullable[string]()
@@ -116,7 +116,7 @@ func StringValueNullable(val basetypes.StringValue) nullable.Nullable[string] {
 	}
 }
 
-func BoolValueNullable(val basetypes.BoolValue) nullable.Nullable[bool] {
+func boolValueNullable(val basetypes.BoolValue) nullable.Nullable[bool] {
 	switch {
 	case val.IsNull():
 		return nullable.NewNullNullable[bool]()
@@ -139,7 +139,7 @@ func etagValue(resp *http.Response) basetypes.StringValue {
 	return types.StringNull()
 }
 
-func NullableInt64Value(val nullable.Nullable[int]) basetypes.Int64Value {
+func nullableInt64Value(val nullable.Nullable[int]) basetypes.Int64Value {
 	n, err := val.Get()
 	if err != nil {
 		return types.Int64Null()
@@ -154,10 +154,10 @@ func updatePolicyModelFromAPIResponse(apiPolicy *client.Policy, data *PolicyMode
 	data.ID = types.StringValue(apiPolicy.Id)
 	data.ZoneID = types.StringValue(apiPolicy.ZoneId)
 	data.Name = types.StringValue(apiPolicy.Name)
-	data.Description = NullableStringValue(apiPolicy.Description)
+	data.Description = nullableStringValue(apiPolicy.Description)
 	data.OwnerType = types.StringValue(string(apiPolicy.OwnerType))
 	data.CreatedBy = types.StringValue(apiPolicy.CreatedBy)
-	data.LatestVersionID = NullableStringValue(apiPolicy.LatestVersionId)
+	data.LatestVersionID = nullableStringValue(apiPolicy.LatestVersionId)
 }
 
 // updatePolicySetModelFromAPIResponse maps a PolicySetWithBinding API response
@@ -172,14 +172,14 @@ func updatePolicySetModelFromAPIResponse(aps *client.PolicySetWithBinding, data 
 	data.CreatedBy = types.StringValue(aps.CreatedBy)
 	data.CreatedAt = types.StringValue(aps.CreatedAt.Format(time.RFC3339))
 	data.UpdatedAt = types.StringValue(aps.UpdatedAt.Format(time.RFC3339))
-	data.LatestVersionID = NullableStringValue(aps.LatestVersionId)
-	data.LatestVersion = NullableInt64Value(aps.LatestVersion)
+	data.LatestVersionID = nullableStringValue(aps.LatestVersionId)
+	data.LatestVersion = nullableInt64Value(aps.LatestVersion)
 	data.Active = types.BoolValue(aps.Active)
-	data.ActiveVersionID = NullableStringValue(aps.ActiveVersionId)
-	data.ActiveVersion = NullableInt64Value(aps.ActiveVersion)
-	data.ShadowVersionID = NullableStringValue(aps.ShadowVersionId)
-	data.ShadowVersion = NullableInt64Value(aps.ShadowVersion)
-	data.TargetID = NullableStringValue(aps.TargetId)
+	data.ActiveVersionID = nullableStringValue(aps.ActiveVersionId)
+	data.ActiveVersion = nullableInt64Value(aps.ActiveVersion)
+	data.ShadowVersionID = nullableStringValue(aps.ShadowVersionId)
+	data.ShadowVersion = nullableInt64Value(aps.ShadowVersion)
+	data.TargetID = nullableStringValue(aps.TargetId)
 	if mode, err := aps.Mode.Get(); err == nil {
 		data.Mode = types.StringValue(string(mode))
 	} else {
@@ -196,7 +196,7 @@ func updateApplicationModelFromAPIResponse(ctx context.Context, app *client.Appl
 	data.ID = types.StringValue(app.Id)
 	data.ZoneID = types.StringValue(app.ZoneId)
 	data.Name = types.StringValue(app.Name)
-	data.Description = NullableStringValue(app.Description)
+	data.Description = nullableStringValue(app.Description)
 	data.Identifier = types.StringValue(app.Identifier)
 	data.Consent = types.StringValue(string(app.Consent))
 
@@ -324,7 +324,7 @@ func updateApplicationWorkloadIdentityModelFromCreateResponse(cred *client.Appli
 	data.ZoneID = types.StringValue(tokenCred.ZoneId)
 	data.ApplicationID = types.StringValue(tokenCred.ApplicationId)
 	data.ProviderID = types.StringValue(tokenCred.ProviderId)
-	data.Subject = NullableStringValue(tokenCred.Subject)
+	data.Subject = nullableStringValue(tokenCred.Subject)
 
 	return diags
 }
@@ -345,7 +345,7 @@ func updateApplicationWorkloadIdentityModelFromAPIResponse(cred *client.Applicat
 	data.ZoneID = types.StringValue(tokenCred.ZoneId)
 	data.ApplicationID = types.StringValue(tokenCred.ApplicationId)
 	data.ProviderID = types.StringValue(tokenCred.ProviderId)
-	data.Subject = NullableStringValue(tokenCred.Subject)
+	data.Subject = nullableStringValue(tokenCred.Subject)
 
 	return diags
 }

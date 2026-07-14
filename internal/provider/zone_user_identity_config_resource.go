@@ -93,7 +93,7 @@ func (r *ZoneUserIdentityConfigResource) Create(ctx context.Context, req resourc
 
 	// Build the update request to set the user identity provider
 	updateReq := client.ZoneUpdate{
-		UserIdentityProviderId: StringValueNullable(data.ProviderID),
+		UserIdentityProviderId: stringValueNullable(data.ProviderID),
 	}
 
 	// Update the zone to set the user identity provider
@@ -195,7 +195,7 @@ func (r *ZoneUserIdentityConfigResource) Update(ctx context.Context, req resourc
 
 	// Build the update request to change the user identity provider
 	updateReq := client.ZoneUpdate{
-		UserIdentityProviderId: StringValueNullable(data.ProviderID),
+		UserIdentityProviderId: stringValueNullable(data.ProviderID),
 	}
 
 	// Update the zone

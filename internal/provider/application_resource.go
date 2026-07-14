@@ -367,7 +367,7 @@ func (r *ApplicationResource) Update(ctx context.Context, req resource.UpdateReq
 
 	// Set description (including null to remove it)
 	if !data.Description.IsUnknown() {
-		updateReq.Description = StringValueNullable(data.Description)
+		updateReq.Description = stringValueNullable(data.Description)
 	}
 
 	// Set identifier if changed
@@ -391,7 +391,7 @@ func (r *ApplicationResource) Update(ctx context.Context, req resource.UpdateReq
 
 			metadataUpdate := client.MetadataUpdate{}
 			if !metadataData.DocsURL.IsUnknown() {
-				metadataUpdate.DocsUrl = StringValueNullable(metadataData.DocsURL)
+				metadataUpdate.DocsUrl = stringValueNullable(metadataData.DocsURL)
 			}
 			updateReq.Metadata = nullable.NewNullableWithValue(metadataUpdate)
 		}

@@ -195,7 +195,7 @@ func (r *ResourceResource) Create(ctx context.Context, req resource.CreateReques
 
 	// Set description if provided
 	if !data.Description.IsNull() && !data.Description.IsUnknown() {
-		createReq.Description = StringValueNullable(data.Description)
+		createReq.Description = stringValueNullable(data.Description)
 	}
 
 	// Set application_id if provided
@@ -343,7 +343,7 @@ func (r *ResourceResource) Update(ctx context.Context, req resource.UpdateReques
 
 	// Set description (including null to remove it)
 	if !data.Description.IsUnknown() {
-		updateReq.Description = StringValueNullable(data.Description)
+		updateReq.Description = stringValueNullable(data.Description)
 	}
 
 	// Set identifier if changed
@@ -353,12 +353,12 @@ func (r *ResourceResource) Update(ctx context.Context, req resource.UpdateReques
 
 	// Set credential_provider_id (including null to remove it)
 	if !data.CredentialProviderID.IsUnknown() {
-		updateReq.CredentialProviderId = StringValueNullable(data.CredentialProviderID)
+		updateReq.CredentialProviderId = stringValueNullable(data.CredentialProviderID)
 	}
 
 	// Set application_id (including null to remove it)
 	if !data.ApplicationID.IsUnknown() {
-		updateReq.ApplicationId = StringValueNullable(data.ApplicationID)
+		updateReq.ApplicationId = stringValueNullable(data.ApplicationID)
 	}
 
 	// Set prefix (always present due to default)
@@ -380,7 +380,7 @@ func (r *ResourceResource) Update(ctx context.Context, req resource.UpdateReques
 			}
 
 			metadataUpdate := client.MetadataUpdate{
-				DocsUrl: StringValueNullable(metadataData.DocsURL),
+				DocsUrl: stringValueNullable(metadataData.DocsURL),
 			}
 			updateReq.Metadata = nullable.NewNullableWithValue(metadataUpdate)
 		}
@@ -498,7 +498,7 @@ func updateResourceModelFromAPIResponse(ctx context.Context, apiResource *client
 	data.ZoneID = types.StringValue(apiResource.ZoneId)
 	data.Name = types.StringValue(apiResource.Name)
 	data.Identifier = types.StringValue(apiResource.Identifier)
-	data.Description = NullableStringValue(apiResource.Description)
+	data.Description = nullableStringValue(apiResource.Description)
 	data.CredentialProviderID = types.StringPointerValue(apiResource.CredentialProviderId)
 	data.ApplicationID = types.StringPointerValue(apiResource.ApplicationId)
 	data.Prefix = types.BoolValue(apiResource.Prefix)

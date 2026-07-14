@@ -227,7 +227,7 @@ func (r *ProviderResource) Create(ctx context.Context, req resource.CreateReques
 
 	// Set description if provided
 	if !data.Description.IsNull() && !data.Description.IsUnknown() {
-		createReq.Description = StringValueNullable(data.Description)
+		createReq.Description = stringValueNullable(data.Description)
 	}
 
 	// Set client_id if provided
@@ -365,7 +365,7 @@ func (r *ProviderResource) Update(ctx context.Context, req resource.UpdateReques
 
 	// Set description (including null to remove it)
 	if !data.Description.IsUnknown() {
-		updateReq.Description = StringValueNullable(data.Description)
+		updateReq.Description = stringValueNullable(data.Description)
 	}
 
 	// Set identifier at root level
@@ -376,12 +376,12 @@ func (r *ProviderResource) Update(ctx context.Context, req resource.UpdateReques
 
 	// Set client_id at root level
 	if !data.ClientID.IsUnknown() {
-		updateReq.ClientId = StringValueNullable(data.ClientID)
+		updateReq.ClientId = stringValueNullable(data.ClientID)
 	}
 
 	// Set client_secret at root level
 	if !data.ClientSecret.IsUnknown() {
-		updateReq.ClientSecret = StringValueNullable(data.ClientSecret)
+		updateReq.ClientSecret = stringValueNullable(data.ClientSecret)
 	}
 
 	// Set protocols.oauth2 fields if oauth2 block is provided
@@ -407,11 +407,11 @@ func (r *ProviderResource) Update(ctx context.Context, req resource.UpdateReques
 			}
 
 			if !oauth2Data.AuthorizationEndpoint.IsNull() && !oauth2Data.AuthorizationEndpoint.IsUnknown() {
-				oauth2Update.AuthorizationEndpoint = StringValueNullable(oauth2Data.AuthorizationEndpoint)
+				oauth2Update.AuthorizationEndpoint = stringValueNullable(oauth2Data.AuthorizationEndpoint)
 			}
 
 			if !oauth2Data.TokenEndpoint.IsNull() && !oauth2Data.TokenEndpoint.IsUnknown() {
-				oauth2Update.TokenEndpoint = StringValueNullable(oauth2Data.TokenEndpoint)
+				oauth2Update.TokenEndpoint = stringValueNullable(oauth2Data.TokenEndpoint)
 			}
 
 			protocolUpdate := client.ProviderProtocolUpdate{
