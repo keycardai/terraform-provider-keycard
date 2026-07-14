@@ -39,13 +39,24 @@ func TestAccPolicyVersionResource_basic(t *testing.T) {
 				),
 			},
 			// Import. Server-normalized cedar may differ from the configured
-			// value, so cedar is excluded from import verification.
+			// value, so cedar is excluded from value verification — but it must
+			// still be populated: a null cedar on import (e.g. the API not
+			// returning cedar_raw) would otherwise slip through the ignore.
 			{
 				ResourceName:            "keycard_policy_version.test",
 				ImportState:             true,
 				ImportStateIdFunc:       testAccPolicyVersionImportStateIdFunc("keycard_policy_version.test"),
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"cedar"},
+				ImportStateCheck: func(states []*terraform.InstanceState) error {
+					if len(states) != 1 {
+						return fmt.Errorf("expected 1 imported instance state, got %d", len(states))
+					}
+					if states[0].Attributes["cedar"] == "" {
+						return fmt.Errorf("imported state has empty cedar; expected it populated from the API's cedar_raw")
+					}
+					return nil
+				},
 			},
 		},
 	})
@@ -54,6 +65,8 @@ func TestAccPolicyVersionResource_basic(t *testing.T) {
 func TestAccPolicyVersionResource_contentChangeForcesNew(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
+
+	var originalID, originalSha string
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheckBasic(t) },
@@ -67,6 +80,8 @@ func TestAccPolicyVersionResource_contentChangeForcesNew(t *testing.T) {
 				Config:    testAccPolicyVersionConfig(zoneName, rName, "permit (principal, action, resource);\n", true),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("keycard_policy_version.test", "sha"),
+					testAccCaptureResourceAttr("keycard_policy_version.test", "id", &originalID),
+					testAccCaptureResourceAttr("keycard_policy_version.test", "sha", &originalSha),
 				),
 			},
 			// Changing cedar must replace the resource (publish a new version).
@@ -79,10 +94,48 @@ func TestAccPolicyVersionResource_contentChangeForcesNew(t *testing.T) {
 				},
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("keycard_policy_version.test", "sha"),
+					testAccCheckResourceAttrDiffers("keycard_policy_version.test", "id", &originalID),
+					testAccCheckResourceAttrDiffers("keycard_policy_version.test", "sha", &originalSha),
 				),
 			},
 		},
 	})
+}
+
+// testAccCaptureResourceAttr stores the named attribute's current value in dst
+// for comparison in a later step.
+func testAccCaptureResourceAttr(resourceName, attr string, dst *string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("resource not found: %s", resourceName)
+		}
+		v, ok := rs.Primary.Attributes[attr]
+		if !ok || v == "" {
+			return fmt.Errorf("%s: attribute %q not set", resourceName, attr)
+		}
+		*dst = v
+		return nil
+	}
+}
+
+// testAccCheckResourceAttrDiffers fails when the named attribute still equals
+// the previously captured value, i.e. the resource was not actually replaced.
+func testAccCheckResourceAttrDiffers(resourceName, attr string, previous *string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("resource not found: %s", resourceName)
+		}
+		v := rs.Primary.Attributes[attr]
+		if *previous == "" {
+			return fmt.Errorf("%s: no previously captured %q to compare against", resourceName, attr)
+		}
+		if v == *previous {
+			return fmt.Errorf("%s: attribute %q unchanged after expected replacement (still %q)", resourceName, attr, v)
+		}
+		return nil
+	}
 }
 
 // Applying non-canonical Cedar formatting must not produce a perpetual diff:
