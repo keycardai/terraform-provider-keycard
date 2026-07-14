@@ -1581,6 +1581,125 @@ paths:
         - bearerAuth: []
       tags:
         - Policies
+  '/zones/{zone_id}/policies/{policy_id}/versions':
+    post:
+      operationId: createPolicyVersion
+      summary: Create a new immutable policy version
+      description: Publishes a new immutable Cedar policy version under a policy
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: policy_id
+          in: path
+          required: true
+          description: The policy identifier
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePolicyVersionRequest'
+      responses:
+        '201':
+          description: The newly created policy version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyVersion'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Policy Versions
+  '/zones/{zone_id}/policies/{policy_id}/versions/{version_id}':
+    get:
+      operationId: getPolicyVersion
+      summary: Get a specific policy version
+      description: Returns a specific immutable policy version by ID
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: policy_id
+          in: path
+          required: true
+          description: The policy identifier
+          schema:
+            type: string
+        - name: version_id
+          in: path
+          required: true
+          description: The policy version identifier
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The requested policy version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyVersion'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Policy Versions
+    delete:
+      operationId: archivePolicyVersion
+      summary: Archive a policy version
+      description: Archives an immutable policy version
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: policy_id
+          in: path
+          required: true
+          description: The policy identifier
+          schema:
+            type: string
+        - name: version_id
+          in: path
+          required: true
+          description: The policy version identifier
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The archived policy version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyVersion'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Policy Versions
   /organizations/{organization_id}/sso-connection:
     post:
       operationId: enableSSOConnection
@@ -3332,6 +3451,71 @@ components:
         description:
           type: string
       title: Update Policy Request
+    PolicyVersion:
+      description: An immutable Cedar policy version published under a policy.
+      type: object
+      properties:
+        id:
+          type: string
+        policy_id:
+          type: string
+        zone_id:
+          type: string
+        version:
+          description: Human-readable version number (e.g., 1, 2, 3)
+          type: integer
+        schema_version:
+          description: Schema version this policy was validated against when created.
+          type: string
+        cedar_raw:
+          description: Cedar policy in human-readable syntax. Null when the response was narrowed to the JSON representation via format=json.
+          type: string
+          nullable: true
+        sha:
+          description: Hex-encoded content hash
+          type: string
+        archived_at:
+          type: string
+          format: date-time
+          nullable: true
+        archived_by:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+        owner_type:
+          description: 'Who manages this policy version. platform: managed by the Keycard platform; customer: managed by the tenant.'
+          type: string
+          enum:
+            - platform
+            - customer
+      required:
+        - id
+        - policy_id
+        - zone_id
+        - version
+        - schema_version
+        - sha
+        - created_at
+        - created_by
+        - owner_type
+      title: Policy Version
+    CreatePolicyVersionRequest:
+      type: object
+      properties:
+        cedar_raw:
+          description: Cedar policy in human-readable Cedar syntax.
+          type: string
+          nullable: true
+        schema_version:
+          description: Schema version to validate this policy against. Must not be archived.
+          type: string
+      required:
+        - schema_version
+      title: Create Policy Version Request
   securitySchemes:
     bearerAuth:
       type: http

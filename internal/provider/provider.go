@@ -32,9 +32,12 @@ type KeycardProvider struct {
 	// testing.
 	version string
 
-	// notFoundRetryWindow overrides the retry window on the policy-family
-	// not-found paths (schema-by-version, policy resource, policy data source).
-	// Zero uses the production default; it exists so acceptance tests can
+	// notFoundRetryWindow overrides the not-found retry window on the policy
+	// resources and data sources. Zero selects each consumer's production
+	// default: resources use the full window (a false 404 on Read would remove
+	// the resource and force a destructive recreate), while data-source lookups
+	// use a short window (a genuine miss is surfaced as an error, not a state
+	// mutation). It exists so acceptance tests exercising a genuine miss can
 	// shorten it. Instance-scoped, so parallel tests stay isolated.
 	notFoundRetryWindow time.Duration
 }
@@ -155,6 +158,9 @@ func (p *KeycardProvider) Resources(ctx context.Context) []func() resource.Resou
 		NewSSOConnectionResource,
 		func() resource.Resource {
 			return NewPolicyResource(p.notFoundRetryWindow)
+		},
+		func() resource.Resource {
+			return NewPolicyVersionResource(p.notFoundRetryWindow)
 		},
 	}
 }

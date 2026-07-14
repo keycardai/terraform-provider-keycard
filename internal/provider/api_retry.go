@@ -17,13 +17,13 @@ const (
 	apiRetryWindow       = 2 * time.Minute
 	apiRetryInitialDelay = 2 * time.Second
 	apiRetryMaxDelay     = 10 * time.Second
-)
 
-// notFoundRetryWindow is the default window for paths where a persistent 404 is
-// a genuine miss (the requested entity does not exist) rather than provisioning
-// lag. It covers replica propagation for a freshly written entity without
-// making a real miss wait out the full apiRetryWindow.
-const notFoundRetryWindow = 30 * time.Second
+	// notFoundRetryWindow is the default window for paths where a persistent 404 is
+	// a genuine miss (the requested entity does not exist) rather than provisioning
+	// lag. It covers replica propagation for a freshly written entity without
+	// making a real miss wait out the full apiRetryWindow.
+	notFoundRetryWindow = 30 * time.Second
+)
 
 // retryOption overrides a callWithRetry default.
 type retryOption func(*time.Duration)
