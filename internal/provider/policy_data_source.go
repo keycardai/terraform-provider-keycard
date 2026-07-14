@@ -191,7 +191,10 @@ func findPoliciesByName(ctx context.Context, c *client.ClientWithResponses, zone
 	var after *string
 	for {
 		// A zone is provisioned asynchronously, so the list endpoint may 404
-		// ("zone not found") briefly after the zone is created.
+		// ("zone not found") briefly after the zone is created. That is the
+		// only 404 this endpoint returns — a missing name is an empty list,
+		// not a 404 — so unlike the ID lookup there is no genuine miss to
+		// surface quickly, and the full default retry window applies.
 		listResp, err := callWithRetry(ctx, func() (*client.ListPoliciesResponse, error) {
 			return c.ListPoliciesWithResponse(ctx, zoneID, &client.ListPoliciesParams{
 				QueryName: &[]string{name},
