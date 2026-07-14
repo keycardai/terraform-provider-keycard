@@ -162,6 +162,10 @@ func (r *PolicyVersionResource) Create(ctx context.Context, req resource.CreateR
 		resp.Diagnostics.AddWarning("Deprecated Policy Schema", warning)
 	}
 
+	// cedar maps to the API's cedar_raw (human-readable form; cedar_json is
+	// derived server-side). The request field is nullable and the server skips
+	// content validation entirely when it's empty, so the schema's Required +
+	// LengthAtLeast(1) are the only guards against publishing an empty version.
 	createReq := client.CreatePolicyVersionRequest{
 		CedarRaw:      StringValueNullable(data.Cedar),
 		SchemaVersion: schemaVersion,
@@ -209,8 +213,13 @@ func (r *PolicyVersionResource) Read(ctx context.Context, req resource.ReadReque
 	// provisioning) can 404 on a read replica for a while. Retry transient 404s
 	// over the configured window; acting on a false 404 here removes the resource
 	// from state and forces a destructive recreate, so production waits out
-	// replica lag rather than surfacing a genuine miss quickly. The default
-	// response populates cedar_raw, which import relies on.
+	// replica lag rather than surfacing a genuine miss quickly.
+	//
+	// API contract (svc-pdp GetPolicyVersion): with no format query param the
+	// response populates both cedar_json and cedar_raw; cedar_raw is null only
+	// when a caller explicitly narrows with format=json, which this client
+	// never sends (the vendored spec doesn't expose the param). Import relies
+	// on cedar_raw being present here.
 	getResp, err := callWithRetry(ctx, func() (*client.GetPolicyVersionResponse, error) {
 		return r.client.GetPolicyVersionWithResponse(ctx, data.ZoneID.ValueString(), data.PolicyID.ValueString(), data.ID.ValueString())
 	}, retryOnNotFound, withRetryWindow(r.retryWindow))
