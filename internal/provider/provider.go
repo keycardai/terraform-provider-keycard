@@ -168,6 +168,9 @@ func (p *KeycardProvider) Resources(ctx context.Context) []func() resource.Resou
 		func() resource.Resource {
 			return NewPolicySetVersionResource(p.retryWindowOverride)
 		},
+		func() resource.Resource {
+			return NewPolicySetActivationResource(p.retryWindowOverride)
+		},
 	}
 }
 

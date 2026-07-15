@@ -1989,6 +1989,51 @@ paths:
         - bearerAuth: []
       tags:
         - Policy Set Versions
+    patch:
+      operationId: updatePolicySetVersion
+      summary: Activate a policy set version
+      description: Set active=true to bind this version as the active zone policy set.
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: policy_set_id
+          in: path
+          required: true
+          description: The policy set identifier
+          schema:
+            type: string
+        - name: version_id
+          in: path
+          required: true
+          description: The policy set version identifier
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePolicySetVersionRequest'
+      responses:
+        '200':
+          description: The policy set version, now active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicySetVersion'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Policy Set Versions
     delete:
       operationId: archivePolicySetVersion
       summary: Archive a policy set version
@@ -3899,6 +3944,16 @@ components:
         name:
           type: string
       title: Update Policy Set Request
+    UpdatePolicySetVersionRequest:
+      type: object
+      required:
+        - active
+      properties:
+        active:
+          type: boolean
+          description: Must be true. Binds this version as the active zone policy set.
+      additionalProperties: false
+      title: Update Policy Set Version Request
     PolicyVersion:
       description: An immutable Cedar policy version published under a policy.
       type: object

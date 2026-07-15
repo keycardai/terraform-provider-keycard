@@ -5,6 +5,8 @@ FEATURES:
 * **Policy Schema Lookup**: New `keycard_policy_schema` data source resolves a zone's default Cedar policy schema version (or a specific version), laying the groundwork for declarative policy management.
 * **Policy Containers**: New `keycard_policy` resource and data source manage Cedar policy containers within a zone. Destroy archives the policy, which frees its name for reuse.
 * **Declarative Policy Authoring**: New `keycard_policy_version` resource publishes immutable Cedar policy content into a `keycard_policy`. Combined with the schema data source and `keycard_policy`, Cedar policies can now be authored end-to-end from Terraform, with a new immutable version created on every content change.
+* **Policy Sets**: New `keycard_policy_set` resource and data source manage named compositions of policies, and the `keycard_policy_set_version` resource publishes immutable manifest snapshots pinning specific policy versions to a schema version.
+* **Policy Set Activation**: New `keycard_policy_set_activation` resource binds a policy set version as the zone's active policy set, completing GitOps-style policy deployment: author Cedar, compose a set, and promote an immutable version to active — with rollback by re-pointing at a prior version.
 
 NOTES:
 
@@ -14,11 +16,15 @@ RESOURCES:
 
 * `keycard_policy` - New resource for managing Cedar policy containers. Destroy archives the policy.
 * `keycard_policy_version` - New resource for publishing immutable Cedar policy versions. Content and schema are `RequiresReplace` (versions are immutable); destroy archives the version.
+* `keycard_policy_set` - New resource for managing policy set containers. Destroy archives the set.
+* `keycard_policy_set_version` - New resource for publishing immutable policy set manifest snapshots. All attributes are `RequiresReplace`; destroy archives the version.
+* `keycard_policy_set_activation` - New resource binding a policy set version as the zone's active policy set. Changing `policy_set_version_id` rolls forward (or back) in place. At most one activation per zone: the binding is keyed by the zone. Destroy does not deactivate (no deactivation API exists; a zone without an active binding fails closed) — it only removes the binding from state, and bound versions/sets cannot be archived while active.
 
 DATA SOURCES:
 
 * `keycard_policy_schema` - New data source for fetching a zone's Cedar policy schema by version or zone default.
 * `keycard_policy` - New data source for looking up a policy by ID or name within a zone.
+* `keycard_policy_set` - New data source for looking up a policy set by ID or name within a zone, including its binding state (active/shadow/latest version).
 
 DEPENDENCIES:
 
