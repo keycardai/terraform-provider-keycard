@@ -28,17 +28,21 @@ var (
 // removes the resource from state and forces a destructive recreate, so
 // production must wait out replica lag. Tests exercising a genuine miss inject a
 // short window.
-func NewPolicySetActivationResource(retryWindow time.Duration) resource.Resource {
-	if retryWindow <= 0 {
-		retryWindow = apiRetryWindow
+func NewPolicySetActivationResource(readRetryWindow time.Duration) resource.Resource {
+	if readRetryWindow <= 0 {
+		readRetryWindow = apiRetryWindow
 	}
-	return &PolicySetActivationResource{retryWindow: retryWindow}
+	return &PolicySetActivationResource{readRetryWindow: readRetryWindow}
 }
 
 // PolicySetActivationResource defines the resource implementation.
 type PolicySetActivationResource struct {
-	client      *client.ClientWithResponses
-	retryWindow time.Duration
+	client *client.ClientWithResponses
+	// readRetryWindow bounds transient-404 retries in Read only. Create always
+	// uses the full apiRetryWindow (async zone provisioning) and Update the short
+	// notFoundRetryWindow (a persistent 404 is a genuine miss); neither is
+	// test-tunable, by design.
+	readRetryWindow time.Duration
 }
 
 // PolicySetActivationResourceModel describes the policy set activation data model.
@@ -152,7 +156,7 @@ func (r *PolicySetActivationResource) Read(ctx context.Context, req resource.Rea
 	// replica lag rather than surfacing a genuine miss quickly.
 	getResp, err := callWithRetry(ctx, func() (*client.GetPolicySetResponse, error) {
 		return r.client.GetPolicySetWithResponse(ctx, data.ZoneID.ValueString(), data.PolicySetID.ValueString())
-	}, retryOnNotFound, withRetryWindow(r.retryWindow))
+	}, retryOnNotFound, withRetryWindow(r.readRetryWindow))
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read policy set activation, got error: %s", err))
 		return
