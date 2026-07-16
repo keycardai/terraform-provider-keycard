@@ -199,9 +199,15 @@ func (r *PolicySetActivationResource) Read(ctx context.Context, req resource.Rea
 		// Update to re-activate the declared version rather than a destructive
 		// recreate. Also covers import, where only zone_id/policy_set_id are known.
 		data.PolicySetVersionID = types.StringValue(activeVersionID.MustGet())
+	} else {
+		// active is true but active_version_id is absent/null (a server quirk):
+		// keep the declared version rather than destructively re-activating. This
+		// masks out-of-band version drift, so surface it.
+		resp.Diagnostics.AddWarning(
+			"API Response Incomplete",
+			"Policy set is active but active_version_id was not returned; cannot verify the active version matches configuration.",
+		)
 	}
-	// active is true but active_version_id is absent/null (a server quirk): keep
-	// the declared version rather than destructively re-activating.
 
 	data.ID = types.StringValue(data.ZoneID.ValueString())
 
