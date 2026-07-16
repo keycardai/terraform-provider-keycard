@@ -194,15 +194,11 @@ func (r *PolicySetActivationResource) Read(ctx context.Context, req resource.Rea
 	}
 
 	if activeVersionID := getResp.JSON200.ActiveVersionId; activeVersionID.IsSpecified() && !activeVersionID.IsNull() {
-		current := activeVersionID.MustGet()
-		if current != data.PolicySetVersionID.ValueString() && !data.PolicySetVersionID.IsNull() {
-			// A different version was activated out-of-band; re-plan re-activates
-			// the declared version.
-			resp.State.RemoveResource(ctx)
-			return
-		}
-		// Covers import, where only zone_id/policy_set_id are known.
-		data.PolicySetVersionID = types.StringValue(current)
+		// Write the live active version into state. If it drifted from the
+		// declared version (activated out-of-band), Terraform plans an in-place
+		// Update to re-activate the declared version rather than a destructive
+		// recreate. Also covers import, where only zone_id/policy_set_id are known.
+		data.PolicySetVersionID = types.StringValue(activeVersionID.MustGet())
 	}
 	// active is true but active_version_id is absent/null (a server quirk): keep
 	// the declared version rather than destructively re-activating.

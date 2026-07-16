@@ -119,6 +119,58 @@ func TestAccPolicySetActivationResource_rollForwardAndBack(t *testing.T) {
 	})
 }
 
+// An out-of-band version change is reconciled with an in-place Update, not a
+// destructive recreate: Read writes the live version into state, so Terraform
+// diffs it against the declared version and plans to re-activate.
+func TestAccPolicySetActivationResource_outOfBandVersionDrift(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+
+	var zoneID, schemaVersion, activationID, policySetID, v2ID string
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheckBasic(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPolicySetActivationConfig(zoneName, rName, 0),
+			},
+			{
+				PreConfig: waitForZoneBootstrap,
+				Config:    testAccPolicySetActivationConfig(zoneName, rName, 1),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrPair("keycard_policy_set_activation.test", "policy_set_version_id", "keycard_policy_set_version.v1", "id"),
+					testAccCaptureResourceAttr("keycard_policy_set_activation.test", "id", &activationID),
+					testAccCaptureResourceAttr("keycard_zone.test", "id", &zoneID),
+					testAccCaptureResourceAttr("keycard_policy_set.test", "id", &policySetID),
+					testAccCaptureResourceAttr("keycard_policy_set_version.v2", "id", &v2ID),
+					testAccCaptureResourceAttr("data.keycard_policy_schema.default", "version", &schemaVersion),
+				),
+			},
+			// Drift to v2 out-of-band; config still declares v1. Refresh writes v2
+			// into state and the plan is an in-place Update back to v1, not a
+			// recreate.
+			{
+				PreConfig: testAccActivateVersionOutOfBand(t, &zoneID, &policySetID, &v2ID),
+				Config:    testAccPolicySetActivationConfig(zoneName, rName, 1),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("keycard_policy_set_activation.test", plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrPair("keycard_policy_set_activation.test", "policy_set_version_id", "keycard_policy_set_version.v1", "id"),
+					resource.TestCheckResourceAttrPtr("keycard_policy_set_activation.test", "id", &activationID),
+				),
+			},
+			{
+				PreConfig: testAccReleaseZoneBinding(t, &zoneID, &schemaVersion),
+				Config:    testAccPolicySetActivationConfig(zoneName, rName, 0),
+			},
+		},
+	})
+}
+
 // Switching policy_set_id is an in-place update, not a replace: the zone's
 // single active slot is keyed by the zone, and the server atomically demotes
 // the previously active version regardless of which set it belonged to.
@@ -201,6 +253,15 @@ func testAccOutOfBandClient(t *testing.T) *client.ClientWithResponses {
 		t.Fatalf("failed to create out-of-band API client: %s", err)
 	}
 	return c
+}
+
+// testAccActivateVersionOutOfBand returns a PreConfig that activates a version
+// directly against the API, simulating drift from the declared version. Pointers
+// are dereferenced at call time so captured attribute values are resolved.
+func testAccActivateVersionOutOfBand(t *testing.T, zoneID, policySetID, versionID *string) func() {
+	return func() {
+		activateOutOfBand(t, testAccOutOfBandClient(t), *zoneID, *policySetID, *versionID)
+	}
 }
 
 func activateOutOfBand(t *testing.T, c *client.ClientWithResponses, zoneID, policySetID, versionID string) {
