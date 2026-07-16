@@ -11,9 +11,9 @@ import (
 )
 
 // Note: the "cannot archive a currently-bound version" 400 path is not covered
-// here because reproducing it requires the not-yet-implemented
-// keycard_policy_set_activation resource to bind the version first. Delete only
-// exercises the unbound (happy) archive path.
+// here; binding is exercised in the keycard_policy_set_activation tests, which
+// release the zone binding before teardown. Delete here only exercises the
+// unbound (happy) archive path.
 
 func TestAccPolicySetVersionResource_basic(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
