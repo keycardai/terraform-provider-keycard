@@ -84,7 +84,7 @@ resource "keycard_policy_set_activation" "app" {
 
 ### Required
 
-- `policy_set_id` (String) The policy set the activated version belongs to. Changing this replaces the activation; the new set takes over the zone's single active slot.
+- `policy_set_id` (String) The policy set the activated version belongs to. Changing it activates the referenced version in place; the new set takes over the zone's single active slot and the server atomically demotes the previously active version.
 - `policy_set_version_id` (String) The policy set version to activate. Changing it activates the new version in place; the server atomically demotes the old one. Rolling back to an older version is supported. Cannot reference a shadow-bound version.
 - `zone_id` (String) The zone whose active policy set binding this manages. Changing this creates a new activation.
 

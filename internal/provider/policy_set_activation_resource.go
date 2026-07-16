@@ -80,11 +80,8 @@ func (r *PolicySetActivationResource) Schema(ctx context.Context, req resource.S
 				},
 			},
 			"policy_set_id": schema.StringAttribute{
-				MarkdownDescription: "The policy set the activated version belongs to. Changing this replaces the activation; the new set takes over the zone's single active slot.",
+				MarkdownDescription: "The policy set the activated version belongs to. Changing it activates the referenced version in place; the new set takes over the zone's single active slot and the server atomically demotes the previously active version.",
 				Required:            true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 				},

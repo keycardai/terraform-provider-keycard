@@ -119,6 +119,55 @@ func TestAccPolicySetActivationResource_rollForwardAndBack(t *testing.T) {
 	})
 }
 
+// Switching policy_set_id is an in-place update, not a replace: the zone's
+// single active slot is keyed by the zone, and the server atomically demotes
+// the previously active version regardless of which set it belonged to.
+func TestAccPolicySetActivationResource_switchPolicySet(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+
+	var zoneID, schemaVersion, activationID string
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheckBasic(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPolicySetActivationConfig(zoneName, rName, 0),
+			},
+			{
+				PreConfig: waitForZoneBootstrap,
+				Config:    testAccPolicySetActivationConfig(zoneName, rName, 1),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrPair("keycard_policy_set_activation.test", "policy_set_id", "keycard_policy_set.test", "id"),
+					testAccCaptureResourceAttr("keycard_policy_set_activation.test", "id", &activationID),
+					testAccCaptureResourceAttr("keycard_zone.test", "id", &zoneID),
+					testAccCaptureResourceAttr("data.keycard_policy_schema.default", "version", &schemaVersion),
+				),
+			},
+			// Point at a different policy set: expect Update, not Replace, and a
+			// stable identity.
+			{
+				Config: testAccPolicySetActivationOtherSetConfig(zoneName, rName),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("keycard_policy_set_activation.test", plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrPair("keycard_policy_set_activation.test", "policy_set_id", "keycard_policy_set.other", "id"),
+					resource.TestCheckResourceAttrPair("keycard_policy_set_activation.test", "policy_set_version_id", "keycard_policy_set_version.other", "id"),
+					resource.TestCheckResourceAttrPtr("keycard_policy_set_activation.test", "id", &activationID),
+				),
+			},
+			{
+				PreConfig: testAccReleaseZoneBinding(t, &zoneID, &schemaVersion),
+				Config:    testAccPolicySetActivationConfig(zoneName, rName, 0),
+			},
+		},
+	})
+}
+
 // Helper to generate the import ID in format zone_id/policy_set_id.
 func testAccPolicySetActivationImportStateIdFunc(resourceName string) resource.ImportStateIdFunc {
 	return func(s *terraform.State) (string, error) {
@@ -255,6 +304,23 @@ resource "keycard_policy_set_activation" "test" {
 `, activeVersion)
 	}
 
+	return testAccPolicySetActivationBaseConfig(zoneName, name) + activation
+}
+
+// testAccPolicySetActivationOtherSetConfig activates a version of the second
+// policy set (keycard_policy_set.other) instead of the primary one, exercising
+// an in-place policy_set_id change.
+func testAccPolicySetActivationOtherSetConfig(zoneName, name string) string {
+	return testAccPolicySetActivationBaseConfig(zoneName, name) + `
+resource "keycard_policy_set_activation" "test" {
+  zone_id               = keycard_zone.test.id
+  policy_set_id         = keycard_policy_set.other.id
+  policy_set_version_id = keycard_policy_set_version.other.id
+}
+`
+}
+
+func testAccPolicySetActivationBaseConfig(zoneName, name string) string {
 	return fmt.Sprintf(`
 resource "keycard_zone" "test" {
   name = %[1]q
@@ -335,5 +401,29 @@ resource "keycard_policy_set_version" "v2" {
     create_before_destroy = true
   }
 }
-%[3]s`, zoneName, name, activation)
+
+resource "keycard_policy_set" "other" {
+  name    = "%[2]s-other"
+  zone_id = keycard_zone.test.id
+}
+
+resource "keycard_policy_set_version" "other" {
+  zone_id        = keycard_zone.test.id
+  policy_set_id  = keycard_policy_set.other.id
+  schema_version = data.keycard_policy_schema.default.version
+
+  manifest = [
+    {
+      policy_id         = keycard_policy.test.id
+      policy_version_id = keycard_policy_version.v1.id
+    }
+  ]
+
+  depends_on = [keycard_policy_set_version.v2]
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+`, zoneName, name)
 }
