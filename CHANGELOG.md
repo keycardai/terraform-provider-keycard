@@ -7,6 +7,8 @@ FEATURES:
 * **Declarative Policy Authoring**: New `keycard_policy_version` resource publishes immutable Cedar policy content into a `keycard_policy`. Combined with the schema data source and `keycard_policy`, Cedar policies can now be authored end-to-end from Terraform, with a new immutable version created on every content change.
 * **Policy Sets**: New `keycard_policy_set` resource and data source manage named compositions of policies, and the `keycard_policy_set_version` resource publishes immutable manifest snapshots pinning specific policy versions to a schema version.
 * **Policy Set Activation**: New `keycard_policy_set_activation` resource binds a policy set version as the zone's active policy set, completing GitOps-style policy deployment: author Cedar, compose a set, and promote an immutable version to active — with rollback by re-pointing at a prior version.
+* **Policy Version Lookup**: New `keycard_policy_version` and `keycard_policy_set_version` data sources read immutable versions by ID — including a set version's manifest — with archived versions surfaced via `archived_at`/`archived_by` rather than erroring.
+* **Policy Listing**: New `keycard_policies`, `keycard_policy_sets`, and `keycard_policy_schemas` data sources enumerate a zone's policies, policy sets (with binding status), and Cedar schema versions, with optional server-side filters.
 
 NOTES:
 
@@ -25,6 +27,14 @@ DATA SOURCES:
 * `keycard_policy_schema` - New data source for fetching a zone's Cedar policy schema by version or zone default.
 * `keycard_policy` - New data source for looking up a policy by ID or name within a zone.
 * `keycard_policy_set` - New data source for looking up a policy set by ID or name within a zone, including its binding state (active/shadow/latest version).
+* `keycard_policy_version` - New data source for reading an immutable policy version by ID, including the server-normalized Cedar content. Archived versions read successfully with `archived_at`/`archived_by` populated.
+* `keycard_policy_set_version` - New data source for reading an immutable policy set version by ID, including its manifest of `{policy_id, policy_version_id, sha}` entries. Archived versions read successfully with `archived_at`/`archived_by` populated.
+* `keycard_policies` - New data source listing a zone's policies, with an optional server-side substring `name` filter.
+* `keycard_policy_sets` - New data source listing a zone's policy sets with their binding status, with an optional server-side substring `name` filter.
+* `keycard_policy_schemas` - New data source listing a zone's Cedar policy schema versions, with an optional `is_default` filter.
+* `keycard_policy` (resource and data source) - Now exposes `created_at`, `updated_at`, `updated_by`, `latest_version` (numeric), and `latest_schema_version`.
+* `keycard_policy_set` (resource and data source) - Now exposes `updated_by`.
+* `keycard_policy_version` / `keycard_policy_set_version` (resources) - Now expose `archived_at`/`archived_by` (always null while managed; populated via the corresponding data sources).
 
 DEPENDENCIES:
 
