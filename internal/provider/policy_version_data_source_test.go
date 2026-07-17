@@ -94,8 +94,11 @@ func TestAccPolicyVersionDataSource_notFound(t *testing.T) {
 		PreCheck:                 func() { testAccPreCheckBasic(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactoriesShortRetry,
 		Steps: []resource.TestStep{
+			// Zone-only first step: creating other resources here risks a
+			// non-empty refresh plan when the short-retry provider reads them
+			// while the zone is still bootstrapping.
 			{
-				Config: testAccPolicyResourceConfig_basic(zoneName, rName),
+				Config: testAccZoneOnlyConfig(zoneName),
 			},
 			{
 				PreConfig:   waitForZoneBootstrap,
