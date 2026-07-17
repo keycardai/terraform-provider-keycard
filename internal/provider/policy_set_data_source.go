@@ -79,6 +79,10 @@ func (d *PolicySetDataSource) Schema(ctx context.Context, req datasource.SchemaR
 				MarkdownDescription: "Timestamp when the policy set was last updated (RFC 3339).",
 				Computed:            true,
 			},
+			"updated_by": schema.StringAttribute{
+				MarkdownDescription: "Identifier of the actor that last updated the policy set. Null when never updated.",
+				Computed:            true,
+			},
 			"latest_version_id": schema.StringAttribute{
 				MarkdownDescription: "Identifier of the policy set's latest version. May be empty when the policy set has no versions.",
 				Computed:            true,

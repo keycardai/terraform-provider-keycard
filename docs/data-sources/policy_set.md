@@ -59,3 +59,4 @@ output "policy_set_active_version" {
 - `target_id` (String) Target entity ID of the active binding. Null when unbound.
 - `target_type` (String) What this policy set targets: `zone` or `user`.
 - `updated_at` (String) Timestamp when the policy set was last updated (RFC 3339).
+- `updated_by` (String) Identifier of the actor that last updated the policy set. Null when never updated.

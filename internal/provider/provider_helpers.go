@@ -105,6 +105,17 @@ func nullableStringValue(val nullable.Nullable[string]) basetypes.StringValue {
 	return types.StringValue(str)
 }
 
+// nullableTimeValue formats a nullable timestamp as an RFC 3339 Terraform
+// string, returning null when the value is absent or null.
+func nullableTimeValue(val nullable.Nullable[time.Time]) basetypes.StringValue {
+	t, err := val.Get()
+	if err != nil {
+		return types.StringNull()
+	}
+
+	return types.StringValue(t.Format(time.RFC3339))
+}
+
 func stringValueNullable(val basetypes.StringValue) nullable.Nullable[string] {
 	switch {
 	case val.IsNull():
@@ -157,7 +168,12 @@ func updatePolicyModelFromAPIResponse(apiPolicy *client.Policy, data *PolicyMode
 	data.Description = nullableStringValue(apiPolicy.Description)
 	data.OwnerType = types.StringValue(string(apiPolicy.OwnerType))
 	data.CreatedBy = types.StringValue(apiPolicy.CreatedBy)
+	data.CreatedAt = types.StringValue(apiPolicy.CreatedAt.Format(time.RFC3339))
+	data.UpdatedAt = types.StringValue(apiPolicy.UpdatedAt.Format(time.RFC3339))
+	data.UpdatedBy = nullableStringValue(apiPolicy.UpdatedBy)
 	data.LatestVersionID = nullableStringValue(apiPolicy.LatestVersionId)
+	data.LatestVersion = nullableInt64Value(apiPolicy.LatestVersion)
+	data.LatestSchemaVersion = nullableStringValue(apiPolicy.LatestSchemaVersion)
 }
 
 // updatePolicySetModelFromAPIResponse maps a PolicySetWithBinding API response
@@ -172,6 +188,7 @@ func updatePolicySetModelFromAPIResponse(aps *client.PolicySetWithBinding, data 
 	data.CreatedBy = types.StringValue(aps.CreatedBy)
 	data.CreatedAt = types.StringValue(aps.CreatedAt.Format(time.RFC3339))
 	data.UpdatedAt = types.StringValue(aps.UpdatedAt.Format(time.RFC3339))
+	data.UpdatedBy = nullableStringValue(aps.UpdatedBy)
 	data.LatestVersionID = nullableStringValue(aps.LatestVersionId)
 	data.LatestVersion = nullableInt64Value(aps.LatestVersion)
 	data.Active = types.BoolValue(aps.Active)

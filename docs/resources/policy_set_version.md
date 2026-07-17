@@ -82,6 +82,8 @@ resource "keycard_policy_set_version" "app" {
 ### Read-Only
 
 - `active` (Boolean) Whether this version is currently bound as the active policy set. Managed by `keycard_policy_set_activation`, not this resource.
+- `archived_at` (String) Timestamp when the version was archived (RFC 3339). Always null while the version is managed by Terraform: an out-of-band archive removes the resource from state.
+- `archived_by` (String) Identifier of the actor that archived the version. Null unless archived.
 - `created_at` (String) Timestamp when the version was created (RFC 3339).
 - `created_by` (String) Identifier of the actor that created the version.
 - `id` (String) Unique identifier of the policy set version.

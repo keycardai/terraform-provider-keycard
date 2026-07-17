@@ -42,13 +42,18 @@ type PolicyResource struct {
 
 // PolicyModel describes the policy data model, shared by the resource and data source.
 type PolicyModel struct {
-	ID              types.String `tfsdk:"id"`
-	ZoneID          types.String `tfsdk:"zone_id"`
-	Name            types.String `tfsdk:"name"`
-	Description     types.String `tfsdk:"description"`
-	OwnerType       types.String `tfsdk:"owner_type"`
-	CreatedBy       types.String `tfsdk:"created_by"`
-	LatestVersionID types.String `tfsdk:"latest_version_id"`
+	ID                  types.String `tfsdk:"id"`
+	ZoneID              types.String `tfsdk:"zone_id"`
+	Name                types.String `tfsdk:"name"`
+	Description         types.String `tfsdk:"description"`
+	OwnerType           types.String `tfsdk:"owner_type"`
+	CreatedBy           types.String `tfsdk:"created_by"`
+	CreatedAt           types.String `tfsdk:"created_at"`
+	UpdatedAt           types.String `tfsdk:"updated_at"`
+	UpdatedBy           types.String `tfsdk:"updated_by"`
+	LatestVersionID     types.String `tfsdk:"latest_version_id"`
+	LatestVersion       types.Int64  `tfsdk:"latest_version"`
+	LatestSchemaVersion types.String `tfsdk:"latest_schema_version"`
 }
 
 func (r *PolicyResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -102,9 +107,33 @@ func (r *PolicyResource) Schema(ctx context.Context, req resource.SchemaRequest,
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			// No UseStateForUnknown: this changes server-side whenever a version is published.
+			"created_at": schema.StringAttribute{
+				MarkdownDescription: "Timestamp when the policy was created (RFC 3339).",
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			// No UseStateForUnknown on updated_at/updated_by or the version
+			// attributes below: they change on every update or server-side.
+			"updated_at": schema.StringAttribute{
+				MarkdownDescription: "Timestamp when the policy was last updated (RFC 3339).",
+				Computed:            true,
+			},
+			"updated_by": schema.StringAttribute{
+				MarkdownDescription: "Identifier of the actor that last updated the policy. Null when never updated.",
+				Computed:            true,
+			},
 			"latest_version_id": schema.StringAttribute{
 				MarkdownDescription: "Identifier of the policy's latest version. Null when the policy has no published versions.",
+				Computed:            true,
+			},
+			"latest_version": schema.Int64Attribute{
+				MarkdownDescription: "Human-readable version number of the latest version. Null when the policy has no published versions.",
+				Computed:            true,
+			},
+			"latest_schema_version": schema.StringAttribute{
+				MarkdownDescription: "Schema version the latest version was validated against. Null when the policy has no published versions.",
 				Computed:            true,
 			},
 		},

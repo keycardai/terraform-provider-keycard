@@ -34,6 +34,8 @@ func TestAccPolicyVersionResource_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet("keycard_policy_version.test", "owner_type"),
 					resource.TestCheckResourceAttrSet("keycard_policy_version.test", "schema_version"),
 					resource.TestCheckResourceAttrPair("keycard_policy_version.test", "policy_id", "keycard_policy.test", "id"),
+					resource.TestCheckNoResourceAttr("keycard_policy_version.test", "archived_at"),
+					resource.TestCheckNoResourceAttr("keycard_policy_version.test", "archived_by"),
 				),
 			},
 			// Import. Server-normalized cedar may differ from the configured

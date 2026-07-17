@@ -53,6 +53,7 @@ type PolicySetModel struct {
 	CreatedBy       types.String `tfsdk:"created_by"`
 	CreatedAt       types.String `tfsdk:"created_at"`
 	UpdatedAt       types.String `tfsdk:"updated_at"`
+	UpdatedBy       types.String `tfsdk:"updated_by"`
 	LatestVersionID types.String `tfsdk:"latest_version_id"`
 	LatestVersion   types.Int64  `tfsdk:"latest_version"`
 	Active          types.Bool   `tfsdk:"active"`
@@ -135,6 +136,10 @@ func (r *PolicySetResource) Schema(ctx context.Context, req resource.SchemaReque
 			},
 			"updated_at": schema.StringAttribute{
 				MarkdownDescription: "Timestamp when the policy set was last updated (RFC 3339).",
+				Computed:            true,
+			},
+			"updated_by": schema.StringAttribute{
+				MarkdownDescription: "Identifier of the actor that last updated the policy set. Null when never updated.",
 				Computed:            true,
 			},
 			"latest_version_id": schema.StringAttribute{
