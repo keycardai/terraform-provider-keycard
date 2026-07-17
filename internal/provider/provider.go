@@ -204,6 +204,9 @@ func (p *KeycardProvider) DataSources(ctx context.Context) []func() datasource.D
 		func() datasource.DataSource {
 			return NewPolicySetVersionDataSource(p.retryWindowOverride)
 		},
+		NewPoliciesDataSource,
+		NewPolicySetsDataSource,
+		NewPolicySchemasDataSource,
 	}
 }
 

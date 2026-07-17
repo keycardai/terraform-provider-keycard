@@ -159,6 +159,28 @@ func nullableInt64Value(val nullable.Nullable[int]) basetypes.Int64Value {
 	return types.Int64Value(int64(n))
 }
 
+// listAllPages walks a cursor-paginated PDP list endpoint to exhaustion and
+// returns every item. fetch performs one page request for the given cursor and
+// returns the page's items plus the pagination metadata carrying the next
+// cursor; a null or empty after_cursor means no next page.
+func listAllPages[T any](fetch func(after *string) ([]T, nullable.Nullable[string], error)) ([]T, error) {
+	var items []T
+	var after *string
+	for {
+		pageItems, afterCursor, err := fetch(after)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, pageItems...)
+
+		cursor := nullableStringValue(afterCursor)
+		if cursor.IsNull() || cursor.ValueString() == "" {
+			return items, nil
+		}
+		after = cursor.ValueStringPointer()
+	}
+}
+
 // updatePolicyModelFromAPIResponse maps a Policy API response to the PolicyModel.
 // This is a shared helper function used by both the resource and data source.
 func updatePolicyModelFromAPIResponse(apiPolicy *client.Policy, data *PolicyModel) {
