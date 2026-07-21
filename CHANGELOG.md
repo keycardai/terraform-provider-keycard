@@ -1,4 +1,6 @@
-## Unreleased
+## 0.7.0
+
+This release adds end-to-end declarative Cedar policy management: author policies, compose them into sets, publish immutable versions, and promote an active set per zone — with data sources for lookup and listing at every level.
 
 FEATURES:
 
