@@ -83,7 +83,7 @@ func (d *PolicySetsDataSource) Metadata(ctx context.Context, req datasource.Meta
 
 func (d *PolicySetsDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Lists the policy sets in a zone with their current binding status, optionally filtered by name. Archived policy sets are excluded.",
+		MarkdownDescription: "Lists the policy sets in a zone with their current binding status, optionally filtered by name. Archived policy sets are excluded. `etag` is not available in list results; use the singular `keycard_policy_set` data source when you need it for optimistic concurrency.",
 
 		Attributes: map[string]schema.Attribute{
 			"zone_id": schema.StringAttribute{

@@ -3,12 +3,12 @@
 page_title: "keycard_policy_sets Data Source - keycard"
 subcategory: ""
 description: |-
-  Lists the policy sets in a zone with their current binding status, optionally filtered by name. Archived policy sets are excluded.
+  Lists the policy sets in a zone with their current binding status, optionally filtered by name. Archived policy sets are excluded. etag is not available in list results; use the singular keycard_policy_set data source when you need it for optimistic concurrency.
 ---
 
 # keycard_policy_sets (Data Source)
 
-Lists the policy sets in a zone with their current binding status, optionally filtered by name. Archived policy sets are excluded.
+Lists the policy sets in a zone with their current binding status, optionally filtered by name. Archived policy sets are excluded. `etag` is not available in list results; use the singular `keycard_policy_set` data source when you need it for optimistic concurrency.
 
 ## Example Usage
 
