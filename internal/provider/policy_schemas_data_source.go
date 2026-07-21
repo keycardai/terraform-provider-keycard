@@ -63,7 +63,7 @@ func (d *PolicySchemasDataSource) Metadata(ctx context.Context, req datasource.M
 
 func (d *PolicySchemasDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Lists the Cedar policy schema versions available in a zone. Policy schemas define the entity model (users, applications, resources) that Cedar policies are validated against; they are managed by the Keycard platform.",
+		MarkdownDescription: "Lists the Cedar policy schema versions available in a zone. Policy schemas define the entity model (users, applications, resources) that Cedar policies are validated against; they are managed by the Keycard platform. Unlike `keycard_policies` and `keycard_policy_sets`, archived schema versions are included; filter client-side on `status != \"archived\"` if you want only active ones.",
 
 		Attributes: map[string]schema.Attribute{
 			"zone_id": schema.StringAttribute{

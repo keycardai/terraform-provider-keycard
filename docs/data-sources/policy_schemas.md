@@ -3,12 +3,12 @@
 page_title: "keycard_policy_schemas Data Source - keycard"
 subcategory: ""
 description: |-
-  Lists the Cedar policy schema versions available in a zone. Policy schemas define the entity model (users, applications, resources) that Cedar policies are validated against; they are managed by the Keycard platform.
+  Lists the Cedar policy schema versions available in a zone. Policy schemas define the entity model (users, applications, resources) that Cedar policies are validated against; they are managed by the Keycard platform. Unlike keycard_policies and keycard_policy_sets, archived schema versions are included; filter client-side on status != "archived" if you want only active ones.
 ---
 
 # keycard_policy_schemas (Data Source)
 
-Lists the Cedar policy schema versions available in a zone. Policy schemas define the entity model (users, applications, resources) that Cedar policies are validated against; they are managed by the Keycard platform.
+Lists the Cedar policy schema versions available in a zone. Policy schemas define the entity model (users, applications, resources) that Cedar policies are validated against; they are managed by the Keycard platform. Unlike `keycard_policies` and `keycard_policy_sets`, archived schema versions are included; filter client-side on `status != "archived"` if you want only active ones.
 
 ## Example Usage
 
