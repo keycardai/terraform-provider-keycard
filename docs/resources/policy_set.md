@@ -51,6 +51,7 @@ resource "keycard_policy_set" "zone_default" {
 - `shadow_version_id` (String) Identifier of the shadow (observed) version, if any.
 - `target_id` (String) Target entity ID of the active binding. Equals `zone_id` for zone-targeted sets; the principal identifier for user-targeted sets. Null when unbound.
 - `updated_at` (String) Timestamp when the policy set was last updated (RFC 3339).
+- `updated_by` (String) Identifier of the actor that last updated the policy set. Null when never updated.
 
 ## Import
 

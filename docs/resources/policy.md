@@ -36,10 +36,15 @@ resource "keycard_policy" "admin_access" {
 
 ### Read-Only
 
+- `created_at` (String) Timestamp when the policy was created (RFC 3339).
 - `created_by` (String) Identifier of the actor that created the policy.
 - `id` (String) Unique identifier of the policy.
+- `latest_schema_version` (String) Schema version the latest version was validated against. Null when the policy has no published versions.
+- `latest_version` (Number) Human-readable version number of the latest version. Null when the policy has no published versions.
 - `latest_version_id` (String) Identifier of the policy's latest version. Null when the policy has no published versions.
 - `owner_type` (String) Who manages this policy: `platform` (managed by Keycard) or `customer` (managed by the tenant).
+- `updated_at` (String) Timestamp when the policy was last updated (RFC 3339).
+- `updated_by` (String) Identifier of the actor that last updated the policy. Null when never updated.
 
 ## Import
 

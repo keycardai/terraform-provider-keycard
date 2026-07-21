@@ -66,8 +66,28 @@ func (d *PolicyDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
 				MarkdownDescription: "Identifier of the actor that created the policy.",
 				Computed:            true,
 			},
+			"created_at": schema.StringAttribute{
+				MarkdownDescription: "Timestamp when the policy was created (RFC 3339).",
+				Computed:            true,
+			},
+			"updated_at": schema.StringAttribute{
+				MarkdownDescription: "Timestamp when the policy was last updated (RFC 3339).",
+				Computed:            true,
+			},
+			"updated_by": schema.StringAttribute{
+				MarkdownDescription: "Identifier of the actor that last updated the policy. Null when never updated.",
+				Computed:            true,
+			},
 			"latest_version_id": schema.StringAttribute{
 				MarkdownDescription: "Identifier of the policy's latest version. May be empty when the policy has no published versions.",
+				Computed:            true,
+			},
+			"latest_version": schema.Int64Attribute{
+				MarkdownDescription: "Human-readable version number of the latest version. Null when the policy has no published versions.",
+				Computed:            true,
+			},
+			"latest_schema_version": schema.StringAttribute{
+				MarkdownDescription: "Schema version the latest version was validated against. Null when the policy has no published versions.",
 				Computed:            true,
 			},
 		},

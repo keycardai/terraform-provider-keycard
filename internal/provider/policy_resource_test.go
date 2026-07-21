@@ -27,6 +27,8 @@ func TestAccPolicyResource_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet("keycard_policy.test", "zone_id"),
 					resource.TestCheckResourceAttrSet("keycard_policy.test", "owner_type"),
 					resource.TestCheckResourceAttrSet("keycard_policy.test", "created_by"),
+					resource.TestCheckResourceAttrSet("keycard_policy.test", "created_at"),
+					resource.TestCheckResourceAttrSet("keycard_policy.test", "updated_at"),
 				),
 			},
 			// ImportState testing

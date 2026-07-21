@@ -105,6 +105,17 @@ func nullableStringValue(val nullable.Nullable[string]) basetypes.StringValue {
 	return types.StringValue(str)
 }
 
+// nullableTimeValue formats a nullable timestamp as an RFC 3339 Terraform
+// string, returning null when the value is absent or null.
+func nullableTimeValue(val nullable.Nullable[time.Time]) basetypes.StringValue {
+	t, err := val.Get()
+	if err != nil {
+		return types.StringNull()
+	}
+
+	return types.StringValue(t.Format(time.RFC3339))
+}
+
 func stringValueNullable(val basetypes.StringValue) nullable.Nullable[string] {
 	switch {
 	case val.IsNull():
@@ -148,6 +159,33 @@ func nullableInt64Value(val nullable.Nullable[int]) basetypes.Int64Value {
 	return types.Int64Value(int64(n))
 }
 
+// listAllPages walks a cursor-paginated PDP list endpoint to exhaustion and
+// returns every item. fetch performs one page request for the given cursor and
+// returns the page's items plus the pagination metadata carrying the next
+// cursor; a null or empty after_cursor means no next page.
+const maxListPages = 1000
+
+func listAllPages[T any](fetch func(after *string) ([]T, nullable.Nullable[string], error)) ([]T, error) {
+	var items []T
+	var after *string
+	for page := 0; ; page++ {
+		if page >= maxListPages {
+			return nil, fmt.Errorf("pagination exceeded %d pages without an empty after_cursor; aborting to avoid an infinite loop", maxListPages)
+		}
+		pageItems, afterCursor, err := fetch(after)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, pageItems...)
+
+		cursor := nullableStringValue(afterCursor)
+		if cursor.IsNull() || cursor.ValueString() == "" {
+			return items, nil
+		}
+		after = cursor.ValueStringPointer()
+	}
+}
+
 // updatePolicyModelFromAPIResponse maps a Policy API response to the PolicyModel.
 // This is a shared helper function used by both the resource and data source.
 func updatePolicyModelFromAPIResponse(apiPolicy *client.Policy, data *PolicyModel) {
@@ -157,7 +195,12 @@ func updatePolicyModelFromAPIResponse(apiPolicy *client.Policy, data *PolicyMode
 	data.Description = nullableStringValue(apiPolicy.Description)
 	data.OwnerType = types.StringValue(string(apiPolicy.OwnerType))
 	data.CreatedBy = types.StringValue(apiPolicy.CreatedBy)
+	data.CreatedAt = types.StringValue(apiPolicy.CreatedAt.Format(time.RFC3339))
+	data.UpdatedAt = types.StringValue(apiPolicy.UpdatedAt.Format(time.RFC3339))
+	data.UpdatedBy = nullableStringValue(apiPolicy.UpdatedBy)
 	data.LatestVersionID = nullableStringValue(apiPolicy.LatestVersionId)
+	data.LatestVersion = nullableInt64Value(apiPolicy.LatestVersion)
+	data.LatestSchemaVersion = nullableStringValue(apiPolicy.LatestSchemaVersion)
 }
 
 // updatePolicySetModelFromAPIResponse maps a PolicySetWithBinding API response
@@ -172,6 +215,7 @@ func updatePolicySetModelFromAPIResponse(aps *client.PolicySetWithBinding, data 
 	data.CreatedBy = types.StringValue(aps.CreatedBy)
 	data.CreatedAt = types.StringValue(aps.CreatedAt.Format(time.RFC3339))
 	data.UpdatedAt = types.StringValue(aps.UpdatedAt.Format(time.RFC3339))
+	data.UpdatedBy = nullableStringValue(aps.UpdatedBy)
 	data.LatestVersionID = nullableStringValue(aps.LatestVersionId)
 	data.LatestVersion = nullableInt64Value(aps.LatestVersion)
 	data.Active = types.BoolValue(aps.Active)

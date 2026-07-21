@@ -25,6 +25,8 @@ func TestAccPolicyDataSource_byID(t *testing.T) {
 					resource.TestCheckResourceAttrPair("data.keycard_policy.test", "description", "keycard_policy.test", "description"),
 					resource.TestCheckResourceAttr("data.keycard_policy.test", "name", rName),
 					resource.TestCheckResourceAttrSet("data.keycard_policy.test", "owner_type"),
+					resource.TestCheckResourceAttrSet("data.keycard_policy.test", "created_at"),
+					resource.TestCheckResourceAttrSet("data.keycard_policy.test", "updated_at"),
 				),
 			},
 		},

@@ -26,7 +26,7 @@ func TestAccPolicySchemaDataSource_default(t *testing.T) {
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccPolicySchemaDataSourceConfig_zoneOnly(rName),
+				Config: testAccZoneOnlyConfig(rName),
 			},
 			// Fetch the zone's default schema without specifying a version
 			{
@@ -51,7 +51,7 @@ func TestAccPolicySchemaDataSource_byVersion(t *testing.T) {
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccPolicySchemaDataSourceConfig_zoneOnly(rName),
+				Config: testAccZoneOnlyConfig(rName),
 			},
 			// Look up the default schema, then fetch the same schema by version
 			{
@@ -81,7 +81,7 @@ func TestAccPolicySchemaDataSource_versionNotFound(t *testing.T) {
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactoriesShortRetry,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccPolicySchemaDataSourceConfig_zoneOnly(rName),
+				Config: testAccZoneOnlyConfig(rName),
 			},
 			// Attempt to fetch a schema version that doesn't exist
 			{
@@ -93,7 +93,7 @@ func TestAccPolicySchemaDataSource_versionNotFound(t *testing.T) {
 	})
 }
 
-func testAccPolicySchemaDataSourceConfig_zoneOnly(name string) string {
+func testAccZoneOnlyConfig(name string) string {
 	return fmt.Sprintf(`
 resource "keycard_zone" "test" {
   name = %[1]q

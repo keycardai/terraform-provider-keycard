@@ -58,6 +58,8 @@ type PolicySetVersionResourceModel struct {
 	CreatedAt     types.String `tfsdk:"created_at"`
 	CreatedBy     types.String `tfsdk:"created_by"`
 	OwnerType     types.String `tfsdk:"owner_type"`
+	ArchivedAt    types.String `tfsdk:"archived_at"`
+	ArchivedBy    types.String `tfsdk:"archived_by"`
 }
 
 // policySetVersionManifestEntryModel describes one manifest entry.
@@ -163,6 +165,14 @@ func (r *PolicySetVersionResource) Schema(ctx context.Context, req resource.Sche
 			},
 			"owner_type": schema.StringAttribute{
 				MarkdownDescription: "Who manages this policy set version: `platform` (managed by Keycard) or `customer` (managed by the tenant).",
+				Computed:            true,
+			},
+			"archived_at": schema.StringAttribute{
+				MarkdownDescription: "Timestamp when the version was archived (RFC 3339). Always null while the version is managed by Terraform: an out-of-band archive removes the resource from state.",
+				Computed:            true,
+			},
+			"archived_by": schema.StringAttribute{
+				MarkdownDescription: "Identifier of the actor that archived the version. Null unless archived.",
 				Computed:            true,
 			},
 		},
@@ -388,6 +398,8 @@ func updatePolicySetVersionComputedFromAPIResponse(ctx context.Context, apiVersi
 	data.CreatedAt = types.StringValue(apiVersion.CreatedAt.Format(time.RFC3339))
 	data.CreatedBy = types.StringValue(apiVersion.CreatedBy)
 	data.OwnerType = types.StringValue(string(apiVersion.OwnerType))
+	data.ArchivedAt = nullableTimeValue(apiVersion.ArchivedAt)
+	data.ArchivedBy = nullableStringValue(apiVersion.ArchivedBy)
 
 	// nil means the API omitted the field, not "inactive" — surface unknown as
 	// null rather than fabricating false.
