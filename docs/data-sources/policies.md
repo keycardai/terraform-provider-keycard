@@ -24,6 +24,14 @@ data "keycard_policies" "admin" {
   name    = "admin"
 }
 
+# Exact-match filter (client-side): the name filter is a substring match, so
+# "admin" also matches "admin-eu" and "administrator"
+locals {
+  admin_policy = one([
+    for p in data.keycard_policies.admin.policies : p if p.name == "admin"
+  ])
+}
+
 output "policy_names" {
   value = data.keycard_policies.all.policies[*].name
 }
