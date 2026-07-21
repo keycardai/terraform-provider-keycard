@@ -18,8 +18,10 @@ func TestAccPoliciesDataSource_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testAccPoliciesDataSourceConfig(zoneName, rName),
-				// No exact count: zones are pre-provisioned with platform-managed
-				// policies, so only the presence of the created ones is stable.
+				// No exact count or indexed access: zones are pre-provisioned with
+				// platform-managed policies, so the positions of the created ones in
+				// the list are not stable. The Set-style matcher is used on this
+				// ListNestedAttribute deliberately for order-independent presence checks.
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckTypeSetElemNestedAttrs("data.keycard_policies.test", "policies.*", map[string]string{
 						"name":        rName + "-a",
