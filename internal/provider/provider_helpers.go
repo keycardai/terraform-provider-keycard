@@ -163,10 +163,15 @@ func nullableInt64Value(val nullable.Nullable[int]) basetypes.Int64Value {
 // returns every item. fetch performs one page request for the given cursor and
 // returns the page's items plus the pagination metadata carrying the next
 // cursor; a null or empty after_cursor means no next page.
+const maxListPages = 1000
+
 func listAllPages[T any](fetch func(after *string) ([]T, nullable.Nullable[string], error)) ([]T, error) {
 	var items []T
 	var after *string
-	for {
+	for page := 0; ; page++ {
+		if page >= maxListPages {
+			return nil, fmt.Errorf("pagination exceeded %d pages without an empty after_cursor; aborting to avoid an infinite loop", maxListPages)
+		}
 		pageItems, afterCursor, err := fetch(after)
 		if err != nil {
 			return nil, err

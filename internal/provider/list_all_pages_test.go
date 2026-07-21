@@ -63,6 +63,20 @@ func TestListAllPages_absentCursorStops(t *testing.T) {
 	}
 }
 
+func TestListAllPages_nonAdvancingCursorAborts(t *testing.T) {
+	calls := 0
+	_, err := listAllPages(func(after *string) ([]string, nullable.Nullable[string], error) {
+		calls++
+		return []string{"x"}, nullable.NewNullableWithValue("stuck"), nil
+	})
+	if err == nil {
+		t.Fatal("expected an error for a cursor that never terminates")
+	}
+	if calls != maxListPages {
+		t.Fatalf("expected %d page requests before aborting, got %d", maxListPages, calls)
+	}
+}
+
 func TestListAllPages_propagatesError(t *testing.T) {
 	_, err := listAllPages(func(after *string) ([]string, nullable.Nullable[string], error) {
 		return nil, nullable.Nullable[string]{}, fmt.Errorf("boom")
