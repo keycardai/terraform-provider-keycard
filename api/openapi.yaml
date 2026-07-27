@@ -46,6 +46,24 @@ paths:
                 required:
                   - items
                   - page_info
+  /organizations/{organization_id}:
+    get:
+      operationId: getOrganization
+      description: Returns a single organization by ID or label
+      parameters:
+        - name: organization_id
+          in: path
+          required: true
+          description: Organization ID or label
+          schema:
+            $ref: '#/components/schemas/OrganizationIdOrLabel'
+      responses:
+        '200':
+          description: The requested organization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
   /organizations/{organization_id}/aws/key-policy:
     get:
       operationId: getOrganizationKMSKeyPolicy
@@ -3580,6 +3598,12 @@ components:
           type: string
         label:
           description: A domain name segment for the Organization
+          type: string
+        sso_enabled:
+          description: Whether SSO is enabled for the Organization
+          type: boolean
+        zone_id:
+          description: Unique identifier of the builtin zone for the Organization
           type: string
         created_at:
           description: The time the Organization was created in UTC
