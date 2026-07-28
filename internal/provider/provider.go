@@ -182,6 +182,7 @@ func (p *KeycardProvider) DataSources(ctx context.Context) []func() datasource.D
 	return []func() datasource.DataSource{
 
 		NewSSOLoginURLDataSource,
+		NewOrganizationDataSource,
 		NewZoneDataSource,
 		NewProviderDataSource,
 		NewZoneUserIdentityConfigDataSource,
