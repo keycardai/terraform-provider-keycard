@@ -469,12 +469,48 @@ func (e PublicKeyCredentialUpdateType) Valid() bool {
 
 // Defines values for RoleOwnerType.
 const (
-	Customer RoleOwnerType = "customer"
-	Platform RoleOwnerType = "platform"
+	RoleOwnerTypeCustomer RoleOwnerType = "customer"
+	RoleOwnerTypePlatform RoleOwnerType = "platform"
 )
 
 // Valid indicates whether the value is a known member of the RoleOwnerType enum.
 func (e RoleOwnerType) Valid() bool {
+	switch e {
+	case RoleOwnerTypeCustomer:
+		return true
+	case RoleOwnerTypePlatform:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RoleAssignmentRoleOwnerType.
+const (
+	RoleAssignmentRoleOwnerTypeCustomer RoleAssignmentRoleOwnerType = "customer"
+	RoleAssignmentRoleOwnerTypePlatform RoleAssignmentRoleOwnerType = "platform"
+)
+
+// Valid indicates whether the value is a known member of the RoleAssignmentRoleOwnerType enum.
+func (e RoleAssignmentRoleOwnerType) Valid() bool {
+	switch e {
+	case RoleAssignmentRoleOwnerTypeCustomer:
+		return true
+	case RoleAssignmentRoleOwnerTypePlatform:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RoleAssignmentCreateOwnerType.
+const (
+	Customer RoleAssignmentCreateOwnerType = "customer"
+	Platform RoleAssignmentCreateOwnerType = "platform"
+)
+
+// Valid indicates whether the value is a known member of the RoleAssignmentCreateOwnerType enum.
+func (e RoleAssignmentCreateOwnerType) Valid() bool {
 	switch e {
 	case Customer:
 		return true
@@ -530,6 +566,75 @@ const (
 func (e UrlCredentialUpdateType) Valid() bool {
 	switch e {
 	case Url:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListGroupsParamsExpand.
+const (
+	ListGroupsParamsExpandMemberCount ListGroupsParamsExpand = "member_count"
+	ListGroupsParamsExpandRoles       ListGroupsParamsExpand = "roles"
+	ListGroupsParamsExpandTotalCount  ListGroupsParamsExpand = "total_count"
+)
+
+// Valid indicates whether the value is a known member of the ListGroupsParamsExpand enum.
+func (e ListGroupsParamsExpand) Valid() bool {
+	switch e {
+	case ListGroupsParamsExpandMemberCount:
+		return true
+	case ListGroupsParamsExpandRoles:
+		return true
+	case ListGroupsParamsExpandTotalCount:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetGroupParamsExpand.
+const (
+	GetGroupParamsExpandMemberCount GetGroupParamsExpand = "member_count"
+	GetGroupParamsExpandRoles       GetGroupParamsExpand = "roles"
+)
+
+// Valid indicates whether the value is a known member of the GetGroupParamsExpand enum.
+func (e GetGroupParamsExpand) Valid() bool {
+	switch e {
+	case GetGroupParamsExpandMemberCount:
+		return true
+	case GetGroupParamsExpandRoles:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListGroupMembersParamsExpand.
+const (
+	ListGroupMembersParamsExpandTotalCount ListGroupMembersParamsExpand = "total_count"
+)
+
+// Valid indicates whether the value is a known member of the ListGroupMembersParamsExpand enum.
+func (e ListGroupMembersParamsExpand) Valid() bool {
+	switch e {
+	case ListGroupMembersParamsExpandTotalCount:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListGroupRoleAssignmentsParamsExpand.
+const (
+	ListGroupRoleAssignmentsParamsExpandTotalCount ListGroupRoleAssignmentsParamsExpand = "total_count"
+)
+
+// Valid indicates whether the value is a known member of the ListGroupRoleAssignmentsParamsExpand enum.
+func (e ListGroupRoleAssignmentsParamsExpand) Valid() bool {
+	switch e {
+	case ListGroupRoleAssignmentsParamsExpandTotalCount:
 		return true
 	default:
 		return false
@@ -1103,6 +1208,88 @@ type Error struct {
 	Status  float32 `json:"status"`
 }
 
+// Group A zone-scoped group of users, assignable to roles and usable in policies. Roles assigned to a group are inherited by its members.
+type Group struct {
+	// CreatedAt Entity creation timestamp
+	CreatedAt time.Time `json:"created_at"`
+
+	// External Whether the group is synced from an external directory. Read-only; set by external sync.
+	External bool `json:"external"`
+
+	// Id Unique identifier of the group
+	Id string `json:"id"`
+
+	// Identifier User-specified identifier, unique within the zone. Automatically assigned for groups from an external directory.
+	Identifier string `json:"identifier"`
+
+	// MemberCount Number of users in the group. Only included when `expand[]=member_count` is requested.
+	MemberCount *int `json:"member_count,omitempty"`
+
+	// Name Human-readable group name
+	Name string `json:"name"`
+
+	// OrganizationId Organization this group belongs to
+	OrganizationId string `json:"organization_id"`
+
+	// Roles Identifiers of the roles assigned to the group. Only included when `expand[]=roles` is requested.
+	Roles *[]string `json:"roles,omitempty"`
+
+	// UpdatedAt Entity update timestamp
+	UpdatedAt time.Time `json:"updated_at"`
+
+	// ZoneId Zone this group belongs to
+	ZoneId string `json:"zone_id"`
+}
+
+// GroupCreate Schema for creating a group managed in Keycard
+type GroupCreate struct {
+	// Identifier User-specified identifier, unique within the zone. Derived from the name when omitted.
+	Identifier *string `json:"identifier,omitempty"`
+
+	// Name Human-readable group name
+	Name string `json:"name"`
+}
+
+// GroupMember A user's membership in a group
+type GroupMember struct {
+	// CreatedAt Entity creation timestamp
+	CreatedAt time.Time `json:"created_at"`
+
+	// UserId ID of the user
+	UserId string `json:"user_id"`
+}
+
+// GroupMemberCreate Schema for adding a user to a group
+type GroupMemberCreate struct {
+	// UserId ID of the user to add to the group
+	UserId string `json:"user_id"`
+}
+
+// GroupMembersList A paginated list of group members
+type GroupMembersList struct {
+	Items []GroupMember `json:"items"`
+
+	// Pagination Cursor-based pagination metadata returned by list endpoints
+	Pagination Pagination `json:"pagination"`
+}
+
+// GroupUpdate Schema for updating a group
+type GroupUpdate struct {
+	// Identifier User-specified identifier, unique within the zone.
+	Identifier *string `json:"identifier,omitempty"`
+
+	// Name Human-readable group name
+	Name *string `json:"name,omitempty"`
+}
+
+// GroupsList A paginated list of groups
+type GroupsList struct {
+	Items []Group `json:"items"`
+
+	// Pagination Cursor-based pagination metadata returned by list endpoints
+	Pagination Pagination `json:"pagination"`
+}
+
 // Metadata Entity metadata
 type Metadata struct {
 	// DocsUrl Documentation URL
@@ -1164,6 +1351,9 @@ type Pagination struct {
 
 	// BeforeCursor Cursor of the first item on the current page. Null when there is no previous page.
 	BeforeCursor nullable.Nullable[string] `json:"before_cursor"`
+
+	// TotalCount Total number of items matching the query. Only included when `expand[]=total_count` is requested.
+	TotalCount *int `json:"total_count,omitempty"`
 }
 
 // PasswordCredentialUpdate Schema for updating a password credential
@@ -1672,6 +1862,74 @@ type Role struct {
 // RoleOwnerType Who owns this role. Platform-owned roles are managed by Keycard and cannot be modified or deleted via the API; customer-owned roles are user-created.
 type RoleOwnerType string
 
+// RoleAssignment Represents a role assigned to a principal within a zone
+type RoleAssignment struct {
+	// CreatedAt Entity creation timestamp
+	CreatedAt time.Time `json:"created_at"`
+
+	// Id Unique identifier of the role assignment
+	Id string `json:"id"`
+
+	// PrincipalId ID of the principal the role is assigned to
+	PrincipalId string `json:"principal_id"`
+
+	// PrincipalType The kind of principal the role is assigned to: `user`, `application`, or `group`. A role assigned to a `group` is inherited by that group's members.
+	PrincipalType string `json:"principal_type"`
+
+	// RoleId ID of the assigned role
+	RoleId string `json:"role_id"`
+
+	// RoleIdentifier Opaque identifier of the assigned role, unique per owner type within a zone
+	RoleIdentifier string `json:"role_identifier"`
+
+	// RoleOwnerType Owner type of the assigned role. Disambiguates roles that share an identifier across owner types.
+	RoleOwnerType RoleAssignmentRoleOwnerType `json:"role_owner_type"`
+
+	// ScopeId The ID of the scoped resource. Null when the assignment is unscoped.
+	ScopeId nullable.Nullable[string] `json:"scope_id,omitempty"`
+
+	// ScopeType The kind of resource this grant is scoped to (e.g. `zone`). Null when the assignment is unscoped.
+	ScopeType nullable.Nullable[string] `json:"scope_type,omitempty"`
+
+	// UpdatedAt Entity update timestamp
+	UpdatedAt time.Time `json:"updated_at"`
+
+	// ZoneId Zone this assignment belongs to
+	ZoneId string `json:"zone_id"`
+}
+
+// RoleAssignmentRoleOwnerType Owner type of the assigned role. Disambiguates roles that share an identifier across owner types.
+type RoleAssignmentRoleOwnerType string
+
+// RoleAssignmentCreate Schema for assigning a role to a principal. Provide exactly one of `role_id` or `role_identifier`; `owner_type` is required with `role_identifier` and must be omitted with `role_id`.
+type RoleAssignmentCreate struct {
+	// OwnerType Owner type of the role to assign. Required with `role_identifier`.
+	OwnerType *RoleAssignmentCreateOwnerType `json:"owner_type,omitempty"`
+
+	// RoleId ID of the role to assign
+	RoleId *string `json:"role_id,omitempty"`
+
+	// RoleIdentifier Opaque identifier of the role to assign
+	RoleIdentifier *string `json:"role_identifier,omitempty"`
+
+	// ScopeId The ID of the resource to scope the grant to. Provide together with `scope_type`.
+	ScopeId *string `json:"scope_id,omitempty"`
+
+	// ScopeType The kind of resource to scope the grant to (e.g. `zone`). Provide together with `scope_id`, or omit both for an unscoped assignment.
+	ScopeType *string `json:"scope_type,omitempty"`
+}
+
+// RoleAssignmentCreateOwnerType Owner type of the role to assign. Required with `role_identifier`.
+type RoleAssignmentCreateOwnerType string
+
+// RoleAssignmentsList A paginated list of role assignments
+type RoleAssignmentsList struct {
+	Items []RoleAssignment `json:"items"`
+
+	// Pagination Cursor-based pagination metadata returned by list endpoints
+	Pagination Pagination `json:"pagination"`
+}
+
 // RoleIdentifier Role identifier: a lowercase slug (letters and digits separated by single hyphens or underscores), unique per owner type within a zone.
 type RoleIdentifier = string
 
@@ -1998,6 +2256,93 @@ type ListApplicationResourcesParams struct {
 	Limit  *int    `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListGroupsParams defines parameters for ListGroups.
+type ListGroupsParams struct {
+	// After Cursor for forward pagination
+	After *string `form:"after,omitempty" json:"after,omitempty"`
+
+	// Before Cursor for backward pagination
+	Before *string `form:"before,omitempty" json:"before,omitempty"`
+
+	// Limit Maximum number of items to return
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Expand Optional fields to include on each group. Repeatable.
+	Expand *[]ListGroupsParamsExpand `form:"expand[],omitempty" json:"expand[],omitempty"`
+
+	// FilterId Restrict results to groups with these IDs. Repeatable, max 100. Mutually exclusive with `after`/`before`.
+	FilterId *[]string `form:"filter[id],omitempty" json:"filter[id],omitempty"`
+
+	// FilterIdentifier Filter by exact group identifier. Repeatable; multiple values are OR-ed.
+	FilterIdentifier *[]string `form:"filter[identifier],omitempty" json:"filter[identifier],omitempty"`
+
+	// Sort Comma-separated sort fields. Prefix with `-` for descending. Allowed: created_at, name, identifier
+	Sort *string `form:"sort,omitempty" json:"sort,omitempty"`
+}
+
+// ListGroupsParamsExpand defines parameters for ListGroups.
+type ListGroupsParamsExpand string
+
+// GetGroupParams defines parameters for GetGroup.
+type GetGroupParams struct {
+	// Expand Optional fields to include on the group. Repeatable.
+	Expand *[]GetGroupParamsExpand `form:"expand[],omitempty" json:"expand[],omitempty"`
+}
+
+// GetGroupParamsExpand defines parameters for GetGroup.
+type GetGroupParamsExpand string
+
+// ListGroupMembersParams defines parameters for ListGroupMembers.
+type ListGroupMembersParams struct {
+	// After Cursor for forward pagination
+	After *string `form:"after,omitempty" json:"after,omitempty"`
+
+	// Before Cursor for backward pagination
+	Before *string `form:"before,omitempty" json:"before,omitempty"`
+
+	// Limit Maximum number of items to return
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Expand Optional fields to include. Repeatable.
+	Expand *[]ListGroupMembersParamsExpand `form:"expand[],omitempty" json:"expand[],omitempty"`
+
+	// FilterId Restrict results to members with these user IDs. Repeatable, max 100. Mutually exclusive with `after`/`before`.
+	FilterId *[]string `form:"filter[id],omitempty" json:"filter[id],omitempty"`
+}
+
+// ListGroupMembersParamsExpand defines parameters for ListGroupMembers.
+type ListGroupMembersParamsExpand string
+
+// ListGroupRoleAssignmentsParams defines parameters for ListGroupRoleAssignments.
+type ListGroupRoleAssignmentsParams struct {
+	// After Cursor for forward pagination
+	After *string `form:"after,omitempty" json:"after,omitempty"`
+
+	// Before Cursor for backward pagination
+	Before *string `form:"before,omitempty" json:"before,omitempty"`
+
+	// Limit Maximum number of items to return
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Expand Optional fields to include. Repeatable.
+	Expand *[]ListGroupRoleAssignmentsParamsExpand `form:"expand[],omitempty" json:"expand[],omitempty"`
+
+	// FilterId Restrict results to role assignments with these IDs. Repeatable, max 100. Mutually exclusive with `after`/`before`.
+	FilterId *[]string `form:"filter[id],omitempty" json:"filter[id],omitempty"`
+}
+
+// ListGroupRoleAssignmentsParamsExpand defines parameters for ListGroupRoleAssignments.
+type ListGroupRoleAssignmentsParamsExpand string
+
+// RevokeGroupRoleParams defines parameters for RevokeGroupRole.
+type RevokeGroupRoleParams struct {
+	// ScopeType Scope kind of the grant to revoke. Provide together with `scope_id`.
+	ScopeType *string `form:"scope_type,omitempty" json:"scope_type,omitempty"`
+
+	// ScopeId Scope target of the grant to revoke. Provide together with `scope_type`.
+	ScopeId *string `form:"scope_id,omitempty" json:"scope_id,omitempty"`
+}
+
 // ListProvidersParams defines parameters for ListProviders.
 type ListProvidersParams struct {
 	Slug       *string                  `form:"slug,omitempty" json:"slug,omitempty"`
@@ -2100,6 +2445,18 @@ type CreateApplicationJSONRequestBody = ApplicationCreate
 
 // UpdateApplicationJSONRequestBody defines body for UpdateApplication for application/json ContentType.
 type UpdateApplicationJSONRequestBody = ApplicationUpdate
+
+// CreateGroupJSONRequestBody defines body for CreateGroup for application/json ContentType.
+type CreateGroupJSONRequestBody = GroupCreate
+
+// UpdateGroupJSONRequestBody defines body for UpdateGroup for application/json ContentType.
+type UpdateGroupJSONRequestBody = GroupUpdate
+
+// AddGroupMemberJSONRequestBody defines body for AddGroupMember for application/json ContentType.
+type AddGroupMemberJSONRequestBody = GroupMemberCreate
+
+// AssignGroupRoleJSONRequestBody defines body for AssignGroupRole for application/json ContentType.
+type AssignGroupRoleJSONRequestBody = RoleAssignmentCreate
 
 // CreateProviderJSONRequestBody defines body for CreateProvider for application/json ContentType.
 type CreateProviderJSONRequestBody = ProviderCreate
@@ -2867,6 +3224,47 @@ type ClientInterface interface {
 	// ListApplicationResources request
 	ListApplicationResources(ctx context.Context, zoneId string, id string, params *ListApplicationResourcesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListGroups request
+	ListGroups(ctx context.Context, zoneId string, params *ListGroupsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateGroupWithBody request with any body
+	CreateGroupWithBody(ctx context.Context, zoneId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateGroup(ctx context.Context, zoneId string, body CreateGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteGroup request
+	DeleteGroup(ctx context.Context, zoneId string, groupId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetGroup request
+	GetGroup(ctx context.Context, zoneId string, groupId string, params *GetGroupParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateGroupWithBody request with any body
+	UpdateGroupWithBody(ctx context.Context, zoneId string, groupId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateGroup(ctx context.Context, zoneId string, groupId string, body UpdateGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListGroupMembers request
+	ListGroupMembers(ctx context.Context, zoneId string, groupId string, params *ListGroupMembersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AddGroupMemberWithBody request with any body
+	AddGroupMemberWithBody(ctx context.Context, zoneId string, groupId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	AddGroupMember(ctx context.Context, zoneId string, groupId string, body AddGroupMemberJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RemoveGroupMember request
+	RemoveGroupMember(ctx context.Context, zoneId string, groupId string, userId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListGroupRoleAssignments request
+	ListGroupRoleAssignments(ctx context.Context, zoneId string, groupId string, params *ListGroupRoleAssignmentsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AssignGroupRoleWithBody request with any body
+	AssignGroupRoleWithBody(ctx context.Context, zoneId string, groupId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	AssignGroupRole(ctx context.Context, zoneId string, groupId string, body AssignGroupRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RevokeGroupRole request
+	RevokeGroupRole(ctx context.Context, zoneId string, groupId string, roleId string, params *RevokeGroupRoleParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListProviders request
 	ListProviders(ctx context.Context, zoneId string, params *ListProvidersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -3405,6 +3803,186 @@ func (c *Client) AddApplicationDependency(ctx context.Context, zoneId string, id
 
 func (c *Client) ListApplicationResources(ctx context.Context, zoneId string, id string, params *ListApplicationResourcesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListApplicationResourcesRequest(c.Server, zoneId, id, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListGroups(ctx context.Context, zoneId string, params *ListGroupsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListGroupsRequest(c.Server, zoneId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateGroupWithBody(ctx context.Context, zoneId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateGroupRequestWithBody(c.Server, zoneId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateGroup(ctx context.Context, zoneId string, body CreateGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateGroupRequest(c.Server, zoneId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteGroup(ctx context.Context, zoneId string, groupId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteGroupRequest(c.Server, zoneId, groupId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetGroup(ctx context.Context, zoneId string, groupId string, params *GetGroupParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetGroupRequest(c.Server, zoneId, groupId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateGroupWithBody(ctx context.Context, zoneId string, groupId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateGroupRequestWithBody(c.Server, zoneId, groupId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateGroup(ctx context.Context, zoneId string, groupId string, body UpdateGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateGroupRequest(c.Server, zoneId, groupId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListGroupMembers(ctx context.Context, zoneId string, groupId string, params *ListGroupMembersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListGroupMembersRequest(c.Server, zoneId, groupId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AddGroupMemberWithBody(ctx context.Context, zoneId string, groupId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddGroupMemberRequestWithBody(c.Server, zoneId, groupId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AddGroupMember(ctx context.Context, zoneId string, groupId string, body AddGroupMemberJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddGroupMemberRequest(c.Server, zoneId, groupId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RemoveGroupMember(ctx context.Context, zoneId string, groupId string, userId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRemoveGroupMemberRequest(c.Server, zoneId, groupId, userId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListGroupRoleAssignments(ctx context.Context, zoneId string, groupId string, params *ListGroupRoleAssignmentsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListGroupRoleAssignmentsRequest(c.Server, zoneId, groupId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AssignGroupRoleWithBody(ctx context.Context, zoneId string, groupId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAssignGroupRoleRequestWithBody(c.Server, zoneId, groupId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AssignGroupRole(ctx context.Context, zoneId string, groupId string, body AssignGroupRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAssignGroupRoleRequest(c.Server, zoneId, groupId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RevokeGroupRole(ctx context.Context, zoneId string, groupId string, roleId string, params *RevokeGroupRoleParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRevokeGroupRoleRequest(c.Server, zoneId, groupId, roleId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -5443,6 +6021,824 @@ func NewListApplicationResourcesRequest(server string, zoneId string, id string,
 	return req, nil
 }
 
+// NewListGroupsRequest generates requests for ListGroups
+func NewListGroupsRequest(server string, zoneId string, params *ListGroupsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "zoneId", zoneId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/groups", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.After != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "after", *params.After, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Before != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "before", *params.Before, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Expand != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "expand[]", *params.Expand, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "array", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.FilterId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter[id]", *params.FilterId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "array", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.FilterIdentifier != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter[identifier]", *params.FilterIdentifier, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "array", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Sort != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "sort", *params.Sort, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateGroupRequest calls the generic CreateGroup builder with application/json body
+func NewCreateGroupRequest(server string, zoneId string, body CreateGroupJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateGroupRequestWithBody(server, zoneId, "application/json", bodyReader)
+}
+
+// NewCreateGroupRequestWithBody generates requests for CreateGroup with any type of body
+func NewCreateGroupRequestWithBody(server string, zoneId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "zoneId", zoneId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/groups", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteGroupRequest generates requests for DeleteGroup
+func NewDeleteGroupRequest(server string, zoneId string, groupId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "zoneId", zoneId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "groupId", groupId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/groups/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetGroupRequest generates requests for GetGroup
+func NewGetGroupRequest(server string, zoneId string, groupId string, params *GetGroupParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "zoneId", zoneId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "groupId", groupId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/groups/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Expand != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "expand[]", *params.Expand, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "array", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateGroupRequest calls the generic UpdateGroup builder with application/json body
+func NewUpdateGroupRequest(server string, zoneId string, groupId string, body UpdateGroupJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateGroupRequestWithBody(server, zoneId, groupId, "application/json", bodyReader)
+}
+
+// NewUpdateGroupRequestWithBody generates requests for UpdateGroup with any type of body
+func NewUpdateGroupRequestWithBody(server string, zoneId string, groupId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "zoneId", zoneId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "groupId", groupId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/groups/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListGroupMembersRequest generates requests for ListGroupMembers
+func NewListGroupMembersRequest(server string, zoneId string, groupId string, params *ListGroupMembersParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "zoneId", zoneId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "groupId", groupId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/groups/%s/members", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.After != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "after", *params.After, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Before != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "before", *params.Before, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Expand != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "expand[]", *params.Expand, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "array", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.FilterId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter[id]", *params.FilterId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "array", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAddGroupMemberRequest calls the generic AddGroupMember builder with application/json body
+func NewAddGroupMemberRequest(server string, zoneId string, groupId string, body AddGroupMemberJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAddGroupMemberRequestWithBody(server, zoneId, groupId, "application/json", bodyReader)
+}
+
+// NewAddGroupMemberRequestWithBody generates requests for AddGroupMember with any type of body
+func NewAddGroupMemberRequestWithBody(server string, zoneId string, groupId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "zoneId", zoneId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "groupId", groupId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/groups/%s/members", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewRemoveGroupMemberRequest generates requests for RemoveGroupMember
+func NewRemoveGroupMemberRequest(server string, zoneId string, groupId string, userId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "zoneId", zoneId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "groupId", groupId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "userId", userId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/groups/%s/members/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListGroupRoleAssignmentsRequest generates requests for ListGroupRoleAssignments
+func NewListGroupRoleAssignmentsRequest(server string, zoneId string, groupId string, params *ListGroupRoleAssignmentsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "zoneId", zoneId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "groupId", groupId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/groups/%s/roles", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.After != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "after", *params.After, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Before != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "before", *params.Before, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Expand != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "expand[]", *params.Expand, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "array", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.FilterId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter[id]", *params.FilterId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "array", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAssignGroupRoleRequest calls the generic AssignGroupRole builder with application/json body
+func NewAssignGroupRoleRequest(server string, zoneId string, groupId string, body AssignGroupRoleJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAssignGroupRoleRequestWithBody(server, zoneId, groupId, "application/json", bodyReader)
+}
+
+// NewAssignGroupRoleRequestWithBody generates requests for AssignGroupRole with any type of body
+func NewAssignGroupRoleRequestWithBody(server string, zoneId string, groupId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "zoneId", zoneId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "groupId", groupId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/groups/%s/roles", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewRevokeGroupRoleRequest generates requests for RevokeGroupRole
+func NewRevokeGroupRoleRequest(server string, zoneId string, groupId string, roleId string, params *RevokeGroupRoleParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "zoneId", zoneId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "groupId", groupId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "roleId", roleId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/zones/%s/groups/%s/roles/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.ScopeType != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "scope_type", *params.ScopeType, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.ScopeId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "scope_id", *params.ScopeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListProvidersRequest generates requests for ListProviders
 func NewListProvidersRequest(server string, zoneId string, params *ListProvidersParams) (*http.Request, error) {
 	var err error
@@ -7325,6 +8721,47 @@ type ClientWithResponsesInterface interface {
 	// ListApplicationResourcesWithResponse request
 	ListApplicationResourcesWithResponse(ctx context.Context, zoneId string, id string, params *ListApplicationResourcesParams, reqEditors ...RequestEditorFn) (*ListApplicationResourcesResponse, error)
 
+	// ListGroupsWithResponse request
+	ListGroupsWithResponse(ctx context.Context, zoneId string, params *ListGroupsParams, reqEditors ...RequestEditorFn) (*ListGroupsResponse, error)
+
+	// CreateGroupWithBodyWithResponse request with any body
+	CreateGroupWithBodyWithResponse(ctx context.Context, zoneId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateGroupResponse, error)
+
+	CreateGroupWithResponse(ctx context.Context, zoneId string, body CreateGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateGroupResponse, error)
+
+	// DeleteGroupWithResponse request
+	DeleteGroupWithResponse(ctx context.Context, zoneId string, groupId string, reqEditors ...RequestEditorFn) (*DeleteGroupResponse, error)
+
+	// GetGroupWithResponse request
+	GetGroupWithResponse(ctx context.Context, zoneId string, groupId string, params *GetGroupParams, reqEditors ...RequestEditorFn) (*GetGroupResponse, error)
+
+	// UpdateGroupWithBodyWithResponse request with any body
+	UpdateGroupWithBodyWithResponse(ctx context.Context, zoneId string, groupId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateGroupResponse, error)
+
+	UpdateGroupWithResponse(ctx context.Context, zoneId string, groupId string, body UpdateGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateGroupResponse, error)
+
+	// ListGroupMembersWithResponse request
+	ListGroupMembersWithResponse(ctx context.Context, zoneId string, groupId string, params *ListGroupMembersParams, reqEditors ...RequestEditorFn) (*ListGroupMembersResponse, error)
+
+	// AddGroupMemberWithBodyWithResponse request with any body
+	AddGroupMemberWithBodyWithResponse(ctx context.Context, zoneId string, groupId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddGroupMemberResponse, error)
+
+	AddGroupMemberWithResponse(ctx context.Context, zoneId string, groupId string, body AddGroupMemberJSONRequestBody, reqEditors ...RequestEditorFn) (*AddGroupMemberResponse, error)
+
+	// RemoveGroupMemberWithResponse request
+	RemoveGroupMemberWithResponse(ctx context.Context, zoneId string, groupId string, userId string, reqEditors ...RequestEditorFn) (*RemoveGroupMemberResponse, error)
+
+	// ListGroupRoleAssignmentsWithResponse request
+	ListGroupRoleAssignmentsWithResponse(ctx context.Context, zoneId string, groupId string, params *ListGroupRoleAssignmentsParams, reqEditors ...RequestEditorFn) (*ListGroupRoleAssignmentsResponse, error)
+
+	// AssignGroupRoleWithBodyWithResponse request with any body
+	AssignGroupRoleWithBodyWithResponse(ctx context.Context, zoneId string, groupId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AssignGroupRoleResponse, error)
+
+	AssignGroupRoleWithResponse(ctx context.Context, zoneId string, groupId string, body AssignGroupRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*AssignGroupRoleResponse, error)
+
+	// RevokeGroupRoleWithResponse request
+	RevokeGroupRoleWithResponse(ctx context.Context, zoneId string, groupId string, roleId string, params *RevokeGroupRoleParams, reqEditors ...RequestEditorFn) (*RevokeGroupRoleResponse, error)
+
 	// ListProvidersWithResponse request
 	ListProvidersWithResponse(ctx context.Context, zoneId string, params *ListProvidersParams, reqEditors ...RequestEditorFn) (*ListProvidersResponse, error)
 
@@ -8336,6 +9773,344 @@ func (r ListApplicationResourcesResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ListApplicationResourcesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListGroupsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *GroupsList
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r ListGroupsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListGroupsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListGroupsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreateGroupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *Group
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateGroupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateGroupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateGroupResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DeleteGroupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteGroupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteGroupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteGroupResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetGroupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Group
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GetGroupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetGroupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetGroupResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UpdateGroupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Group
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateGroupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateGroupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateGroupResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListGroupMembersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *GroupMembersList
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r ListGroupMembersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListGroupMembersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListGroupMembersResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AddGroupMemberResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *GroupMember
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r AddGroupMemberResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AddGroupMemberResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AddGroupMemberResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type RemoveGroupMemberResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r RemoveGroupMemberResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RemoveGroupMemberResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RemoveGroupMemberResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListGroupRoleAssignmentsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *RoleAssignmentsList
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r ListGroupRoleAssignmentsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListGroupRoleAssignmentsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListGroupRoleAssignmentsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AssignGroupRoleResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *RoleAssignment
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r AssignGroupRoleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AssignGroupRoleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AssignGroupRoleResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type RevokeGroupRoleResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r RevokeGroupRoleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RevokeGroupRoleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RevokeGroupRoleResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -9624,6 +11399,137 @@ func (c *ClientWithResponses) ListApplicationResourcesWithResponse(ctx context.C
 		return nil, err
 	}
 	return ParseListApplicationResourcesResponse(rsp)
+}
+
+// ListGroupsWithResponse request returning *ListGroupsResponse
+func (c *ClientWithResponses) ListGroupsWithResponse(ctx context.Context, zoneId string, params *ListGroupsParams, reqEditors ...RequestEditorFn) (*ListGroupsResponse, error) {
+	rsp, err := c.ListGroups(ctx, zoneId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListGroupsResponse(rsp)
+}
+
+// CreateGroupWithBodyWithResponse request with arbitrary body returning *CreateGroupResponse
+func (c *ClientWithResponses) CreateGroupWithBodyWithResponse(ctx context.Context, zoneId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateGroupResponse, error) {
+	rsp, err := c.CreateGroupWithBody(ctx, zoneId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateGroupResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateGroupWithResponse(ctx context.Context, zoneId string, body CreateGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateGroupResponse, error) {
+	rsp, err := c.CreateGroup(ctx, zoneId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateGroupResponse(rsp)
+}
+
+// DeleteGroupWithResponse request returning *DeleteGroupResponse
+func (c *ClientWithResponses) DeleteGroupWithResponse(ctx context.Context, zoneId string, groupId string, reqEditors ...RequestEditorFn) (*DeleteGroupResponse, error) {
+	rsp, err := c.DeleteGroup(ctx, zoneId, groupId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteGroupResponse(rsp)
+}
+
+// GetGroupWithResponse request returning *GetGroupResponse
+func (c *ClientWithResponses) GetGroupWithResponse(ctx context.Context, zoneId string, groupId string, params *GetGroupParams, reqEditors ...RequestEditorFn) (*GetGroupResponse, error) {
+	rsp, err := c.GetGroup(ctx, zoneId, groupId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetGroupResponse(rsp)
+}
+
+// UpdateGroupWithBodyWithResponse request with arbitrary body returning *UpdateGroupResponse
+func (c *ClientWithResponses) UpdateGroupWithBodyWithResponse(ctx context.Context, zoneId string, groupId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateGroupResponse, error) {
+	rsp, err := c.UpdateGroupWithBody(ctx, zoneId, groupId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateGroupResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateGroupWithResponse(ctx context.Context, zoneId string, groupId string, body UpdateGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateGroupResponse, error) {
+	rsp, err := c.UpdateGroup(ctx, zoneId, groupId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateGroupResponse(rsp)
+}
+
+// ListGroupMembersWithResponse request returning *ListGroupMembersResponse
+func (c *ClientWithResponses) ListGroupMembersWithResponse(ctx context.Context, zoneId string, groupId string, params *ListGroupMembersParams, reqEditors ...RequestEditorFn) (*ListGroupMembersResponse, error) {
+	rsp, err := c.ListGroupMembers(ctx, zoneId, groupId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListGroupMembersResponse(rsp)
+}
+
+// AddGroupMemberWithBodyWithResponse request with arbitrary body returning *AddGroupMemberResponse
+func (c *ClientWithResponses) AddGroupMemberWithBodyWithResponse(ctx context.Context, zoneId string, groupId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddGroupMemberResponse, error) {
+	rsp, err := c.AddGroupMemberWithBody(ctx, zoneId, groupId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddGroupMemberResponse(rsp)
+}
+
+func (c *ClientWithResponses) AddGroupMemberWithResponse(ctx context.Context, zoneId string, groupId string, body AddGroupMemberJSONRequestBody, reqEditors ...RequestEditorFn) (*AddGroupMemberResponse, error) {
+	rsp, err := c.AddGroupMember(ctx, zoneId, groupId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddGroupMemberResponse(rsp)
+}
+
+// RemoveGroupMemberWithResponse request returning *RemoveGroupMemberResponse
+func (c *ClientWithResponses) RemoveGroupMemberWithResponse(ctx context.Context, zoneId string, groupId string, userId string, reqEditors ...RequestEditorFn) (*RemoveGroupMemberResponse, error) {
+	rsp, err := c.RemoveGroupMember(ctx, zoneId, groupId, userId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRemoveGroupMemberResponse(rsp)
+}
+
+// ListGroupRoleAssignmentsWithResponse request returning *ListGroupRoleAssignmentsResponse
+func (c *ClientWithResponses) ListGroupRoleAssignmentsWithResponse(ctx context.Context, zoneId string, groupId string, params *ListGroupRoleAssignmentsParams, reqEditors ...RequestEditorFn) (*ListGroupRoleAssignmentsResponse, error) {
+	rsp, err := c.ListGroupRoleAssignments(ctx, zoneId, groupId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListGroupRoleAssignmentsResponse(rsp)
+}
+
+// AssignGroupRoleWithBodyWithResponse request with arbitrary body returning *AssignGroupRoleResponse
+func (c *ClientWithResponses) AssignGroupRoleWithBodyWithResponse(ctx context.Context, zoneId string, groupId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AssignGroupRoleResponse, error) {
+	rsp, err := c.AssignGroupRoleWithBody(ctx, zoneId, groupId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAssignGroupRoleResponse(rsp)
+}
+
+func (c *ClientWithResponses) AssignGroupRoleWithResponse(ctx context.Context, zoneId string, groupId string, body AssignGroupRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*AssignGroupRoleResponse, error) {
+	rsp, err := c.AssignGroupRole(ctx, zoneId, groupId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAssignGroupRoleResponse(rsp)
+}
+
+// RevokeGroupRoleWithResponse request returning *RevokeGroupRoleResponse
+func (c *ClientWithResponses) RevokeGroupRoleWithResponse(ctx context.Context, zoneId string, groupId string, roleId string, params *RevokeGroupRoleParams, reqEditors ...RequestEditorFn) (*RevokeGroupRoleResponse, error) {
+	rsp, err := c.RevokeGroupRole(ctx, zoneId, groupId, roleId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRevokeGroupRoleResponse(rsp)
 }
 
 // ListProvidersWithResponse request returning *ListProvidersResponse
@@ -10920,6 +12826,348 @@ func ParseListApplicationResourcesResponse(rsp *http.Response) (*ListApplication
 	return response, nil
 }
 
+// ParseListGroupsResponse parses an HTTP response from a ListGroupsWithResponse call
+func ParseListGroupsResponse(rsp *http.Response) (*ListGroupsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListGroupsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest GroupsList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateGroupResponse parses an HTTP response from a CreateGroupWithResponse call
+func ParseCreateGroupResponse(rsp *http.Response) (*CreateGroupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateGroupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Group
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteGroupResponse parses an HTTP response from a DeleteGroupWithResponse call
+func ParseDeleteGroupResponse(rsp *http.Response) (*DeleteGroupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteGroupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetGroupResponse parses an HTTP response from a GetGroupWithResponse call
+func ParseGetGroupResponse(rsp *http.Response) (*GetGroupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetGroupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Group
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateGroupResponse parses an HTTP response from a UpdateGroupWithResponse call
+func ParseUpdateGroupResponse(rsp *http.Response) (*UpdateGroupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateGroupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Group
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListGroupMembersResponse parses an HTTP response from a ListGroupMembersWithResponse call
+func ParseListGroupMembersResponse(rsp *http.Response) (*ListGroupMembersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListGroupMembersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest GroupMembersList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAddGroupMemberResponse parses an HTTP response from a AddGroupMemberWithResponse call
+func ParseAddGroupMemberResponse(rsp *http.Response) (*AddGroupMemberResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AddGroupMemberResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest GroupMember
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRemoveGroupMemberResponse parses an HTTP response from a RemoveGroupMemberWithResponse call
+func ParseRemoveGroupMemberResponse(rsp *http.Response) (*RemoveGroupMemberResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RemoveGroupMemberResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListGroupRoleAssignmentsResponse parses an HTTP response from a ListGroupRoleAssignmentsWithResponse call
+func ParseListGroupRoleAssignmentsResponse(rsp *http.Response) (*ListGroupRoleAssignmentsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListGroupRoleAssignmentsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest RoleAssignmentsList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAssignGroupRoleResponse parses an HTTP response from a AssignGroupRoleWithResponse call
+func ParseAssignGroupRoleResponse(rsp *http.Response) (*AssignGroupRoleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AssignGroupRoleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest RoleAssignment
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRevokeGroupRoleResponse parses an HTTP response from a RevokeGroupRoleWithResponse call
+func ParseRevokeGroupRoleResponse(rsp *http.Response) (*RevokeGroupRoleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RevokeGroupRoleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListProvidersResponse parses an HTTP response from a ListProvidersWithResponse call
 func ParseListProvidersResponse(rsp *http.Response) (*ListProvidersResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -11943,190 +14191,223 @@ func ParseUpdatePolicySetVersionResponse(rsp *http.Response) (*UpdatePolicySetVe
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
+	"7ZZ90+5WLiwlbh2DpSIZnY5ORvdf7v9/AAAA//8=",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

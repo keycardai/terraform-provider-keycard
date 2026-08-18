@@ -2091,6 +2091,561 @@ paths:
         - bearerAuth: []
       tags:
         - Policy Set Versions
+  '/zones/{zoneId}/groups':
+    get:
+      operationId: listGroups
+      summary: List groups in a zone
+      description: Returns a paginated list of groups in the zone.
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          description: Zone ID
+          schema:
+            type: string
+        - name: after
+          in: query
+          description: Cursor for forward pagination
+          required: false
+          schema:
+            type: string
+        - name: before
+          in: query
+          description: Cursor for backward pagination
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Maximum number of items to return
+          required: false
+          schema:
+            type: integer
+        - name: expand[]
+          in: query
+          description: Optional fields to include on each group. Repeatable.
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - total_count
+                - member_count
+                - roles
+        - name: filter[id]
+          in: query
+          description: Restrict results to groups with these IDs. Repeatable, max 100. Mutually exclusive with `after`/`before`.
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+        - name: filter[identifier]
+          in: query
+          description: Filter by exact group identifier. Repeatable; multiple values are OR-ed.
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+        - name: sort
+          in: query
+          description: 'Comma-separated sort fields. Prefix with `-` for descending. Allowed: created_at, name, identifier'
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A paginated list of groups
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupsList'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Groups
+    post:
+      operationId: createGroup
+      summary: Create a group
+      description: Creates a group managed in Keycard. Groups synced from an external directory are created by that directory.
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          description: Zone ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupCreate'
+      responses:
+        '201':
+          description: The newly created group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Groups
+  '/zones/{zoneId}/groups/{groupId}':
+    get:
+      operationId: getGroup
+      summary: Get a group by ID
+      description: Returns a group by ID.
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          description: Zone ID
+          schema:
+            type: string
+        - name: groupId
+          in: path
+          required: true
+          description: Group ID
+          schema:
+            type: string
+        - name: expand[]
+          in: query
+          description: Optional fields to include on the group. Repeatable.
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - member_count
+                - roles
+      responses:
+        '200':
+          description: The requested group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Groups
+    patch:
+      operationId: updateGroup
+      summary: Update a group
+      description: Updates a group's name and/or identifier. The name of an externally synced group cannot be changed while external sync is enabled for the zone.
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          description: Zone ID
+          schema:
+            type: string
+        - name: groupId
+          in: path
+          required: true
+          description: Group ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupUpdate'
+      responses:
+        '200':
+          description: The updated group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Groups
+    delete:
+      operationId: deleteGroup
+      summary: Delete a group
+      description: Deletes a group along with its memberships and role assignments. Externally synced groups can only be deleted by their directory.
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          description: Zone ID
+          schema:
+            type: string
+        - name: groupId
+          in: path
+          required: true
+          description: Group ID
+          schema:
+            type: string
+      responses:
+        '204':
+          description: The group was deleted
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Groups
+  '/zones/{zoneId}/groups/{groupId}/members':
+    get:
+      operationId: listGroupMembers
+      summary: List group members
+      description: Returns a paginated list of the group's members.
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          description: Zone ID
+          schema:
+            type: string
+        - name: groupId
+          in: path
+          required: true
+          description: Group ID
+          schema:
+            type: string
+        - name: after
+          in: query
+          description: Cursor for forward pagination
+          required: false
+          schema:
+            type: string
+        - name: before
+          in: query
+          description: Cursor for backward pagination
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Maximum number of items to return
+          required: false
+          schema:
+            type: integer
+        - name: expand[]
+          in: query
+          description: Optional fields to include. Repeatable.
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - total_count
+        - name: filter[id]
+          in: query
+          description: Restrict results to members with these user IDs. Repeatable, max 100. Mutually exclusive with `after`/`before`.
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: A paginated list of group members
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupMembersList'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Groups
+    post:
+      operationId: addGroupMember
+      summary: Add a group member
+      description: Adds a user to a group managed in Keycard. Membership of externally synced groups is not managed manually.
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          description: Zone ID
+          schema:
+            type: string
+        - name: groupId
+          in: path
+          required: true
+          description: Group ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupMemberCreate'
+      responses:
+        '201':
+          description: The newly created membership
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupMember'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Groups
+  '/zones/{zoneId}/groups/{groupId}/members/{userId}':
+    delete:
+      operationId: removeGroupMember
+      summary: Remove a group member
+      description: Removes a user from a group managed in Keycard. Membership of externally synced groups is not managed manually.
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          description: Zone ID
+          schema:
+            type: string
+        - name: groupId
+          in: path
+          required: true
+          description: Group ID
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          description: User ID
+          schema:
+            type: string
+      responses:
+        '204':
+          description: The member was removed
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Groups
+  '/zones/{zoneId}/groups/{groupId}/roles':
+    get:
+      operationId: listGroupRoleAssignments
+      summary: List group role assignments
+      description: Returns the roles assigned to the group. Members inherit these roles.
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          description: Zone ID
+          schema:
+            type: string
+        - name: groupId
+          in: path
+          required: true
+          description: Group ID
+          schema:
+            type: string
+        - name: after
+          in: query
+          description: Cursor for forward pagination
+          required: false
+          schema:
+            type: string
+        - name: before
+          in: query
+          description: Cursor for backward pagination
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Maximum number of items to return
+          required: false
+          schema:
+            type: integer
+        - name: expand[]
+          in: query
+          description: Optional fields to include. Repeatable.
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - total_count
+        - name: filter[id]
+          in: query
+          description: Restrict results to role assignments with these IDs. Repeatable, max 100. Mutually exclusive with `after`/`before`.
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: A paginated list of role assignments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleAssignmentsList'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Groups
+    post:
+      operationId: assignGroupRole
+      summary: Assign a role to a group
+      description: Assigns a role to the group; members inherit it.
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          description: Zone ID
+          schema:
+            type: string
+        - name: groupId
+          in: path
+          required: true
+          description: Group ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleAssignmentCreate'
+      responses:
+        '201':
+          description: The newly created role assignment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleAssignment'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Groups
+  '/zones/{zoneId}/groups/{groupId}/roles/{roleId}':
+    delete:
+      operationId: revokeGroupRole
+      summary: Revoke a role from a group
+      description: Revokes a role from the group. Provide the same `scope_type`/`scope_id` pair the grant was created with, or omit both to revoke the unscoped grant.
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          description: Zone ID
+          schema:
+            type: string
+        - name: groupId
+          in: path
+          required: true
+          description: Group ID
+          schema:
+            type: string
+        - name: roleId
+          in: path
+          required: true
+          description: Role ID
+          schema:
+            type: string
+        - name: scope_type
+          in: query
+          description: Scope kind of the grant to revoke. Provide together with `scope_id`.
+          required: false
+          schema:
+            type: string
+        - name: scope_id
+          in: query
+          description: Scope target of the grant to revoke. Provide together with `scope_type`.
+          required: false
+          schema:
+            type: string
+      responses:
+        '204':
+          description: The role assignment was revoked
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Groups
   /organizations/{organization_id}/sso-connection:
     post:
       operationId: enableSSOConnection
@@ -3814,6 +4369,9 @@ components:
           description: Cursor of the first item on the current page. Null when there is no previous page.
           type: string
           nullable: true
+        total_count:
+          description: Total number of items matching the query. Only included when `expand[]=total_count` is requested.
+          type: integer
       required:
         - after_cursor
         - before_cursor
@@ -4264,6 +4822,237 @@ components:
       required:
         - items
         - pagination
+    Group:
+      description: A zone-scoped group of users, assignable to roles and usable in policies. Roles assigned to a group are inherited by its members.
+      type: object
+      properties:
+        id:
+          description: Unique identifier of the group
+          type: string
+        zone_id:
+          description: Zone this group belongs to
+          type: string
+        organization_id:
+          description: Organization this group belongs to
+          type: string
+        identifier:
+          description: User-specified identifier, unique within the zone. Automatically assigned for groups from an external directory.
+          type: string
+        name:
+          description: Human-readable group name
+          type: string
+        external:
+          description: Whether the group is synced from an external directory. Read-only; set by external sync.
+          type: boolean
+        member_count:
+          description: Number of users in the group. Only included when `expand[]=member_count` is requested.
+          type: integer
+        roles:
+          description: Identifiers of the roles assigned to the group. Only included when `expand[]=roles` is requested.
+          type: array
+          items:
+            type: string
+        created_at:
+          description: Entity creation timestamp
+          type: string
+          format: date-time
+        updated_at:
+          description: Entity update timestamp
+          type: string
+          format: date-time
+      required:
+        - id
+        - zone_id
+        - organization_id
+        - identifier
+        - name
+        - external
+        - created_at
+        - updated_at
+      title: Group
+    GroupCreate:
+      description: Schema for creating a group managed in Keycard
+      type: object
+      properties:
+        name:
+          description: Human-readable group name
+          type: string
+          minLength: 1
+          maxLength: 255
+        identifier:
+          description: User-specified identifier, unique within the zone. Derived from the name when omitted.
+          type: string
+          minLength: 1
+          maxLength: 2048
+      required:
+        - name
+      additionalProperties: false
+      title: Group Create
+    GroupUpdate:
+      description: Schema for updating a group
+      type: object
+      properties:
+        name:
+          description: Human-readable group name
+          type: string
+          minLength: 1
+          maxLength: 255
+        identifier:
+          description: User-specified identifier, unique within the zone.
+          type: string
+          minLength: 1
+          maxLength: 2048
+      additionalProperties: false
+      title: Group Update
+    GroupsList:
+      description: A paginated list of groups
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Group'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+      required:
+        - items
+        - pagination
+      title: Groups List
+    GroupMember:
+      description: A user's membership in a group
+      type: object
+      properties:
+        user_id:
+          description: ID of the user
+          type: string
+        created_at:
+          description: Entity creation timestamp
+          type: string
+          format: date-time
+      required:
+        - user_id
+        - created_at
+      title: Group Member
+    GroupMemberCreate:
+      description: Schema for adding a user to a group
+      type: object
+      properties:
+        user_id:
+          description: ID of the user to add to the group
+          type: string
+      required:
+        - user_id
+      additionalProperties: false
+      title: Group Member Create
+    GroupMembersList:
+      description: A paginated list of group members
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupMember'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+      required:
+        - items
+        - pagination
+      title: Group Members List
+    RoleAssignment:
+      description: Represents a role assigned to a principal within a zone
+      type: object
+      properties:
+        id:
+          description: Unique identifier of the role assignment
+          type: string
+        zone_id:
+          description: Zone this assignment belongs to
+          type: string
+        principal_type:
+          description: 'The kind of principal the role is assigned to: `user`, `application`, or `group`. A role assigned to a `group` is inherited by that group''s members.'
+          type: string
+        principal_id:
+          description: ID of the principal the role is assigned to
+          type: string
+        role_id:
+          description: ID of the assigned role
+          type: string
+        role_identifier:
+          description: Opaque identifier of the assigned role, unique per owner type within a zone
+          type: string
+        role_owner_type:
+          description: Owner type of the assigned role. Disambiguates roles that share an identifier across owner types.
+          type: string
+          enum:
+            - platform
+            - customer
+        scope_type:
+          description: The kind of resource this grant is scoped to (e.g. `zone`). Null when the assignment is unscoped.
+          type: string
+          nullable: true
+        scope_id:
+          description: The ID of the scoped resource. Null when the assignment is unscoped.
+          type: string
+          nullable: true
+        created_at:
+          description: Entity creation timestamp
+          type: string
+          format: date-time
+        updated_at:
+          description: Entity update timestamp
+          type: string
+          format: date-time
+      required:
+        - id
+        - zone_id
+        - principal_type
+        - principal_id
+        - role_id
+        - role_identifier
+        - role_owner_type
+        - created_at
+        - updated_at
+      title: Role Assignment
+    RoleAssignmentCreate:
+      description: Schema for assigning a role to a principal. Provide exactly one of `role_id` or `role_identifier`; `owner_type` is required with `role_identifier` and must be omitted with `role_id`.
+      type: object
+      properties:
+        role_id:
+          description: ID of the role to assign
+          type: string
+        role_identifier:
+          description: Opaque identifier of the role to assign
+          type: string
+        owner_type:
+          description: Owner type of the role to assign. Required with `role_identifier`.
+          type: string
+          enum:
+            - platform
+            - customer
+        scope_type:
+          description: The kind of resource to scope the grant to (e.g. `zone`). Provide together with `scope_id`, or omit both for an unscoped assignment.
+          type: string
+          minLength: 1
+        scope_id:
+          description: The ID of the resource to scope the grant to. Provide together with `scope_type`.
+          type: string
+          minLength: 1
+      additionalProperties: false
+      title: Role Assignment Create
+    RoleAssignmentsList:
+      description: A paginated list of role assignments
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleAssignment'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+      required:
+        - items
+        - pagination
+      title: Role Assignments List
   securitySchemes:
     bearerAuth:
       type: http
