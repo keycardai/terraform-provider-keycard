@@ -19,8 +19,6 @@ func TestAccRoleDataSource_byIdentifier(t *testing.T) {
 					resource.TestCheckResourceAttrPair("data.keycard_role.by_identifier", "zone_id", "data.keycard_organization.test", "zone_id"),
 					resource.TestCheckResourceAttr("data.keycard_role.by_identifier", "identifier", "viewer"),
 					resource.TestCheckResourceAttr("data.keycard_role.by_identifier", "owner_type", "platform"),
-					resource.TestCheckResourceAttrSet("data.keycard_role.by_identifier", "created_at"),
-					resource.TestCheckResourceAttrSet("data.keycard_role.by_identifier", "updated_at"),
 				),
 			},
 		},

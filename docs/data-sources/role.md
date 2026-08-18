@@ -47,6 +47,4 @@ output "viewer_role_id" {
 
 ### Read-Only
 
-- `created_at` (String) Timestamp when the role was created (RFC 3339).
 - `description` (String) Human-readable description of the role. Null when unset.
-- `updated_at` (String) Timestamp when the role was last updated (RFC 3339).

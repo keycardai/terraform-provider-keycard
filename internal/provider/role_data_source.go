@@ -39,8 +39,6 @@ type RoleModel struct {
 	Identifier  types.String `tfsdk:"identifier"`
 	OwnerType   types.String `tfsdk:"owner_type"`
 	Description types.String `tfsdk:"description"`
-	CreatedAt   types.String `tfsdk:"created_at"`
-	UpdatedAt   types.String `tfsdk:"updated_at"`
 }
 
 func (d *RoleDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -73,14 +71,6 @@ func (d *RoleDataSource) Schema(ctx context.Context, req datasource.SchemaReques
 			},
 			"description": schema.StringAttribute{
 				MarkdownDescription: "Human-readable description of the role. Null when unset.",
-				Computed:            true,
-			},
-			"created_at": schema.StringAttribute{
-				MarkdownDescription: "Timestamp when the role was created (RFC 3339).",
-				Computed:            true,
-			},
-			"updated_at": schema.StringAttribute{
-				MarkdownDescription: "Timestamp when the role was last updated (RFC 3339).",
 				Computed:            true,
 			},
 		},
@@ -221,8 +211,6 @@ func (d *RoleDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 	data.Identifier = types.StringValue(role.Identifier)
 	data.OwnerType = types.StringValue(string(role.OwnerType))
 	data.Description = nullableStringValue(role.Description)
-	data.CreatedAt = types.StringValue(role.CreatedAt.Format(time.RFC3339))
-	data.UpdatedAt = types.StringValue(role.UpdatedAt.Format(time.RFC3339))
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
