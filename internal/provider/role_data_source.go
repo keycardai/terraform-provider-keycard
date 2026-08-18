@@ -3,7 +3,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/datasourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -19,17 +18,13 @@ var (
 	_ datasource.DataSourceWithConfigValidators = &RoleDataSource{}
 )
 
-func NewRoleDataSource(retryWindow time.Duration) datasource.DataSource {
-	if retryWindow <= 0 {
-		retryWindow = notFoundRetryWindow
-	}
-	return &RoleDataSource{notFoundRetryWindow: retryWindow}
+func NewRoleDataSource() datasource.DataSource {
+	return &RoleDataSource{}
 }
 
 // RoleDataSource defines the data source implementation.
 type RoleDataSource struct {
-	client              *client.ClientWithResponses
-	notFoundRetryWindow time.Duration
+	client *client.ClientWithResponses
 }
 
 // RoleModel maps the keycard_role data source schema.
@@ -131,12 +126,7 @@ func (d *RoleDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 	var role *client.Role
 
 	if !data.ID.IsNull() {
-		// A zone is provisioned asynchronously, so a role read shortly after the
-		// zone is created can 404 briefly. A persistent 404 is a genuine miss,
-		// so bound retries to a short window.
-		getResp, err := callWithRetry(ctx, func() (*client.GetRoleResponse, error) {
-			return d.client.GetRoleWithResponse(ctx, zoneID, data.ID.ValueString())
-		}, retryOnNotFound, withRetryWindow(d.notFoundRetryWindow))
+		getResp, err := d.client.GetRoleWithResponse(ctx, zoneID, data.ID.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read role, got error: %s", err))
 			return
@@ -169,14 +159,10 @@ func (d *RoleDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 		ownerType := data.OwnerType.ValueString()
 
 		// The identifier filter returns at most two roles — one per owner type —
-		// so a single unpaginated call suffices. As with the ID lookup, the zone
-		// itself may 404 briefly while it provisions; a missing identifier is an
-		// empty list rather than a 404, so the full default retry window applies.
-		listResp, err := callWithRetry(ctx, func() (*client.ListRolesResponse, error) {
-			return d.client.ListRolesWithResponse(ctx, zoneID, &client.ListRolesParams{
-				Identifier: &identifier,
-			})
-		}, retryOnNotFound)
+		// so a single unpaginated call suffices.
+		listResp, err := d.client.ListRolesWithResponse(ctx, zoneID, &client.ListRolesParams{
+			Identifier: &identifier,
+		})
 		if err != nil {
 			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list roles: %s", err))
 			return
