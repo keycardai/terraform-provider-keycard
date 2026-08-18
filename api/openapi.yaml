@@ -2238,6 +2238,76 @@ paths:
         - bearerAuth: []
       tags:
         - SSO
+  '/zones/{zoneId}/roles':
+    get:
+      operationId: listRoles
+      summary: List roles
+      description: Returns the roles defined in the specified zone. The full result set is currently returned in a single page; the `after`/`before`/`limit` cursor parameters are reserved and not yet enforced, and `pagination` cursors are always null.
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          description: Zone ID
+          schema:
+            type: string
+        - name: identifier
+          in: query
+          required: false
+          description: Filter roles by identifier
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of roles in the zone
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RolesList'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Zone Roles
+  '/zones/{zoneId}/roles/{roleId}':
+    get:
+      operationId: getRole
+      summary: Get role
+      description: Returns details of a specific role by ID
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          description: Zone ID
+          schema:
+            type: string
+        - name: roleId
+          in: path
+          required: true
+          description: Role ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A role that can be assigned to users within a zone.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Zone Roles
 components:
   schemas:
     PageInfo:
@@ -3733,7 +3803,7 @@ components:
         - updated_at
       title: Policy Schema Version
     Pagination:
-      description: Cursor-based pagination metadata returned by PDP list endpoints
+      description: Cursor-based pagination metadata returned by list endpoints
       type: object
       properties:
         after_cursor:
@@ -4134,6 +4204,66 @@ components:
         - manifest
         - schema_version
       title: Create Policy Set Version Request
+    RoleIdentifier:
+      title: Role Identifier
+      description: "Role identifier: a lowercase slug (letters and digits separated by single hyphens or underscores), unique per owner type within a zone."
+      type: string
+      pattern: ^[a-z0-9]+(?:[-_][a-z0-9]+)*$
+      minLength: 1
+      maxLength: 255
+    Role:
+      title: Role
+      description: A role that can be assigned to users within a zone.
+      type: object
+      properties:
+        id:
+          description: Unique identifier of the role
+          type: string
+        zone_id:
+          description: Zone this role belongs to
+          type: string
+        identifier:
+          $ref: '#/components/schemas/RoleIdentifier'
+        description:
+          description: Human-readable description
+          type: string
+          nullable: true
+          maxLength: 1000
+        owner_type:
+          description: Who owns this role. Platform-owned roles are managed by Keycard and cannot be modified or deleted via the API; customer-owned roles are user-created.
+          type: string
+          enum:
+            - platform
+            - customer
+        created_at:
+          description: Entity creation timestamp
+          type: string
+          format: date-time
+        updated_at:
+          description: Entity update timestamp
+          type: string
+          format: date-time
+      required:
+        - id
+        - zone_id
+        - identifier
+        - owner_type
+        - created_at
+        - updated_at
+    RolesList:
+      title: Roles List
+      description: A list of roles in a zone
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Role'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+      required:
+        - items
+        - pagination
   securitySchemes:
     bearerAuth:
       type: http
