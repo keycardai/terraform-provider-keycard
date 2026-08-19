@@ -29,7 +29,7 @@ func TestAccGroupRoleAssignmentResource_basic(t *testing.T) {
 			{
 				Config: testAccGroupRoleAssignmentResourceConfig_basic(groupName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrPair("keycard_group_role_assignment.test", "zone_id", "data.keycard_organization.test", "zone_id"),
+					resource.TestCheckResourceAttrPair("keycard_group_role_assignment.test", "zone_id", testAccOrgZoneRef, "zone_id"),
 					resource.TestCheckResourceAttrPair("keycard_group_role_assignment.test", "group_id", "keycard_group.test", "id"),
 					resource.TestCheckResourceAttrPair("keycard_group_role_assignment.test", "principal_id", "keycard_group.test", "id"),
 					resource.TestCheckResourceAttrPair("keycard_group_role_assignment.test", "role_id", "data.keycard_role.test", "id"),
@@ -60,7 +60,7 @@ func TestAccGroupRoleAssignmentResource_scoped(t *testing.T) {
 				Config: testAccGroupRoleAssignmentResourceConfig_scoped(groupName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_group_role_assignment.test", "scope_type", "zone"),
-					resource.TestCheckResourceAttrPair("keycard_group_role_assignment.test", "scope_id", "data.keycard_organization.test", "zone_id"),
+					resource.TestCheckResourceAttrPair("keycard_group_role_assignment.test", "scope_id", testAccOrgZoneRef, "zone_id"),
 				),
 			},
 		},
@@ -105,9 +105,7 @@ func testAccGroupRoleAssignmentImportStateIdFunc(resourceName string) resource.I
 // testAccGroupRoleAssignmentConfigBase declares the org zone, the group to
 // assign to, and the role looked up by identifier and owner type.
 func testAccGroupRoleAssignmentConfigBase(groupName string) string {
-	return fmt.Sprintf(`
-data "keycard_organization" "test" {}
-
+	return testAccOrgZone + fmt.Sprintf(`
 data "keycard_role" "test" {
   zone_id    = data.keycard_organization.test.zone_id
   identifier = %[2]q

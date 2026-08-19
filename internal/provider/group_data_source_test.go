@@ -21,7 +21,7 @@ func TestAccGroupDataSource_byID(t *testing.T) {
 				Config: testAccGroupDataSourceConfig_byID(groupName, identifier),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.keycard_group.test", "id", "keycard_group.test", "id"),
-					resource.TestCheckResourceAttrPair("data.keycard_group.test", "zone_id", "data.keycard_organization.test", "zone_id"),
+					resource.TestCheckResourceAttrPair("data.keycard_group.test", "zone_id", testAccOrgZoneRef, "zone_id"),
 					resource.TestCheckResourceAttr("data.keycard_group.test", "name", groupName),
 					resource.TestCheckResourceAttr("data.keycard_group.test", "identifier", identifier),
 				),
@@ -66,9 +66,7 @@ func TestAccGroupDataSource_bothIDAndIdentifier(t *testing.T) {
 }
 
 func testAccGroupDataSourceConfig_byID(groupName, identifier string) string {
-	return fmt.Sprintf(`
-data "keycard_organization" "test" {}
-
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_group" "test" {
   zone_id    = data.keycard_organization.test.zone_id
   name       = %[1]q
@@ -83,9 +81,7 @@ data "keycard_group" "test" {
 }
 
 func testAccGroupDataSourceConfig_byIdentifier(groupName, identifier string) string {
-	return fmt.Sprintf(`
-data "keycard_organization" "test" {}
-
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_group" "test" {
   zone_id    = data.keycard_organization.test.zone_id
   name       = %[1]q
@@ -100,9 +96,7 @@ data "keycard_group" "test" {
 }
 
 func testAccGroupDataSourceConfig_bothIDAndIdentifier(groupName string) string {
-	return fmt.Sprintf(`
-data "keycard_organization" "test" {}
-
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_group" "test" {
   zone_id = data.keycard_organization.test.zone_id
   name    = %[1]q

@@ -20,7 +20,7 @@ func TestAccGroupResource_basic(t *testing.T) {
 			{
 				Config: testAccGroupResourceConfig_basic(groupName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrPair("keycard_group.test", "zone_id", "data.keycard_organization.test", "zone_id"),
+					resource.TestCheckResourceAttrPair("keycard_group.test", "zone_id", testAccOrgZoneRef, "zone_id"),
 					resource.TestCheckResourceAttr("keycard_group.test", "name", groupName),
 					resource.TestCheckResourceAttrSet("keycard_group.test", "id"),
 					// Not configured, so the API derives it from the name.
@@ -107,9 +107,7 @@ func testAccGroupImportStateIdFunc(resourceName string) resource.ImportStateIdFu
 }
 
 func testAccGroupResourceConfig_basic(groupName string) string {
-	return fmt.Sprintf(`
-data "keycard_organization" "test" {}
-
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_group" "test" {
   zone_id = data.keycard_organization.test.zone_id
   name    = %[1]q
@@ -118,9 +116,7 @@ resource "keycard_group" "test" {
 }
 
 func testAccGroupResourceConfig_withIdentifier(groupName, identifier string) string {
-	return fmt.Sprintf(`
-data "keycard_organization" "test" {}
-
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_group" "test" {
   zone_id    = data.keycard_organization.test.zone_id
   name       = %[1]q
