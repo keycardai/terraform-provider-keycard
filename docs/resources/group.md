@@ -19,7 +19,7 @@ resource "keycard_group" "engineering" {
   name    = "Engineering"
 }
 
-# A group with an explicit identifier, useful when policies or external systems
+# A group with an explicit identifier, useful when policies or other systems
 # reference the group by a stable name
 resource "keycard_group" "oncall" {
   zone_id    = keycard_zone.production.id

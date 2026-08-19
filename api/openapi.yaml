@@ -2181,7 +2181,7 @@ paths:
     post:
       operationId: createGroup
       summary: Create a group
-      description: Creates a group managed in Keycard. Groups synced from an external directory are created by that directory.
+      description: Creates a group.
       parameters:
         - name: zoneId
           in: path
@@ -2263,7 +2263,7 @@ paths:
     patch:
       operationId: updateGroup
       summary: Update a group
-      description: Updates a group's name and/or identifier. The name of an externally synced group cannot be changed while external sync is enabled for the zone.
+      description: Updates a group's name and/or identifier.
       parameters:
         - name: zoneId
           in: path
@@ -2303,7 +2303,7 @@ paths:
     delete:
       operationId: deleteGroup
       summary: Delete a group
-      description: Deletes a group along with its memberships and role assignments. Externally synced groups can only be deleted by their directory.
+      description: Deletes a group along with its memberships and role assignments.
       parameters:
         - name: zoneId
           in: path
@@ -2408,7 +2408,7 @@ paths:
     post:
       operationId: addGroupMember
       summary: Add a group member
-      description: Adds a user to a group managed in Keycard. Membership of externally synced groups is not managed manually.
+      description: Adds a user to a group.
       parameters:
         - name: zoneId
           in: path
@@ -2449,7 +2449,7 @@ paths:
     delete:
       operationId: removeGroupMember
       summary: Remove a group member
-      description: Removes a user from a group managed in Keycard. Membership of externally synced groups is not managed manually.
+      description: Removes a user from a group.
       parameters:
         - name: zoneId
           in: path
@@ -4836,14 +4836,11 @@ components:
           description: Organization this group belongs to
           type: string
         identifier:
-          description: User-specified identifier, unique within the zone. Automatically assigned for groups from an external directory.
+          description: User-specified identifier, unique within the zone.
           type: string
         name:
           description: Human-readable group name
           type: string
-        external:
-          description: Whether the group is synced from an external directory. Read-only; set by external sync.
-          type: boolean
         member_count:
           description: Number of users in the group. Only included when `expand[]=member_count` is requested.
           type: integer
@@ -4866,12 +4863,11 @@ components:
         - organization_id
         - identifier
         - name
-        - external
         - created_at
         - updated_at
       title: Group
     GroupCreate:
-      description: Schema for creating a group managed in Keycard
+      description: Schema for creating a group
       type: object
       properties:
         name:

@@ -3,12 +3,12 @@
 page_title: "keycard_group_member Resource - keycard"
 subcategory: ""
 description: |-
-  Adds a user to a Keycard group. The user inherits every role assigned to the group. Membership of groups synced from an external directory is managed by that directory, not here.
+  Adds a user to a Keycard group. The user inherits every role assigned to the group.
 ---
 
 # keycard_group_member (Resource)
 
-Adds a user to a Keycard group. The user inherits every role assigned to the group. Membership of groups synced from an external directory is managed by that directory, not here.
+Adds a user to a Keycard group. The user inherits every role assigned to the group.
 
 ## Example Usage
 

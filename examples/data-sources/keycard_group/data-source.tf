@@ -4,8 +4,7 @@ data "keycard_group" "engineering" {
   id      = keycard_group.engineering.id
 }
 
-# Look up a group by identifier, for groups created outside Terraform or synced
-# from an external directory
+# Look up a group by identifier, for groups created outside Terraform
 data "keycard_group" "oncall" {
   zone_id    = keycard_zone.production.id
   identifier = "oncall-engineers"

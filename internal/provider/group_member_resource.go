@@ -42,7 +42,7 @@ func (r *GroupMemberResource) Metadata(ctx context.Context, req resource.Metadat
 
 func (r *GroupMemberResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Adds a user to a Keycard group. The user inherits every role assigned to the group. Membership of groups synced from an external directory is managed by that directory, not here.",
+		MarkdownDescription: "Adds a user to a Keycard group. The user inherits every role assigned to the group.",
 
 		Attributes: map[string]schema.Attribute{
 			"zone_id": schema.StringAttribute{
