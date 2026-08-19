@@ -108,8 +108,10 @@ func TestAccApplicationWorkloadIdentityResource_updateSubject(t *testing.T) {
 
 func TestAccApplicationWorkloadIdentityResource_removeSubject(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	namespace := acctest.RandomWithPrefix("ns")
 	serviceAccount := acctest.RandomWithPrefix("sa")
+	subject := fmt.Sprintf("system:serviceaccount:%s:%s", namespace, serviceAccount)
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -117,19 +119,15 @@ func TestAccApplicationWorkloadIdentityResource_removeSubject(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create with subject
 			{
-				Config: testAccApplicationWorkloadIdentityResourceConfig_kubernetes(rName, namespace, serviceAccount),
+				Config: testAccApplicationWorkloadIdentityResourceConfig_ownZone(zoneName, rName, subject),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("keycard_application_workload_identity.test", "id"),
-					resource.TestCheckResourceAttr(
-						"keycard_application_workload_identity.test",
-						"subject",
-						fmt.Sprintf("system:serviceaccount:%s:%s", namespace, serviceAccount),
-					),
+					resource.TestCheckResourceAttr("keycard_application_workload_identity.test", "subject", subject),
 				),
 			},
 			// Remove subject (should accept any token from provider)
 			{
-				Config: testAccApplicationWorkloadIdentityResourceConfig_noSubject(rName),
+				Config: testAccApplicationWorkloadIdentityResourceConfig_ownZone(zoneName, rName, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("keycard_application_workload_identity.test", "id"),
 					resource.TestCheckNoResourceAttr("keycard_application_workload_identity.test", "subject"),
@@ -284,6 +282,7 @@ func testAccApplicationWorkloadIdentityResourceConfig_kubernetes(appName, namesp
 	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
   name        = "k8s-provider-%[1]s"
+  identifier  = "https://k8s-provider-%[1]s.example.com"
 
   oauth2 = {
     issuer = "https://kubernetes.default.svc.cluster.local"
@@ -306,35 +305,50 @@ resource "keycard_application_workload_identity" "test" {
 `, appName, namespace, serviceAccount)
 }
 
-func testAccApplicationWorkloadIdentityResourceConfig_noSubject(appName string) string {
-	return testAccOrgZone + fmt.Sprintf(`
+// A workload identity created without a subject gets the server-assigned
+// credential identifier "*" (see api/openapi.yaml), which must be unique within
+// the zone and cannot be varied per test. Tests that create one need their own
+// zone. Passing an empty subject omits the attribute.
+func testAccApplicationWorkloadIdentityResourceConfig_ownZone(zoneName, appName, subject string) string {
+	identity := `
+resource "keycard_application_workload_identity" "test" {
+  zone_id        = keycard_zone.test.id
+  application_id = keycard_application.test.id
+  provider_id    = keycard_provider.test.id
+`
+	if subject != "" {
+		identity += fmt.Sprintf("  subject        = %q\n", subject)
+	}
+	identity += "}\n"
+
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+}
+
 resource "keycard_provider" "test" {
-  name        = "k8s-provider-%[1]s"
+  name       = "k8s-provider-%[2]s"
+  identifier = "https://k8s-provider-%[2]s.example.com"
+  zone_id    = keycard_zone.test.id
 
   oauth2 = {
     issuer = "https://kubernetes.default.svc.cluster.local"
   }
-  zone_id     = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_application" "test" {
-  name       = %[1]q
-  identifier = "https://%[1]s.example.com"
-  zone_id    = data.keycard_organization.test.zone_id
+  name       = %[2]q
+  identifier = "https://%[2]s.example.com"
+  zone_id    = keycard_zone.test.id
 }
-
-resource "keycard_application_workload_identity" "test" {
-  zone_id        = data.keycard_organization.test.zone_id
-  application_id = keycard_application.test.id
-  provider_id    = keycard_provider.test.id
-}
-`, appName)
+`, zoneName, appName) + identity
 }
 
 func testAccApplicationWorkloadIdentityResourceConfig_github(appName, org, repo, branch string) string {
 	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
   name        = "github-provider-%[1]s"
+  identifier  = "https://github-provider-%[1]s.example.com"
 
   oauth2 = {
     issuer = "https://token.actions.githubusercontent.com"
@@ -361,6 +375,7 @@ func testAccApplicationWorkloadIdentityResourceConfig_withSecondProvider(appName
 	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
   name        = "k8s-provider-%[1]s"
+  identifier  = "https://k8s-provider-%[1]s.example.com"
 
   oauth2 = {
     issuer = "https://kubernetes.default.svc.cluster.local"
@@ -370,6 +385,7 @@ resource "keycard_provider" "test" {
 
 resource "keycard_provider" "test2" {
   name        = "k8s-provider2-%[1]s"
+  identifier  = "https://k8s-provider2-%[1]s.example.com"
 
   oauth2 = {
     issuer = "https://kubernetes2.default.svc.cluster.local"
@@ -396,6 +412,7 @@ func testAccApplicationWorkloadIdentityResourceConfig_multiple(appName, namespac
 	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
   name        = "k8s-provider-%[1]s"
+  identifier  = "https://k8s-provider-%[1]s.example.com"
 
   oauth2 = {
     issuer = "https://kubernetes.default.svc.cluster.local"
@@ -429,6 +446,7 @@ func testAccApplicationWorkloadIdentityResourceConfig_emptySubject(appName strin
 	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
   name        = "k8s-provider-%[1]s"
+  identifier  = "https://k8s-provider-%[1]s.example.com"
 
   oauth2 = {
     issuer = "https://kubernetes.default.svc.cluster.local"

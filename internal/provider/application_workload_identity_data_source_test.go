@@ -56,6 +56,7 @@ func TestAccApplicationWorkloadIdentityDataSource_basic(t *testing.T) {
 
 func TestAccApplicationWorkloadIdentityDataSource_noSubject(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -63,7 +64,7 @@ func TestAccApplicationWorkloadIdentityDataSource_noSubject(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a workload identity without subject and fetch it
 			{
-				Config: testAccApplicationWorkloadIdentityDataSourceConfig_noSubject(rName),
+				Config: testAccApplicationWorkloadIdentityDataSourceConfig_noSubject(zoneName, rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
 						"data.keycard_application_workload_identity.test", "id",
@@ -107,6 +108,7 @@ func testAccApplicationWorkloadIdentityDataSourceConfig_basic(appName, namespace
 	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
   name        = "k8s-provider-%[1]s"
+  identifier  = "https://k8s-provider-%[1]s.example.com"
 
   oauth2 = {
     issuer = "https://kubernetes.default.svc.cluster.local"
@@ -134,25 +136,33 @@ data "keycard_application_workload_identity" "test" {
 `, appName, namespace, serviceAccount)
 }
 
-func testAccApplicationWorkloadIdentityDataSourceConfig_noSubject(appName string) string {
-	return testAccOrgZone + fmt.Sprintf(`
+// A workload identity created without a subject gets the server-assigned
+// credential identifier "*" (see api/openapi.yaml), which must be unique within
+// the zone and cannot be varied per test, so this one needs its own zone.
+func testAccApplicationWorkloadIdentityDataSourceConfig_noSubject(zoneName, appName string) string {
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+}
+
 resource "keycard_provider" "test" {
-  name        = "k8s-provider-%[1]s"
+  name       = "k8s-provider-%[2]s"
+  identifier = "https://k8s-provider-%[2]s.example.com"
+  zone_id    = keycard_zone.test.id
 
   oauth2 = {
     issuer = "https://kubernetes.default.svc.cluster.local"
   }
-  zone_id     = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_application" "test" {
-  name       = %[1]q
-  identifier = "https://%[1]s.example.com"
-  zone_id    = data.keycard_organization.test.zone_id
+  name       = %[2]q
+  identifier = "https://%[2]s.example.com"
+  zone_id    = keycard_zone.test.id
 }
 
 resource "keycard_application_workload_identity" "test" {
-  zone_id        = data.keycard_organization.test.zone_id
+  zone_id        = keycard_zone.test.id
   application_id = keycard_application.test.id
   provider_id    = keycard_provider.test.id
 }
@@ -161,7 +171,7 @@ data "keycard_application_workload_identity" "test" {
   zone_id = keycard_application_workload_identity.test.zone_id
   id      = keycard_application_workload_identity.test.id
 }
-`, appName)
+`, zoneName, appName)
 }
 
 func testAccApplicationWorkloadIdentityDataSourceConfig_notFound() string {

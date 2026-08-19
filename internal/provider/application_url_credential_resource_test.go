@@ -88,7 +88,7 @@ func TestAccApplicationURLCredentialResource_urlChange(t *testing.T) {
 func TestAccApplicationURLCredentialResource_applicationChange(t *testing.T) {
 	rName1 := acctest.RandomWithPrefix("tftest-app1")
 	rName2 := acctest.RandomWithPrefix("tftest-app2")
-	urlValue := "https://example.com/credential"
+	urlValue := fmt.Sprintf("https://%s.example.com", rName1)
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -235,7 +235,7 @@ resource "keycard_application" "test" {
 resource "keycard_application_url_credential" "test" {
   zone_id        = %[2]s
   application_id = keycard_application.test.id
-  url            = "https://example.com/credential"
+  url            = "https://%[1]s.example.com"
 }
 `, appName, zoneID)
 }
