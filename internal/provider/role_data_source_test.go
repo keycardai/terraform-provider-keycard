@@ -68,14 +68,11 @@ func TestAccRoleDataSource_ownerTypeRequiredWithIdentifier(t *testing.T) {
 	})
 }
 
-// The organization zone is the only zone with roles: custom zones have none by
-// default and the provider cannot create them yet.
-const testAccRoleOrgZone = `
-data "keycard_organization" "test" {}
-`
+// Roles only exist in the organization zone: custom zones have none by default
+// and the provider cannot create them yet.
 
 func testAccRoleDataSourceConfig_byIdentifier() string {
-	return testAccRoleOrgZone + `
+	return testAccOrgZone + `
 data "keycard_role" "by_identifier" {
   zone_id    = data.keycard_organization.test.zone_id
   identifier = "viewer"
@@ -94,7 +91,7 @@ data "keycard_role" "by_id" {
 }
 
 func testAccRoleDataSourceConfig_notFound() string {
-	return testAccRoleOrgZone + `
+	return testAccOrgZone + `
 data "keycard_role" "missing" {
   zone_id    = data.keycard_organization.test.zone_id
   identifier = "no-such-role"
@@ -104,7 +101,7 @@ data "keycard_role" "missing" {
 }
 
 func testAccRoleDataSourceConfig_identifierWithoutOwnerType() string {
-	return testAccRoleOrgZone + `
+	return testAccOrgZone + `
 data "keycard_role" "missing_owner_type" {
   zone_id    = data.keycard_organization.test.zone_id
   identifier = "viewer"

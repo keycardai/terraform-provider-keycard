@@ -122,15 +122,13 @@ func TestAccProviderDataSource_withOAuth2(t *testing.T) {
 }
 
 func TestAccProviderDataSource_notFound(t *testing.T) {
-	rName := acctest.RandomWithPrefix("tftest")
-
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
-			// Create a zone but attempt to fetch a provider that doesn't exist
+			// Attempt to fetch a provider that doesn't exist
 			{
-				Config:      testAccProviderDataSourceConfig_notFound(rName),
+				Config:      testAccProviderDataSourceConfig_notFound(),
 				ExpectError: regexp.MustCompile("Provider Not Found"),
 			},
 		},
@@ -138,14 +136,10 @@ func TestAccProviderDataSource_notFound(t *testing.T) {
 }
 
 func testAccProviderDataSourceConfig_basic(name, issuer string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
   name    = %[1]q
-  zone_id = keycard_zone.test.id
+  zone_id = data.keycard_organization.test.zone_id
 
   oauth2 = {
     issuer = %[2]q
@@ -160,14 +154,10 @@ data "keycard_provider" "test" {
 }
 
 func testAccProviderDataSourceConfig_withDescription(name, issuer, description string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
   name        = %[1]q
-  zone_id     = keycard_zone.test.id
+  zone_id     = data.keycard_organization.test.zone_id
   description = %[3]q
 
   oauth2 = {
@@ -183,14 +173,10 @@ data "keycard_provider" "test" {
 }
 
 func testAccProviderDataSourceConfig_withOAuth2(name, issuer string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
   name          = %[1]q
-  zone_id       = keycard_zone.test.id
+  zone_id       = data.keycard_organization.test.zone_id
   client_id     = "test-client-id"
   client_secret = "test-client-secret"
 
@@ -208,15 +194,11 @@ data "keycard_provider" "test" {
 `, name, issuer)
 }
 
-func testAccProviderDataSourceConfig_notFound(name string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccProviderDataSourceConfig_notFound() string {
+	return testAccOrgZone + `
 data "keycard_provider" "test" {
-  zone_id = keycard_zone.test.id
+  zone_id = data.keycard_organization.test.zone_id
   id      = "non-existent-provider-id-12345"
 }
-`, name)
+`
 }

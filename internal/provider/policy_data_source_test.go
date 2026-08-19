@@ -53,14 +53,12 @@ func TestAccPolicyDataSource_byName(t *testing.T) {
 }
 
 func TestAccPolicyDataSource_notFound(t *testing.T) {
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
-
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheckBasic(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccPolicyDataSourceConfig_notFound(zoneName),
+				Config:      testAccPolicyDataSourceConfig_notFound(),
 				ExpectError: regexp.MustCompile(`No policy found with name`),
 			},
 		},
@@ -68,14 +66,12 @@ func TestAccPolicyDataSource_notFound(t *testing.T) {
 }
 
 func TestAccPolicyDataSource_idNotFound(t *testing.T) {
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
-
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheckBasic(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactoriesShortRetry,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccPolicyDataSourceConfig_idNotFound(zoneName),
+				Config:      testAccPolicyDataSourceConfig_idNotFound(),
 				ExpectError: regexp.MustCompile(`Policy Not Found`),
 			},
 		},
@@ -83,14 +79,12 @@ func TestAccPolicyDataSource_idNotFound(t *testing.T) {
 }
 
 func TestAccPolicyDataSource_idAndNameConflict(t *testing.T) {
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
-
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheckBasic(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccPolicyDataSourceConfig_idAndName(zoneName),
+				Config:      testAccPolicyDataSourceConfig_idAndName(),
 				ExpectError: regexp.MustCompile(`Invalid Attribute Combination`),
 			},
 		},
@@ -134,42 +128,30 @@ data "keycard_policy" "test" {
 `, zoneName, policyName)
 }
 
-func testAccPolicyDataSourceConfig_notFound(zoneName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccPolicyDataSourceConfig_notFound() string {
+	return testAccOrgZone + `
 data "keycard_policy" "test" {
-  zone_id = keycard_zone.test.id
+  zone_id = data.keycard_organization.test.zone_id
   name    = "does-not-exist-policy"
 }
-`, zoneName)
+`
 }
 
-func testAccPolicyDataSourceConfig_idNotFound(zoneName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccPolicyDataSourceConfig_idNotFound() string {
+	return testAccOrgZone + `
 data "keycard_policy" "test" {
-  zone_id = keycard_zone.test.id
+  zone_id = data.keycard_organization.test.zone_id
   id      = "does-not-exist-policy-id"
 }
-`, zoneName)
+`
 }
 
-func testAccPolicyDataSourceConfig_idAndName(zoneName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccPolicyDataSourceConfig_idAndName() string {
+	return testAccOrgZone + `
 data "keycard_policy" "test" {
-  zone_id = keycard_zone.test.id
+  zone_id = data.keycard_organization.test.zone_id
   id      = "some-id"
   name    = "some-name"
 }
-`, zoneName)
+`
 }

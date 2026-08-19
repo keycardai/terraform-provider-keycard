@@ -11,7 +11,6 @@ import (
 
 func TestAccResourceDataSource_basic(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -20,7 +19,7 @@ func TestAccResourceDataSource_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a resource and fetch it with the data source
 			{
-				Config: testAccResourceDataSourceConfig_basic(zoneName, providerName, rName),
+				Config: testAccResourceDataSourceConfig_basic(providerName, rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify data source attributes match the resource
 					resource.TestCheckResourceAttrPair(
@@ -58,7 +57,6 @@ func TestAccResourceDataSource_basic(t *testing.T) {
 
 func TestAccResourceDataSource_withDescription(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 	description := "Test resource description"
 
@@ -68,7 +66,7 @@ func TestAccResourceDataSource_withDescription(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a resource with description and fetch it
 			{
-				Config: testAccResourceDataSourceConfig_withDescription(zoneName, providerName, rName, description),
+				Config: testAccResourceDataSourceConfig_withDescription(providerName, rName, description),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
 						"data.keycard_resource.test", "id",
@@ -87,7 +85,6 @@ func TestAccResourceDataSource_withDescription(t *testing.T) {
 
 func TestAccResourceDataSource_withMetadata(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -96,7 +93,7 @@ func TestAccResourceDataSource_withMetadata(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a resource with metadata and fetch it
 			{
-				Config: testAccResourceDataSourceConfig_withMetadata(zoneName, providerName, rName),
+				Config: testAccResourceDataSourceConfig_withMetadata(providerName, rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
 						"data.keycard_resource.test", "id",
@@ -115,7 +112,6 @@ func TestAccResourceDataSource_withMetadata(t *testing.T) {
 
 func TestAccResourceDataSource_withScopes(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -124,7 +120,7 @@ func TestAccResourceDataSource_withScopes(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a resource with OAuth2 scopes and fetch it
 			{
-				Config: testAccResourceDataSourceConfig_withScopes(zoneName, providerName, rName),
+				Config: testAccResourceDataSourceConfig_withScopes(providerName, rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
 						"data.keycard_resource.test", "id",
@@ -145,7 +141,6 @@ func TestAccResourceDataSource_withScopes(t *testing.T) {
 
 func TestAccResourceDataSource_withApplication(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 	appName := acctest.RandomWithPrefix("tftest-app")
 
@@ -155,7 +150,7 @@ func TestAccResourceDataSource_withApplication(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a resource with application_id and fetch it
 			{
-				Config: testAccResourceDataSourceConfig_withApplication(zoneName, providerName, appName, rName),
+				Config: testAccResourceDataSourceConfig_withApplication(providerName, appName, rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
 						"data.keycard_resource.test", "id",
@@ -174,7 +169,6 @@ func TestAccResourceDataSource_withApplication(t *testing.T) {
 
 func TestAccResourceDataSource_complete(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 	appName := acctest.RandomWithPrefix("tftest-app")
 
@@ -184,7 +178,7 @@ func TestAccResourceDataSource_complete(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a resource with all fields and fetch it
 			{
-				Config: testAccResourceDataSourceConfig_complete(zoneName, providerName, appName, rName),
+				Config: testAccResourceDataSourceConfig_complete(providerName, appName, rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
 						"data.keycard_resource.test", "id",
@@ -225,15 +219,13 @@ func TestAccResourceDataSource_complete(t *testing.T) {
 }
 
 func TestAccResourceDataSource_notFound(t *testing.T) {
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
-
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
-			// Create a zone but attempt to fetch a resource that doesn't exist
+			// Attempt to fetch a resource that doesn't exist
 			{
-				Config:      testAccResourceDataSourceConfig_notFound(zoneName),
+				Config:      testAccResourceDataSourceConfig_notFound(),
 				ExpectError: regexp.MustCompile("Resource Not Found"),
 			},
 		},
@@ -242,7 +234,6 @@ func TestAccResourceDataSource_notFound(t *testing.T) {
 
 func TestAccResourceDataSource_byIdentifier(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -251,7 +242,7 @@ func TestAccResourceDataSource_byIdentifier(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a resource and fetch it by identifier
 			{
-				Config: testAccResourceDataSourceConfig_byIdentifier(zoneName, providerName, rName),
+				Config: testAccResourceDataSourceConfig_byIdentifier(providerName, rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify data source attributes match the resource
 					resource.TestCheckResourceAttrPair(
@@ -279,15 +270,13 @@ func TestAccResourceDataSource_byIdentifier(t *testing.T) {
 }
 
 func TestAccResourceDataSource_byIdentifier_notFound(t *testing.T) {
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
-
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Attempt to fetch a resource by identifier that doesn't exist
 			{
-				Config:      testAccResourceDataSourceConfig_byIdentifier_notFound(zoneName),
+				Config:      testAccResourceDataSourceConfig_byIdentifier_notFound(),
 				ExpectError: regexp.MustCompile("Resource Not Found"),
 			},
 		},
@@ -295,15 +284,13 @@ func TestAccResourceDataSource_byIdentifier_notFound(t *testing.T) {
 }
 
 func TestAccResourceDataSource_validation_bothIdAndIdentifier(t *testing.T) {
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
-
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Attempt to provide both id and identifier
 			{
-				Config:      testAccResourceDataSourceConfig_bothIdAndIdentifier(zoneName),
+				Config:      testAccResourceDataSourceConfig_bothIdAndIdentifier(),
 				ExpectError: regexp.MustCompile("Invalid Attribute Combination"),
 			},
 		},
@@ -311,40 +298,34 @@ func TestAccResourceDataSource_validation_bothIdAndIdentifier(t *testing.T) {
 }
 
 func TestAccResourceDataSource_validation_neitherIdNorIdentifier(t *testing.T) {
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
-
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Attempt to provide neither id nor identifier
 			{
-				Config:      testAccResourceDataSourceConfig_neitherIdNorIdentifier(zoneName),
+				Config:      testAccResourceDataSourceConfig_neitherIdNorIdentifier(),
 				ExpectError: regexp.MustCompile("Missing Attribute Configuration"),
 			},
 		},
 	})
 }
 
-func testAccResourceDataSourceConfig_basic(zoneName, providerName, resourceName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccResourceDataSourceConfig_basic(providerName, resourceName string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
-  name       = %[2]q
+  name       = %[1]q
 
   oauth2 = {
-    issuer = "https://%[2]s.example.com"
+    issuer = "https://%[1]s.example.com"
   }
-  zone_id    = keycard_zone.test.id
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_resource" "test" {
-  name                   = %[3]q
-  identifier             = "https://%[3]s.example.com"
-  zone_id                = keycard_zone.test.id
+  name                   = %[2]q
+  identifier             = "https://%[2]s.example.com"
+  zone_id                = data.keycard_organization.test.zone_id
   credential_provider_id = keycard_provider.test.id
 }
 
@@ -352,29 +333,25 @@ data "keycard_resource" "test" {
   zone_id = keycard_resource.test.zone_id
   id      = keycard_resource.test.id
 }
-`, zoneName, providerName, resourceName)
+`, providerName, resourceName)
 }
 
-func testAccResourceDataSourceConfig_withDescription(zoneName, providerName, resourceName, description string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccResourceDataSourceConfig_withDescription(providerName, resourceName, description string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
-  name       = %[2]q
+  name       = %[1]q
 
   oauth2 = {
-    issuer = "https://%[2]s.example.com"
+    issuer = "https://%[1]s.example.com"
   }
-  zone_id    = keycard_zone.test.id
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_resource" "test" {
-  name                   = %[3]q
-  description            = %[4]q
-  identifier             = "https://%[3]s.example.com"
-  zone_id                = keycard_zone.test.id
+  name                   = %[2]q
+  description            = %[3]q
+  identifier             = "https://%[2]s.example.com"
+  zone_id                = data.keycard_organization.test.zone_id
   credential_provider_id = keycard_provider.test.id
 }
 
@@ -382,28 +359,24 @@ data "keycard_resource" "test" {
   zone_id = keycard_resource.test.zone_id
   id      = keycard_resource.test.id
 }
-`, zoneName, providerName, resourceName, description)
+`, providerName, resourceName, description)
 }
 
-func testAccResourceDataSourceConfig_withMetadata(zoneName, providerName, resourceName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccResourceDataSourceConfig_withMetadata(providerName, resourceName string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
-  name       = %[2]q
+  name       = %[1]q
 
   oauth2 = {
-    issuer = "https://%[2]s.example.com"
+    issuer = "https://%[1]s.example.com"
   }
-  zone_id    = keycard_zone.test.id
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_resource" "test" {
-  name                   = %[3]q
-  identifier             = "https://%[3]s.example.com"
-  zone_id                = keycard_zone.test.id
+  name                   = %[2]q
+  identifier             = "https://%[2]s.example.com"
+  zone_id                = data.keycard_organization.test.zone_id
   credential_provider_id = keycard_provider.test.id
 
   metadata = {
@@ -415,28 +388,24 @@ data "keycard_resource" "test" {
   zone_id = keycard_resource.test.zone_id
   id      = keycard_resource.test.id
 }
-`, zoneName, providerName, resourceName)
+`, providerName, resourceName)
 }
 
-func testAccResourceDataSourceConfig_withScopes(zoneName, providerName, resourceName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccResourceDataSourceConfig_withScopes(providerName, resourceName string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
-  name       = %[2]q
+  name       = %[1]q
 
   oauth2 = {
-    issuer = "https://%[2]s.example.com"
+    issuer = "https://%[1]s.example.com"
   }
-  zone_id    = keycard_zone.test.id
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_resource" "test" {
-  name                   = %[3]q
-  identifier             = "https://%[3]s.example.com"
-  zone_id                = keycard_zone.test.id
+  name                   = %[2]q
+  identifier             = "https://%[2]s.example.com"
+  zone_id                = data.keycard_organization.test.zone_id
   credential_provider_id = keycard_provider.test.id
 
   oauth2 = {
@@ -448,34 +417,30 @@ data "keycard_resource" "test" {
   zone_id = keycard_resource.test.zone_id
   id      = keycard_resource.test.id
 }
-`, zoneName, providerName, resourceName)
+`, providerName, resourceName)
 }
 
-func testAccResourceDataSourceConfig_withApplication(zoneName, providerName, appName, resourceName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccResourceDataSourceConfig_withApplication(providerName, appName, resourceName string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
-  name       = %[2]q
+  name       = %[1]q
 
   oauth2 = {
-    issuer = "https://%[2]s.example.com"
+    issuer = "https://%[1]s.example.com"
   }
-  zone_id    = keycard_zone.test.id
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_application" "test" {
-  name       = %[3]q
-  identifier = "https://%[3]s.example.com"
-  zone_id    = keycard_zone.test.id
+  name       = %[2]q
+  identifier = "https://%[2]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_resource" "test" {
-  name                   = %[4]q
-  identifier             = "https://%[4]s.example.com"
-  zone_id                = keycard_zone.test.id
+  name                   = %[3]q
+  identifier             = "https://%[3]s.example.com"
+  zone_id                = data.keycard_organization.test.zone_id
   credential_provider_id = keycard_provider.test.id
   application_id         = keycard_application.test.id
 }
@@ -484,35 +449,31 @@ data "keycard_resource" "test" {
   zone_id = keycard_resource.test.zone_id
   id      = keycard_resource.test.id
 }
-`, zoneName, providerName, appName, resourceName)
+`, providerName, appName, resourceName)
 }
 
-func testAccResourceDataSourceConfig_complete(zoneName, providerName, appName, resourceName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccResourceDataSourceConfig_complete(providerName, appName, resourceName string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
-  name       = %[2]q
+  name       = %[1]q
 
   oauth2 = {
-    issuer = "https://%[2]s.example.com"
+    issuer = "https://%[1]s.example.com"
   }
-  zone_id    = keycard_zone.test.id
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_application" "test" {
-  name       = %[3]q
-  identifier = "https://%[3]s.example.com"
-  zone_id    = keycard_zone.test.id
+  name       = %[2]q
+  identifier = "https://%[2]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_resource" "test" {
-  name                   = %[4]q
+  name                   = %[3]q
   description            = "Complete resource with all fields"
-  identifier             = "https://%[4]s.example.com"
-  zone_id                = keycard_zone.test.id
+  identifier             = "https://%[3]s.example.com"
+  zone_id                = data.keycard_organization.test.zone_id
   credential_provider_id = keycard_provider.test.id
   application_id         = keycard_application.test.id
 
@@ -529,41 +490,33 @@ data "keycard_resource" "test" {
   zone_id = keycard_resource.test.zone_id
   id      = keycard_resource.test.id
 }
-`, zoneName, providerName, appName, resourceName)
+`, providerName, appName, resourceName)
 }
 
-func testAccResourceDataSourceConfig_notFound(zoneName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccResourceDataSourceConfig_notFound() string {
+	return testAccOrgZone + `
 data "keycard_resource" "test" {
-  zone_id = keycard_zone.test.id
+  zone_id = data.keycard_organization.test.zone_id
   id      = "non-existent-resource-id-12345"
 }
-`, zoneName)
+`
 }
 
-func testAccResourceDataSourceConfig_byIdentifier(zoneName, providerName, resourceName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccResourceDataSourceConfig_byIdentifier(providerName, resourceName string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
-  name       = %[2]q
+  name       = %[1]q
 
   oauth2 = {
-    issuer = "https://%[2]s.example.com"
+    issuer = "https://%[1]s.example.com"
   }
-  zone_id    = keycard_zone.test.id
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_resource" "test" {
-  name                   = %[3]q
-  identifier             = "https://%[3]s.example.com"
-  zone_id                = keycard_zone.test.id
+  name                   = %[2]q
+  identifier             = "https://%[2]s.example.com"
+  zone_id                = data.keycard_organization.test.zone_id
   credential_provider_id = keycard_provider.test.id
 }
 
@@ -571,44 +524,32 @@ data "keycard_resource" "test" {
   zone_id    = keycard_resource.test.zone_id
   identifier = keycard_resource.test.identifier
 }
-`, zoneName, providerName, resourceName)
+`, providerName, resourceName)
 }
 
-func testAccResourceDataSourceConfig_byIdentifier_notFound(zoneName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccResourceDataSourceConfig_byIdentifier_notFound() string {
+	return testAccOrgZone + `
 data "keycard_resource" "test" {
-  zone_id    = keycard_zone.test.id
+  zone_id    = data.keycard_organization.test.zone_id
   identifier = "https://non-existent-resource.example.com"
 }
-`, zoneName)
+`
 }
 
-func testAccResourceDataSourceConfig_bothIdAndIdentifier(zoneName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccResourceDataSourceConfig_bothIdAndIdentifier() string {
+	return testAccOrgZone + `
 data "keycard_resource" "test" {
-  zone_id    = keycard_zone.test.id
+  zone_id    = data.keycard_organization.test.zone_id
   id         = "some-id"
   identifier = "https://some-resource.example.com"
 }
-`, zoneName)
+`
 }
 
-func testAccResourceDataSourceConfig_neitherIdNorIdentifier(zoneName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccResourceDataSourceConfig_neitherIdNorIdentifier() string {
+	return testAccOrgZone + `
 data "keycard_resource" "test" {
-  zone_id = keycard_zone.test.id
+  zone_id = data.keycard_organization.test.zone_id
 }
-`, zoneName)
+`
 }

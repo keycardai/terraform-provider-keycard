@@ -11,7 +11,6 @@ import (
 
 func TestAccApplicationURLCredentialResource_basic(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	urlValue := fmt.Sprintf("https://%s.example.com", rName)
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -20,7 +19,7 @@ func TestAccApplicationURLCredentialResource_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: testAccApplicationURLCredentialResourceConfig_basic(zoneName, rName, urlValue),
+				Config: testAccApplicationURLCredentialResourceConfig_basic(rName, urlValue),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("keycard_application_url_credential.test", "id"),
 					resource.TestCheckResourceAttrSet("keycard_application_url_credential.test", "zone_id"),
@@ -29,7 +28,7 @@ func TestAccApplicationURLCredentialResource_basic(t *testing.T) {
 					// Verify relationships
 					resource.TestCheckResourceAttrPair(
 						"keycard_application_url_credential.test", "zone_id",
-						"keycard_zone.test", "id",
+						testAccOrgZoneRef, "zone_id",
 					),
 					resource.TestCheckResourceAttrPair(
 						"keycard_application_url_credential.test", "application_id",
@@ -59,7 +58,6 @@ func TestAccApplicationURLCredentialResource_basic(t *testing.T) {
 
 func TestAccApplicationURLCredentialResource_urlChange(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	urlValue1 := fmt.Sprintf("https://%s-1.example.com", rName)
 	urlValue2 := fmt.Sprintf("https://%s-2.example.com", rName)
 
@@ -69,7 +67,7 @@ func TestAccApplicationURLCredentialResource_urlChange(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create with first URL
 			{
-				Config: testAccApplicationURLCredentialResourceConfig_basic(zoneName, rName, urlValue1),
+				Config: testAccApplicationURLCredentialResourceConfig_basic(rName, urlValue1),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("keycard_application_url_credential.test", "id"),
 					resource.TestCheckResourceAttr("keycard_application_url_credential.test", "url", urlValue1),
@@ -77,7 +75,7 @@ func TestAccApplicationURLCredentialResource_urlChange(t *testing.T) {
 			},
 			// Change URL (should force replacement)
 			{
-				Config: testAccApplicationURLCredentialResourceConfig_basic(zoneName, rName, urlValue2),
+				Config: testAccApplicationURLCredentialResourceConfig_basic(rName, urlValue2),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("keycard_application_url_credential.test", "id"),
 					resource.TestCheckResourceAttr("keycard_application_url_credential.test", "url", urlValue2),
@@ -90,7 +88,6 @@ func TestAccApplicationURLCredentialResource_urlChange(t *testing.T) {
 func TestAccApplicationURLCredentialResource_applicationChange(t *testing.T) {
 	rName1 := acctest.RandomWithPrefix("tftest-app1")
 	rName2 := acctest.RandomWithPrefix("tftest-app2")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	urlValue := "https://example.com/credential"
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -99,7 +96,7 @@ func TestAccApplicationURLCredentialResource_applicationChange(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create with first application
 			{
-				Config: testAccApplicationURLCredentialResourceConfig_basic(zoneName, rName1, urlValue),
+				Config: testAccApplicationURLCredentialResourceConfig_basic(rName1, urlValue),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("keycard_application_url_credential.test", "id"),
 					resource.TestCheckResourceAttrPair(
@@ -110,7 +107,7 @@ func TestAccApplicationURLCredentialResource_applicationChange(t *testing.T) {
 			},
 			// Change application (should force replacement)
 			{
-				Config: testAccApplicationURLCredentialResourceConfig_basic(zoneName, rName2, urlValue),
+				Config: testAccApplicationURLCredentialResourceConfig_basic(rName2, urlValue),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("keycard_application_url_credential.test", "id"),
 					resource.TestCheckResourceAttrPair(
@@ -125,33 +122,31 @@ func TestAccApplicationURLCredentialResource_applicationChange(t *testing.T) {
 
 func TestAccApplicationURLCredentialResource_zoneChange(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName1 := acctest.RandomWithPrefix("tftest-zone1")
-	zoneName2 := acctest.RandomWithPrefix("tftest-zone2")
-	urlValue := "https://example.com/credential"
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
-			// Create in zone 1
+			// Create in the organization zone
 			{
-				Config: testAccApplicationURLCredentialResourceConfig_basic(zoneName1, rName, urlValue),
+				Config: testAccApplicationURLCredentialResourceConfig_inZone(rName, zoneName, false),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("keycard_application_url_credential.test", "id"),
 					resource.TestCheckResourceAttrPair(
 						"keycard_application_url_credential.test", "zone_id",
-						"keycard_zone.test", "id",
+						testAccOrgZoneRef, "zone_id",
 					),
 				),
 			},
-			// Change zone (should force replacement)
+			// Move to another zone (should force replacement)
 			{
-				Config: testAccApplicationURLCredentialResourceConfig_basic(zoneName2, rName, urlValue),
+				Config: testAccApplicationURLCredentialResourceConfig_inZone(rName, zoneName, true),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("keycard_application_url_credential.test", "id"),
 					resource.TestCheckResourceAttrPair(
 						"keycard_application_url_credential.test", "zone_id",
-						"keycard_zone.test", "id",
+						testAccOtherZoneRef, "id",
 					),
 				),
 			},
@@ -161,7 +156,6 @@ func TestAccApplicationURLCredentialResource_zoneChange(t *testing.T) {
 
 func TestAccApplicationURLCredentialResource_multipleCredentials(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	urlValue1 := fmt.Sprintf("https://%s-1.example.com", rName)
 	urlValue2 := fmt.Sprintf("https://%s-2.example.com", rName)
 
@@ -171,7 +165,7 @@ func TestAccApplicationURLCredentialResource_multipleCredentials(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create multiple credentials for the same application
 			{
-				Config: testAccApplicationURLCredentialResourceConfig_multiple(zoneName, rName, urlValue1, urlValue2),
+				Config: testAccApplicationURLCredentialResourceConfig_multiple(rName, urlValue1, urlValue2),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// First credential
 					resource.TestCheckResourceAttrSet("keycard_application_url_credential.test1", "id"),
@@ -190,48 +184,58 @@ func TestAccApplicationURLCredentialResource_multipleCredentials(t *testing.T) {
 	})
 }
 
-func testAccApplicationURLCredentialResourceConfig_basic(zoneName, appName, urlValue string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccApplicationURLCredentialResourceConfig_basic(appName, urlValue string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_application" "test" {
-  name       = %[2]q
-  identifier = "https://%[2]s.example.com"
-  zone_id    = keycard_zone.test.id
+  name       = %[1]q
+  identifier = "https://%[1]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_application_url_credential" "test" {
-  zone_id        = keycard_zone.test.id
+  zone_id        = data.keycard_organization.test.zone_id
   application_id = keycard_application.test.id
-  url            = %[3]q
+  url            = %[2]q
 }
-`, zoneName, appName, urlValue)
-}
-
-func testAccApplicationURLCredentialResourceConfig_multiple(zoneName, appName, urlValue1, urlValue2 string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
+`, appName, urlValue)
 }
 
+func testAccApplicationURLCredentialResourceConfig_multiple(appName, urlValue1, urlValue2 string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_application" "test" {
-  name       = %[2]q
-  identifier = "https://%[2]s.example.com"
-  zone_id    = keycard_zone.test.id
+  name       = %[1]q
+  identifier = "https://%[1]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_application_url_credential" "test1" {
-  zone_id        = keycard_zone.test.id
+  zone_id        = data.keycard_organization.test.zone_id
   application_id = keycard_application.test.id
-  url            = %[3]q
+  url            = %[2]q
 }
 
 resource "keycard_application_url_credential" "test2" {
-  zone_id        = keycard_zone.test.id
+  zone_id        = data.keycard_organization.test.zone_id
   application_id = keycard_application.test.id
-  url            = %[4]q
+  url            = %[3]q
 }
-`, zoneName, appName, urlValue1, urlValue2)
+`, appName, urlValue1, urlValue2)
+}
+
+func testAccApplicationURLCredentialResourceConfig_inZone(appName, zoneName string, otherZone bool) string {
+	zoneConfig, zoneID := testAccZone(otherZone, zoneName)
+
+	return zoneConfig + fmt.Sprintf(`
+resource "keycard_application" "test" {
+  name       = %[1]q
+  identifier = "https://%[1]s.example.com"
+  zone_id    = %[2]s
+}
+
+resource "keycard_application_url_credential" "test" {
+  zone_id        = %[2]s
+  application_id = keycard_application.test.id
+  url            = "https://example.com/credential"
+}
+`, appName, zoneID)
 }
