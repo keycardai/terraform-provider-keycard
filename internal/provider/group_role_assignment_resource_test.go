@@ -51,16 +51,17 @@ func TestAccGroupRoleAssignmentResource_basic(t *testing.T) {
 
 func TestAccGroupRoleAssignmentResource_scoped(t *testing.T) {
 	groupName := acctest.RandomWithPrefix("tftest-group")
+	scopeZoneName := acctest.RandomWithPrefix("tftest-zone")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheckBasic(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGroupRoleAssignmentResourceConfig_scoped(groupName),
+				Config: testAccGroupRoleAssignmentResourceConfig_scoped(groupName, scopeZoneName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_group_role_assignment.test", "scope_type", "zone"),
-					resource.TestCheckResourceAttrPair("keycard_group_role_assignment.test", "scope_id", testAccOrgZoneRef, "zone_id"),
+					resource.TestCheckResourceAttrPair("keycard_group_role_assignment.test", "scope_id", testAccOtherZoneRef, "id"),
 				),
 			},
 		},
@@ -129,14 +130,18 @@ resource "keycard_group_role_assignment" "test" {
 `
 }
 
-func testAccGroupRoleAssignmentResourceConfig_scoped(groupName string) string {
-	return testAccGroupRoleAssignmentConfigBase(groupName) + `
+// testAccGroupRoleAssignmentResourceConfig_scoped scopes the assignment to a
+// zone other than the one it is created in: the API rejects a scope_id that
+// references the assignment's own zone.
+func testAccGroupRoleAssignmentResourceConfig_scoped(groupName, scopeZoneName string) string {
+	scopeZone, _ := testAccZone(true, scopeZoneName)
+	return testAccGroupRoleAssignmentConfigBase(groupName) + scopeZone + `
 resource "keycard_group_role_assignment" "test" {
   zone_id    = data.keycard_organization.test.zone_id
   group_id   = keycard_group.test.id
   role_id    = data.keycard_role.test.id
   scope_type = "zone"
-  scope_id   = data.keycard_organization.test.zone_id
+  scope_id   = keycard_zone.other.id
 }
 `
 }
