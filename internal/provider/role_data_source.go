@@ -100,10 +100,6 @@ func (d *RoleDataSource) ConfigValidators(ctx context.Context) []datasource.Conf
 		),
 		datasourcevalidator.Conflicting(
 			path.MatchRoot("id"),
-			path.MatchRoot("identifier"),
-		),
-		datasourcevalidator.Conflicting(
-			path.MatchRoot("id"),
 			path.MatchRoot("owner_type"),
 		),
 		datasourcevalidator.RequiredTogether(
