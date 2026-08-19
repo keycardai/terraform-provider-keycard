@@ -11,7 +11,6 @@ import (
 
 func TestAccApplicationDataSource_basic(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -19,7 +18,7 @@ func TestAccApplicationDataSource_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create an application resource and fetch it with the data source
 			{
-				Config: testAccApplicationDataSourceConfig_basic(zoneName, rName),
+				Config: testAccApplicationDataSourceConfig_basic(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify data source attributes match the resource
 					resource.TestCheckResourceAttrPair(
@@ -48,7 +47,6 @@ func TestAccApplicationDataSource_basic(t *testing.T) {
 
 func TestAccApplicationDataSource_withDescription(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	description := "Test application description"
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -57,7 +55,7 @@ func TestAccApplicationDataSource_withDescription(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create an application with description and fetch it
 			{
-				Config: testAccApplicationDataSourceConfig_withDescription(zoneName, rName, description),
+				Config: testAccApplicationDataSourceConfig_withDescription(rName, description),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
 						"data.keycard_application.test", "id",
@@ -76,7 +74,6 @@ func TestAccApplicationDataSource_withDescription(t *testing.T) {
 
 func TestAccApplicationDataSource_withMetadata(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -84,7 +81,7 @@ func TestAccApplicationDataSource_withMetadata(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create an application with metadata and fetch it
 			{
-				Config: testAccApplicationDataSourceConfig_withMetadata(zoneName, rName),
+				Config: testAccApplicationDataSourceConfig_withMetadata(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
 						"data.keycard_application.test", "id",
@@ -103,7 +100,6 @@ func TestAccApplicationDataSource_withMetadata(t *testing.T) {
 
 func TestAccApplicationDataSource_withOAuth2(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -111,7 +107,7 @@ func TestAccApplicationDataSource_withOAuth2(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create an application with OAuth2 configuration and fetch it
 			{
-				Config: testAccApplicationDataSourceConfig_withOAuth2(zoneName, rName),
+				Config: testAccApplicationDataSourceConfig_withOAuth2(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
 						"data.keycard_application.test", "id",
@@ -132,7 +128,6 @@ func TestAccApplicationDataSource_withOAuth2(t *testing.T) {
 
 func TestAccApplicationDataSource_withTraits(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -140,7 +135,7 @@ func TestAccApplicationDataSource_withTraits(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create an application with traits and fetch it
 			{
-				Config: testAccApplicationDataSourceConfig_withTraits(zoneName, rName),
+				Config: testAccApplicationDataSourceConfig_withTraits(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
 						"data.keycard_application.test", "id",
@@ -160,14 +155,13 @@ func TestAccApplicationDataSource_withTraits(t *testing.T) {
 
 func TestAccApplicationDataSource_withConsent(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccApplicationDataSourceConfig_withConsent(zoneName, rName),
+				Config: testAccApplicationDataSourceConfig_withConsent(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
 						"data.keycard_application.test", "consent",
@@ -182,7 +176,6 @@ func TestAccApplicationDataSource_withConsent(t *testing.T) {
 
 func TestAccApplicationDataSource_complete(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -190,7 +183,7 @@ func TestAccApplicationDataSource_complete(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create an application with all fields and fetch it
 			{
-				Config: testAccApplicationDataSourceConfig_complete(zoneName, rName),
+				Config: testAccApplicationDataSourceConfig_complete(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
 						"data.keycard_application.test", "id",
@@ -238,70 +231,56 @@ func TestAccApplicationDataSource_complete(t *testing.T) {
 }
 
 func TestAccApplicationDataSource_notFound(t *testing.T) {
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
-
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
-			// Create a zone but attempt to fetch an application that doesn't exist
+			// Attempt to fetch an application that doesn't exist
 			{
-				Config:      testAccApplicationDataSourceConfig_notFound(zoneName),
+				Config:      testAccApplicationDataSourceConfig_notFound(),
 				ExpectError: regexp.MustCompile("Application Not Found"),
 			},
 		},
 	})
 }
 
-func testAccApplicationDataSourceConfig_basic(zoneName, appName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccApplicationDataSourceConfig_basic(appName string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_application" "test" {
-  name       = %[2]q
-  identifier = "https://%[2]s.example.com"
-  zone_id    = keycard_zone.test.id
+  name       = %[1]q
+  identifier = "https://%[1]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 data "keycard_application" "test" {
   zone_id = keycard_application.test.zone_id
   id      = keycard_application.test.id
 }
-`, zoneName, appName)
+`, appName)
 }
 
-func testAccApplicationDataSourceConfig_withDescription(zoneName, appName, description string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccApplicationDataSourceConfig_withDescription(appName, description string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_application" "test" {
-  name        = %[2]q
-  description = %[3]q
-  identifier  = "https://%[2]s.example.com"
-  zone_id     = keycard_zone.test.id
+  name        = %[1]q
+  description = %[2]q
+  identifier  = "https://%[1]s.example.com"
+  zone_id     = data.keycard_organization.test.zone_id
 }
 
 data "keycard_application" "test" {
   zone_id = keycard_application.test.zone_id
   id      = keycard_application.test.id
 }
-`, zoneName, appName, description)
+`, appName, description)
 }
 
-func testAccApplicationDataSourceConfig_withMetadata(zoneName, appName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccApplicationDataSourceConfig_withMetadata(appName string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_application" "test" {
-  name       = %[2]q
-  identifier = "https://%[2]s.example.com"
-  zone_id    = keycard_zone.test.id
+  name       = %[1]q
+  identifier = "https://%[1]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 
   metadata = {
     docs_url = "https://docs.example.com/app"
@@ -312,24 +291,20 @@ data "keycard_application" "test" {
   zone_id = keycard_application.test.zone_id
   id      = keycard_application.test.id
 }
-`, zoneName, appName)
+`, appName)
 }
 
-func testAccApplicationDataSourceConfig_withOAuth2(zoneName, appName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccApplicationDataSourceConfig_withOAuth2(appName string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_application" "test" {
-  name       = %[2]q
-  identifier = "https://%[2]s.example.com"
-  zone_id    = keycard_zone.test.id
+  name       = %[1]q
+  identifier = "https://%[1]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 
   oauth2 = {
     redirect_uris = [
-      "https://%[2]s.example.com/callback",
-      "https://%[2]s.example.com/auth/callback"
+      "https://%[1]s.example.com/callback",
+      "https://%[1]s.example.com/auth/callback"
     ]
   }
 }
@@ -338,19 +313,15 @@ data "keycard_application" "test" {
   zone_id = keycard_application.test.zone_id
   id      = keycard_application.test.id
 }
-`, zoneName, appName)
+`, appName)
 }
 
-func testAccApplicationDataSourceConfig_withTraits(zoneName, appName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccApplicationDataSourceConfig_withTraits(appName string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_application" "test" {
-  name       = %[2]q
-  identifier = "https://%[2]s.example.com"
-  zone_id    = keycard_zone.test.id
+  name       = %[1]q
+  identifier = "https://%[1]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 
   traits = ["gateway"]
 }
@@ -359,41 +330,33 @@ data "keycard_application" "test" {
   zone_id = keycard_application.test.zone_id
   id      = keycard_application.test.id
 }
-`, zoneName, appName)
+`, appName)
 }
 
-func testAccApplicationDataSourceConfig_withConsent(zoneName, appName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccApplicationDataSourceConfig_withConsent(appName string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_application" "test" {
-  name       = %[2]q
+  name       = %[1]q
   consent    = "implicit"
-  identifier = "https://%[2]s.example.com"
-  zone_id    = keycard_zone.test.id
+  identifier = "https://%[1]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 data "keycard_application" "test" {
   zone_id = keycard_application.test.zone_id
   id      = keycard_application.test.id
 }
-`, zoneName, appName)
+`, appName)
 }
 
-func testAccApplicationDataSourceConfig_complete(zoneName, appName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccApplicationDataSourceConfig_complete(appName string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_application" "test" {
-  name        = %[2]q
+  name        = %[1]q
   consent     = "implicit"
   description = "Complete application with all fields"
-  identifier  = "https://%[2]s.example.com"
-  zone_id     = keycard_zone.test.id
+  identifier  = "https://%[1]s.example.com"
+  zone_id     = data.keycard_organization.test.zone_id
 
   metadata = {
     docs_url = "https://docs.example.com/complete"
@@ -401,8 +364,8 @@ resource "keycard_application" "test" {
 
   oauth2 = {
     redirect_uris = [
-      "https://%[2]s.example.com/callback",
-      "https://%[2]s.example.com/auth/callback"
+      "https://%[1]s.example.com/callback",
+      "https://%[1]s.example.com/auth/callback"
     ]
   }
 
@@ -413,18 +376,14 @@ data "keycard_application" "test" {
   zone_id = keycard_application.test.zone_id
   id      = keycard_application.test.id
 }
-`, zoneName, appName)
+`, appName)
 }
 
-func testAccApplicationDataSourceConfig_notFound(zoneName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccApplicationDataSourceConfig_notFound() string {
+	return testAccOrgZone + `
 data "keycard_application" "test" {
-  zone_id = keycard_zone.test.id
+  zone_id = data.keycard_organization.test.zone_id
   id      = "non-existent-application-id-12345"
 }
-`, zoneName)
+`
 }

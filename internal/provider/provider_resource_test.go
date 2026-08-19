@@ -363,14 +363,10 @@ func TestAccProviderResource_invalidIssuerURI(t *testing.T) {
 }
 
 func testAccProviderResourceConfig_basic(name, issuer string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
   name    = %[1]q
-  zone_id = keycard_zone.test.id
+  zone_id = data.keycard_organization.test.zone_id
 
   oauth2 = {
     issuer = %[2]q
@@ -380,14 +376,10 @@ resource "keycard_provider" "test" {
 }
 
 func testAccProviderResourceConfig_withIdentifier(name, issuer, identifier string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
   name       = %[1]q
-  zone_id    = keycard_zone.test.id
+  zone_id    = data.keycard_organization.test.zone_id
   identifier = %[3]q
 
   oauth2 = {
@@ -398,14 +390,10 @@ resource "keycard_provider" "test" {
 }
 
 func testAccProviderResourceConfig_withDescription(name, issuer, description string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
   name        = %[1]q
-  zone_id     = keycard_zone.test.id
+  zone_id     = data.keycard_organization.test.zone_id
   description = %[3]q
 
   oauth2 = {
@@ -416,14 +404,10 @@ resource "keycard_provider" "test" {
 }
 
 func testAccProviderResourceConfig_oauth2Config(name, issuer string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
   name          = %[1]q
-  zone_id       = keycard_zone.test.id
+  zone_id       = data.keycard_organization.test.zone_id
   client_id     = "test-client-id"
   client_secret = "test-client-secret"
 
@@ -437,14 +421,10 @@ resource "keycard_provider" "test" {
 }
 
 func testAccProviderResourceConfig_withClientId(name, issuer, clientId string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
   name      = %[1]q
-  zone_id   = keycard_zone.test.id
+  zone_id   = data.keycard_organization.test.zone_id
   client_id = %[3]q
 
   oauth2 = {
@@ -455,14 +435,10 @@ resource "keycard_provider" "test" {
 }
 
 func testAccProviderResourceConfig_withClientSecret(name, issuer, clientSecret string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
   name          = %[1]q
-  zone_id       = keycard_zone.test.id
+  zone_id       = data.keycard_organization.test.zone_id
   client_secret = %[3]q
 
   oauth2 = {
@@ -473,14 +449,10 @@ resource "keycard_provider" "test" {
 }
 
 func testAccProviderResourceConfig_withOAuth2Endpoints(name, issuer, authEndpoint, tokenEndpoint string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
   name    = %[1]q
-  zone_id = keycard_zone.test.id
+  zone_id = data.keycard_organization.test.zone_id
 
   oauth2 = {
     issuer                 = %[2]q
@@ -492,28 +464,20 @@ resource "keycard_provider" "test" {
 }
 
 func testAccProviderResourceConfig_identifierOnly(name, identifier string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
   name       = %[1]q
-  zone_id    = keycard_zone.test.id
+  zone_id    = data.keycard_organization.test.zone_id
   identifier = %[2]q
 }
 `, name, identifier)
 }
 
 func testAccProviderResourceConfig_noIdentifierNoOAuth2(name string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
   name    = %[1]q
-  zone_id = keycard_zone.test.id
+  zone_id = data.keycard_organization.test.zone_id
 }
 `, name)
 }

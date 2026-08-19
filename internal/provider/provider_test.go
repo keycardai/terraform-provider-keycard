@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -26,6 +27,58 @@ var testAccProtoV6ProviderFactoriesShortRetry = map[string]func() (tfprotov6.Pro
 		version:             "test",
 		retryWindowOverride: 2 * time.Second,
 	}),
+}
+
+// testAccOrgZone exposes the organization's built-in zone. Tests that just need
+// somewhere to hang resources use it instead of creating a zone: zone creation
+// and teardown are slow, and the policy service negatively caches a freshly
+// created zone for up to a minute. Tests whose subject is the zone itself, that
+// write zone-keyed singletons, or that need a guaranteed-empty zone still create
+// their own.
+const testAccOrgZone = `
+data "keycard_organization" "test" {}
+`
+
+// testAccOrgZoneRef is the Terraform address of the testAccOrgZone data source,
+// for checks comparing a resource's zone_id against the zone it was created in.
+const testAccOrgZoneRef = "data.keycard_organization.test"
+
+// testAccOtherZoneRef is the Terraform address of the zone testAccZone declares
+// when asked for a zone other than the organization's.
+const testAccOtherZoneRef = "keycard_zone.other"
+
+// testAccZone returns the config declaring the zone a step's resources belong
+// in, along with the Terraform expression for that zone's id. Tests that assert
+// a resource is replaced when zone_id changes move from the organization zone to
+// a created one, so only one zone is created per test.
+func testAccZone(other bool, name string) (config, zoneID string) {
+	if other {
+		return fmt.Sprintf(`
+resource "keycard_zone" "other" {
+  name = %q
+}
+`, name), testAccOtherZoneRef + ".id"
+	}
+	return testAccOrgZone, testAccOrgZoneRef + ".zone_id"
+}
+
+// testAccZoneOnlyConfig declares a bare zone, for tests that need a zone of
+// their own but nothing in it.
+func testAccZoneOnlyConfig(name string) string {
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+}
+`, name)
+}
+
+// waitForZoneBootstrap gives a newly created zone time to register with the
+// policy service, which negatively caches unknown zones for up to a minute. The
+// data sources retry through that, but tests run much faster when the first read
+// lands after bootstrap instead of poisoning the cache. Tests using
+// testAccOrgZone do not need it.
+func waitForZoneBootstrap() {
+	time.Sleep(5 * time.Second)
 }
 
 func testAccPreCheckBasic(t *testing.T) {

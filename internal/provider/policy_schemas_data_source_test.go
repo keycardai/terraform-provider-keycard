@@ -1,26 +1,18 @@
 package provider
 
 import (
-	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccPolicySchemasDataSource_basic(t *testing.T) {
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
-
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheckBasic(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccPolicySchemasDataSourceConfig(zoneName),
-			},
-			{
-				PreConfig: waitForZoneBootstrap,
-				Config:    testAccPolicySchemasDataSourceConfig(zoneName),
+				Config: testAccPolicySchemasDataSourceConfig(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.keycard_policy_schemas.test", "schemas.#"),
 					resource.TestCheckResourceAttrSet("data.keycard_policy_schemas.test", "schemas.0.version"),
@@ -34,18 +26,12 @@ func TestAccPolicySchemasDataSource_basic(t *testing.T) {
 }
 
 func TestAccPolicySchemasDataSource_isDefault(t *testing.T) {
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
-
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheckBasic(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccPolicySchemasDataSourceConfig_isDefault(zoneName),
-			},
-			{
-				PreConfig: waitForZoneBootstrap,
-				Config:    testAccPolicySchemasDataSourceConfig_isDefault(zoneName),
+				Config: testAccPolicySchemasDataSourceConfig_isDefault(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.keycard_policy_schemas.test", "schemas.#", "1"),
 					resource.TestCheckResourceAttr("data.keycard_policy_schemas.test", "schemas.0.is_default", "true"),
@@ -56,31 +42,23 @@ func TestAccPolicySchemasDataSource_isDefault(t *testing.T) {
 	})
 }
 
-func testAccPolicySchemasDataSourceConfig(zoneName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccPolicySchemasDataSourceConfig() string {
+	return testAccOrgZone + `
 data "keycard_policy_schemas" "test" {
-  zone_id = keycard_zone.test.id
+  zone_id = data.keycard_organization.test.zone_id
 }
-`, zoneName)
-}
-
-func testAccPolicySchemasDataSourceConfig_isDefault(zoneName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
+`
 }
 
+func testAccPolicySchemasDataSourceConfig_isDefault() string {
+	return testAccOrgZone + `
 data "keycard_policy_schema" "default" {
-  zone_id = keycard_zone.test.id
+  zone_id = data.keycard_organization.test.zone_id
 }
 
 data "keycard_policy_schemas" "test" {
-  zone_id    = keycard_zone.test.id
+  zone_id    = data.keycard_organization.test.zone_id
   is_default = true
 }
-`, zoneName)
+`
 }

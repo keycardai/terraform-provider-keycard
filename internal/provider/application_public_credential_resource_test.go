@@ -12,7 +12,6 @@ import (
 
 func TestAccApplicationPublicCredentialResource_basic(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	identifier := "client-" + rName
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -21,7 +20,7 @@ func TestAccApplicationPublicCredentialResource_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: testAccApplicationPublicCredentialResourceConfig_basic(zoneName, rName, identifier),
+				Config: testAccApplicationPublicCredentialResourceConfig_basic(rName, identifier),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("keycard_application_public_credential.test", "id"),
 					resource.TestCheckResourceAttrSet("keycard_application_public_credential.test", "zone_id"),
@@ -30,7 +29,7 @@ func TestAccApplicationPublicCredentialResource_basic(t *testing.T) {
 					// Verify relationships
 					resource.TestCheckResourceAttrPair(
 						"keycard_application_public_credential.test", "zone_id",
-						"keycard_zone.test", "id",
+						testAccOrgZoneRef, "zone_id",
 					),
 					resource.TestCheckResourceAttrPair(
 						"keycard_application_public_credential.test", "application_id",
@@ -61,7 +60,6 @@ func TestAccApplicationPublicCredentialResource_basic(t *testing.T) {
 func TestAccApplicationPublicCredentialResource_applicationChange(t *testing.T) {
 	rName1 := acctest.RandomWithPrefix("tftest-app1")
 	rName2 := acctest.RandomWithPrefix("tftest-app2")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	identifier := "client-" + acctest.RandomWithPrefix("tftest")
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -70,7 +68,7 @@ func TestAccApplicationPublicCredentialResource_applicationChange(t *testing.T) 
 		Steps: []resource.TestStep{
 			// Create with first application
 			{
-				Config: testAccApplicationPublicCredentialResourceConfig_withApplication(zoneName, rName1, rName2, identifier, "app1"),
+				Config: testAccApplicationPublicCredentialResourceConfig_withApplication(rName1, rName2, identifier, "app1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("keycard_application_public_credential.test", "id"),
 					resource.TestCheckResourceAttrPair(
@@ -81,7 +79,7 @@ func TestAccApplicationPublicCredentialResource_applicationChange(t *testing.T) 
 			},
 			// Change application (should force replacement)
 			{
-				Config: testAccApplicationPublicCredentialResourceConfig_withApplication(zoneName, rName1, rName2, identifier, "app2"),
+				Config: testAccApplicationPublicCredentialResourceConfig_withApplication(rName1, rName2, identifier, "app2"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("keycard_application_public_credential.test", "id"),
 					resource.TestCheckResourceAttrPair(
@@ -96,33 +94,32 @@ func TestAccApplicationPublicCredentialResource_applicationChange(t *testing.T) 
 
 func TestAccApplicationPublicCredentialResource_zoneChange(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName1 := acctest.RandomWithPrefix("tftest-zone1")
-	zoneName2 := acctest.RandomWithPrefix("tftest-zone2")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	identifier := "client-" + rName
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
-			// Create in zone 1
+			// Create in the organization zone
 			{
-				Config: testAccApplicationPublicCredentialResourceConfig_withZone(zoneName1, zoneName2, rName, identifier, "zone1"),
+				Config: testAccApplicationPublicCredentialResourceConfig_inZone(rName, identifier, zoneName, false),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("keycard_application_public_credential.test", "id"),
 					resource.TestCheckResourceAttrPair(
 						"keycard_application_public_credential.test", "zone_id",
-						"keycard_zone.zone1", "id",
+						testAccOrgZoneRef, "zone_id",
 					),
 				),
 			},
-			// Change zone (should force replacement)
+			// Move to another zone (should force replacement)
 			{
-				Config: testAccApplicationPublicCredentialResourceConfig_withZone(zoneName1, zoneName2, rName, identifier, "zone2"),
+				Config: testAccApplicationPublicCredentialResourceConfig_inZone(rName, identifier, zoneName, true),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("keycard_application_public_credential.test", "id"),
 					resource.TestCheckResourceAttrPair(
 						"keycard_application_public_credential.test", "zone_id",
-						"keycard_zone.zone2", "id",
+						testAccOtherZoneRef, "id",
 					),
 				),
 			},
@@ -132,7 +129,6 @@ func TestAccApplicationPublicCredentialResource_zoneChange(t *testing.T) {
 
 func TestAccApplicationPublicCredentialResource_multipleCredentials(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	identifier1 := "client1-" + rName
 	identifier2 := "client2-" + rName
 
@@ -142,7 +138,7 @@ func TestAccApplicationPublicCredentialResource_multipleCredentials(t *testing.T
 		Steps: []resource.TestStep{
 			// Create multiple credentials for the same application
 			{
-				Config: testAccApplicationPublicCredentialResourceConfig_multiple(zoneName, rName, identifier1, identifier2),
+				Config: testAccApplicationPublicCredentialResourceConfig_multiple(rName, identifier1, identifier2),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// First credential
 					resource.TestCheckResourceAttrSet("keycard_application_public_credential.test1", "id"),
@@ -173,50 +169,42 @@ func TestAccApplicationPublicCredentialResource_emptyIdentifierInvalid(t *testin
 	})
 }
 
-func testAccApplicationPublicCredentialResourceConfig_basic(zoneName, appName, identifier string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccApplicationPublicCredentialResourceConfig_basic(appName, identifier string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_application" "test" {
-  name       = %[2]q
-  identifier = "https://%[2]s.example.com"
-  zone_id    = keycard_zone.test.id
+  name       = %[1]q
+  identifier = "https://%[1]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_application_public_credential" "test" {
-  zone_id        = keycard_zone.test.id
+  zone_id        = data.keycard_organization.test.zone_id
   application_id = keycard_application.test.id
-  identifier     = %[3]q
+  identifier     = %[2]q
 }
-`, zoneName, appName, identifier)
-}
-
-func testAccApplicationPublicCredentialResourceConfig_multiple(zoneName, appName, identifier1, identifier2 string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
+`, appName, identifier)
 }
 
+func testAccApplicationPublicCredentialResourceConfig_multiple(appName, identifier1, identifier2 string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_application" "test" {
-  name       = %[2]q
-  identifier = "https://%[2]s.example.com"
-  zone_id    = keycard_zone.test.id
+  name       = %[1]q
+  identifier = "https://%[1]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_application_public_credential" "test1" {
-  zone_id        = keycard_zone.test.id
+  zone_id        = data.keycard_organization.test.zone_id
   application_id = keycard_application.test.id
-  identifier     = %[3]q
+  identifier     = %[2]q
 }
 
 resource "keycard_application_public_credential" "test2" {
-  zone_id        = keycard_zone.test.id
+  zone_id        = data.keycard_organization.test.zone_id
   application_id = keycard_application.test.id
-  identifier     = %[4]q
+  identifier     = %[3]q
 }
-`, zoneName, appName, identifier1, identifier2)
+`, appName, identifier1, identifier2)
 }
 
 func testAccApplicationPublicCredentialResourceConfig_withIdentifier(identifier string) string {
@@ -229,52 +217,42 @@ resource "keycard_application_public_credential" "test" {
 `, identifier)
 }
 
-func testAccApplicationPublicCredentialResourceConfig_withApplication(zoneName, appName1, appName2, identifier, appResourceName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccApplicationPublicCredentialResourceConfig_withApplication(appName1, appName2, identifier, appResourceName string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_application" "app1" {
-  name       = %[2]q
-  identifier = "https://%[2]s.example.com"
-  zone_id    = keycard_zone.test.id
+  name       = %[1]q
+  identifier = "https://%[1]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_application" "app2" {
-  name       = %[3]q
-  identifier = "https://%[3]s.example.com"
-  zone_id    = keycard_zone.test.id
+  name       = %[2]q
+  identifier = "https://%[2]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_application_public_credential" "test" {
-  zone_id        = keycard_zone.test.id
-  application_id = keycard_application.%[4]s.id
-  identifier     = %[5]q
+  zone_id        = data.keycard_organization.test.zone_id
+  application_id = keycard_application.%[3]s.id
+  identifier     = %[4]q
 }
-`, zoneName, appName1, appName2, appResourceName, identifier)
-}
-
-func testAccApplicationPublicCredentialResourceConfig_withZone(zoneName1, zoneName2, appName, identifier, zoneResourceName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "zone1" {
-  name = %[1]q
+`, appName1, appName2, appResourceName, identifier)
 }
 
-resource "keycard_zone" "zone2" {
-  name = %[2]q
-}
+func testAccApplicationPublicCredentialResourceConfig_inZone(appName, identifier, zoneName string, otherZone bool) string {
+	zoneConfig, zoneID := testAccZone(otherZone, zoneName)
 
+	return zoneConfig + fmt.Sprintf(`
 resource "keycard_application" "test" {
-  name       = %[3]q
-  identifier = "https://%[3]s.example.com"
-  zone_id    = keycard_zone.%[4]s.id
+  name       = %[1]q
+  identifier = "https://%[1]s.example.com"
+  zone_id    = %[3]s
 }
 
 resource "keycard_application_public_credential" "test" {
-  zone_id        = keycard_zone.%[4]s.id
+  zone_id        = %[3]s
   application_id = keycard_application.test.id
-  identifier     = %[5]q
+  identifier     = %[2]q
 }
-`, zoneName1, zoneName2, appName, zoneResourceName, identifier)
+`, appName, identifier, zoneID)
 }

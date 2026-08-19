@@ -12,7 +12,6 @@ import (
 
 func TestAccApplicationResource_basic(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -20,7 +19,7 @@ func TestAccApplicationResource_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: testAccApplicationResourceConfig_basic(zoneName, rName),
+				Config: testAccApplicationResourceConfig_basic(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_application.test", "name", rName),
 					resource.TestCheckResourceAttr("keycard_application.test", "identifier", "https://"+rName+".example.com"),
@@ -38,7 +37,7 @@ func TestAccApplicationResource_basic(t *testing.T) {
 			},
 			// Update and Read testing
 			{
-				Config: testAccApplicationResourceConfig_basic(zoneName, rName+"-updated"),
+				Config: testAccApplicationResourceConfig_basic(rName + "-updated"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_application.test", "name", rName+"-updated"),
 					resource.TestCheckResourceAttr("keycard_application.test", "identifier", "https://"+rName+"-updated.example.com"),
@@ -51,7 +50,6 @@ func TestAccApplicationResource_basic(t *testing.T) {
 
 func TestAccApplicationResource_withDescription(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -59,7 +57,7 @@ func TestAccApplicationResource_withDescription(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create with description
 			{
-				Config: testAccApplicationResourceConfig_withDescription(zoneName, rName, "Test application description"),
+				Config: testAccApplicationResourceConfig_withDescription(rName, "Test application description"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_application.test", "name", rName),
 					resource.TestCheckResourceAttr("keycard_application.test", "description", "Test application description"),
@@ -67,14 +65,14 @@ func TestAccApplicationResource_withDescription(t *testing.T) {
 			},
 			// Update description
 			{
-				Config: testAccApplicationResourceConfig_withDescription(zoneName, rName, "Updated application description"),
+				Config: testAccApplicationResourceConfig_withDescription(rName, "Updated application description"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_application.test", "description", "Updated application description"),
 				),
 			},
 			// Remove description
 			{
-				Config: testAccApplicationResourceConfig_basic(zoneName, rName),
+				Config: testAccApplicationResourceConfig_basic(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckNoResourceAttr("keycard_application.test", "description"),
 				),
@@ -85,7 +83,6 @@ func TestAccApplicationResource_withDescription(t *testing.T) {
 
 func TestAccApplicationResource_withMetadata(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -93,7 +90,7 @@ func TestAccApplicationResource_withMetadata(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create with metadata
 			{
-				Config: testAccApplicationResourceConfig_withMetadata(zoneName, rName, "https://docs.example.com/app"),
+				Config: testAccApplicationResourceConfig_withMetadata(rName, "https://docs.example.com/app"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_application.test", "name", rName),
 					resource.TestCheckResourceAttr("keycard_application.test", "metadata.docs_url", "https://docs.example.com/app"),
@@ -101,14 +98,14 @@ func TestAccApplicationResource_withMetadata(t *testing.T) {
 			},
 			// Update metadata docs_url
 			{
-				Config: testAccApplicationResourceConfig_withMetadata(zoneName, rName, "https://docs.example.com/updated"),
+				Config: testAccApplicationResourceConfig_withMetadata(rName, "https://docs.example.com/updated"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_application.test", "metadata.docs_url", "https://docs.example.com/updated"),
 				),
 			},
 			// Remove metadata
 			{
-				Config: testAccApplicationResourceConfig_basic(zoneName, rName),
+				Config: testAccApplicationResourceConfig_basic(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckNoResourceAttr("keycard_application.test", "metadata.docs_url"),
 				),
@@ -119,7 +116,6 @@ func TestAccApplicationResource_withMetadata(t *testing.T) {
 
 func TestAccApplicationResource_withOAuth2(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -127,7 +123,7 @@ func TestAccApplicationResource_withOAuth2(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create with OAuth2 redirect URIs
 			{
-				Config: testAccApplicationResourceConfig_withOAuth2(zoneName, rName, []string{
+				Config: testAccApplicationResourceConfig_withOAuth2(rName, []string{
 					"https://" + rName + ".example.com/callback",
 				}),
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -138,7 +134,7 @@ func TestAccApplicationResource_withOAuth2(t *testing.T) {
 			},
 			// Update OAuth2 redirect URIs (add more)
 			{
-				Config: testAccApplicationResourceConfig_withOAuth2(zoneName, rName, []string{
+				Config: testAccApplicationResourceConfig_withOAuth2(rName, []string{
 					"https://" + rName + ".example.com/callback",
 					"https://" + rName + ".example.com/auth/callback",
 				}),
@@ -150,7 +146,7 @@ func TestAccApplicationResource_withOAuth2(t *testing.T) {
 			},
 			// Update OAuth2 redirect URIs (change to single)
 			{
-				Config: testAccApplicationResourceConfig_withOAuth2(zoneName, rName, []string{
+				Config: testAccApplicationResourceConfig_withOAuth2(rName, []string{
 					"https://" + rName + ".example.com/new-callback",
 				}),
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -160,7 +156,7 @@ func TestAccApplicationResource_withOAuth2(t *testing.T) {
 			},
 			// Remove OAuth2 block
 			{
-				Config: testAccApplicationResourceConfig_basic(zoneName, rName),
+				Config: testAccApplicationResourceConfig_basic(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckNoResourceAttr("keycard_application.test", "oauth2"),
 				),
@@ -171,7 +167,6 @@ func TestAccApplicationResource_withOAuth2(t *testing.T) {
 
 func TestAccApplicationResource_complete(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -179,7 +174,7 @@ func TestAccApplicationResource_complete(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create with all fields
 			{
-				Config: testAccApplicationResourceConfig_complete(zoneName, rName),
+				Config: testAccApplicationResourceConfig_complete(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_application.test", "name", rName),
 					resource.TestCheckResourceAttr("keycard_application.test", "consent", "implicit"),
@@ -206,27 +201,26 @@ func TestAccApplicationResource_complete(t *testing.T) {
 
 func TestAccApplicationResource_zoneChange(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName1 := acctest.RandomWithPrefix("tftest-zone1")
-	zoneName2 := acctest.RandomWithPrefix("tftest-zone2")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
-			// Create in zone 1
+			// Create in the organization zone
 			{
-				Config: testAccApplicationResourceConfig_basic(zoneName1, rName),
+				Config: testAccApplicationResourceConfig_inZone(rName, zoneName, false),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_application.test", "name", rName),
-					resource.TestCheckResourceAttrPair("keycard_application.test", "zone_id", "keycard_zone.test", "id"),
+					resource.TestCheckResourceAttrPair("keycard_application.test", "zone_id", testAccOrgZoneRef, "zone_id"),
 				),
 			},
-			// Change zone (should force replacement)
+			// Move to another zone (should force replacement)
 			{
-				Config: testAccApplicationResourceConfig_basic(zoneName2, rName),
+				Config: testAccApplicationResourceConfig_inZone(rName, zoneName, true),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_application.test", "name", rName),
-					resource.TestCheckResourceAttrPair("keycard_application.test", "zone_id", "keycard_zone.test", "id"),
+					resource.TestCheckResourceAttrPair("keycard_application.test", "zone_id", testAccOtherZoneRef, "id"),
 				),
 			},
 		},
@@ -235,7 +229,6 @@ func TestAccApplicationResource_zoneChange(t *testing.T) {
 
 func TestAccApplicationResource_withConsent(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -243,7 +236,7 @@ func TestAccApplicationResource_withConsent(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create with consent = "implicit"
 			{
-				Config: testAccApplicationResourceConfig_withConsent(zoneName, rName, "implicit"),
+				Config: testAccApplicationResourceConfig_withConsent(rName, "implicit"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_application.test", "name", rName),
 					resource.TestCheckResourceAttr("keycard_application.test", "consent", "implicit"),
@@ -251,14 +244,14 @@ func TestAccApplicationResource_withConsent(t *testing.T) {
 			},
 			// Update consent to "required"
 			{
-				Config: testAccApplicationResourceConfig_withConsent(zoneName, rName, "required"),
+				Config: testAccApplicationResourceConfig_withConsent(rName, "required"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_application.test", "consent", "required"),
 				),
 			},
 			// Remove consent (should default to "required")
 			{
-				Config: testAccApplicationResourceConfig_basic(zoneName, rName),
+				Config: testAccApplicationResourceConfig_basic(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_application.test", "consent", "required"),
 				),
@@ -269,14 +262,13 @@ func TestAccApplicationResource_withConsent(t *testing.T) {
 
 func TestAccApplicationResource_invalidConsentValue(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccApplicationResourceConfig_withConsent(zoneName, rName, "invalid"),
+				Config:      testAccApplicationResourceConfig_withConsent(rName, "invalid"),
 				ExpectError: regexp.MustCompile(`Attribute consent value must be one of`),
 			},
 		},
@@ -285,14 +277,13 @@ func TestAccApplicationResource_invalidConsentValue(t *testing.T) {
 
 func TestAccApplicationResource_emptyConsentInvalid(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccApplicationResourceConfig_withConsent(zoneName, rName, ""),
+				Config:      testAccApplicationResourceConfig_withConsent(rName, ""),
 				ExpectError: regexp.MustCompile(`Attribute consent string length must be at least 1`),
 			},
 		},
@@ -301,14 +292,13 @@ func TestAccApplicationResource_emptyConsentInvalid(t *testing.T) {
 
 func TestAccApplicationResource_emptyDescriptionInvalid(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccApplicationResourceConfig_withDescription(zoneName, rName, ""),
+				Config:      testAccApplicationResourceConfig_withDescription(rName, ""),
 				ExpectError: regexp.MustCompile(`Attribute description string length must be at least 1`),
 			},
 		},
@@ -317,14 +307,13 @@ func TestAccApplicationResource_emptyDescriptionInvalid(t *testing.T) {
 
 func TestAccApplicationResource_emptyDocsUrlInvalid(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccApplicationResourceConfig_withMetadata(zoneName, rName, ""),
+				Config:      testAccApplicationResourceConfig_withMetadata(rName, ""),
 				ExpectError: regexp.MustCompile(`Attribute metadata.docs_url string length must be at least 1`),
 			},
 		},
@@ -333,7 +322,6 @@ func TestAccApplicationResource_emptyDocsUrlInvalid(t *testing.T) {
 
 func TestAccApplicationResource_withTraits(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -341,7 +329,7 @@ func TestAccApplicationResource_withTraits(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create with traits
 			{
-				Config: testAccApplicationResourceConfig_withTraits(zoneName, rName, []string{"gateway"}),
+				Config: testAccApplicationResourceConfig_withTraits(rName, []string{"gateway"}),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_application.test", "name", rName),
 					resource.TestCheckResourceAttr("keycard_application.test", "traits.#", "1"),
@@ -357,14 +345,14 @@ func TestAccApplicationResource_withTraits(t *testing.T) {
 			},
 			// Remove traits
 			{
-				Config: testAccApplicationResourceConfig_basic(zoneName, rName),
+				Config: testAccApplicationResourceConfig_basic(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckNoResourceAttr("keycard_application.test", "traits"),
 				),
 			},
 			// Re-add traits
 			{
-				Config: testAccApplicationResourceConfig_withTraits(zoneName, rName, []string{"gateway"}),
+				Config: testAccApplicationResourceConfig_withTraits(rName, []string{"gateway"}),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_application.test", "traits.#", "1"),
 					resource.TestCheckResourceAttr("keycard_application.test", "traits.0", "gateway"),
@@ -376,14 +364,13 @@ func TestAccApplicationResource_withTraits(t *testing.T) {
 
 func TestAccApplicationResource_invalidTraitValue(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccApplicationResourceConfig_withTraits(zoneName, rName, []string{"invalid-trait"}),
+				Config:      testAccApplicationResourceConfig_withTraits(rName, []string{"invalid-trait"}),
 				ExpectError: regexp.MustCompile(`Attribute traits\[0\] value must be one of`),
 			},
 		},
@@ -409,67 +396,63 @@ func testAccApplicationImportStateIdFunc(resourceName string) resource.ImportSta
 	}
 }
 
-func testAccApplicationResourceConfig_basic(zoneName, appName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccApplicationResourceConfig_basic(appName string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_application" "test" {
-  name       = %[2]q
-  identifier = "https://%[2]s.example.com"
-  zone_id    = keycard_zone.test.id
+  name       = %[1]q
+  identifier = "https://%[1]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 }
-`, zoneName, appName)
-}
-
-func testAccApplicationResourceConfig_withDescription(zoneName, appName, description string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
+`, appName)
 }
 
+func testAccApplicationResourceConfig_inZone(appName, zoneName string, otherZone bool) string {
+	zoneConfig, zoneID := testAccZone(otherZone, zoneName)
+
+	return zoneConfig + fmt.Sprintf(`
 resource "keycard_application" "test" {
-  name        = %[2]q
-  description = %[3]q
-  identifier  = "https://%[2]s.example.com"
-  zone_id     = keycard_zone.test.id
+  name       = %[1]q
+  identifier = "https://%[1]s.example.com"
+  zone_id    = %[2]s
 }
-`, zoneName, appName, description)
-}
-
-func testAccApplicationResourceConfig_withMetadata(zoneName, appName, docsURL string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
+`, appName, zoneID)
 }
 
+func testAccApplicationResourceConfig_withDescription(appName, description string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_application" "test" {
-  name       = %[2]q
-  identifier = "https://%[2]s.example.com"
-  zone_id    = keycard_zone.test.id
+  name        = %[1]q
+  description = %[2]q
+  identifier  = "https://%[1]s.example.com"
+  zone_id     = data.keycard_organization.test.zone_id
+}
+`, appName, description)
+}
+
+func testAccApplicationResourceConfig_withMetadata(appName, docsURL string) string {
+	return testAccOrgZone + fmt.Sprintf(`
+resource "keycard_application" "test" {
+  name       = %[1]q
+  identifier = "https://%[1]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 
   metadata = {
-    docs_url = %[3]q
+    docs_url = %[2]q
   }
 }
-`, zoneName, appName, docsURL)
+`, appName, docsURL)
 }
 
-func testAccApplicationResourceConfig_withOAuth2(zoneName, appName string, redirectURIs []string) string {
-	config := fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccApplicationResourceConfig_withOAuth2(appName string, redirectURIs []string) string {
+	config := testAccOrgZone + fmt.Sprintf(`
 resource "keycard_application" "test" {
-  name       = %[2]q
-  identifier = "https://%[2]s.example.com"
-  zone_id    = keycard_zone.test.id
+  name       = %[1]q
+  identifier = "https://%[1]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 
   oauth2 = {
     redirect_uris = [
-`, zoneName, appName)
+`, appName)
 
 	for i, uri := range redirectURIs {
 		if i > 0 {
@@ -486,19 +469,15 @@ resource "keycard_application" "test" {
 	return config
 }
 
-func testAccApplicationResourceConfig_withTraits(zoneName, appName string, traits []string) string {
-	config := fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccApplicationResourceConfig_withTraits(appName string, traits []string) string {
+	config := testAccOrgZone + fmt.Sprintf(`
 resource "keycard_application" "test" {
-  name       = %[2]q
-  identifier = "https://%[2]s.example.com"
-  zone_id    = keycard_zone.test.id
+  name       = %[1]q
+  identifier = "https://%[1]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 
   traits = [
-`, zoneName, appName)
+`, appName)
 
 	for i, trait := range traits {
 		if i > 0 {
@@ -514,33 +493,25 @@ resource "keycard_application" "test" {
 	return config
 }
 
-func testAccApplicationResourceConfig_withConsent(zoneName, appName, consent string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccApplicationResourceConfig_withConsent(appName, consent string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_application" "test" {
-  name       = %[2]q
-  consent    = %[3]q
-  identifier = "https://%[2]s.example.com"
-  zone_id    = keycard_zone.test.id
+  name       = %[1]q
+  consent    = %[2]q
+  identifier = "https://%[1]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 }
-`, zoneName, appName, consent)
-}
-
-func testAccApplicationResourceConfig_complete(zoneName, appName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
+`, appName, consent)
 }
 
+func testAccApplicationResourceConfig_complete(appName string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_application" "test" {
-  name        = %[2]q
+  name        = %[1]q
   consent     = "implicit"
   description = "Complete application with all fields"
-  identifier  = "https://%[2]s.example.com"
-  zone_id     = keycard_zone.test.id
+  identifier  = "https://%[1]s.example.com"
+  zone_id     = data.keycard_organization.test.zone_id
 
   metadata = {
     docs_url = "https://docs.example.com/complete"
@@ -548,12 +519,12 @@ resource "keycard_application" "test" {
 
   oauth2 = {
     redirect_uris = [
-      "https://%[2]s.example.com/callback",
-      "https://%[2]s.example.com/auth/callback"
+      "https://%[1]s.example.com/callback",
+      "https://%[1]s.example.com/auth/callback"
     ]
   }
 
   traits = ["gateway"]
 }
-`, zoneName, appName)
+`, appName)
 }

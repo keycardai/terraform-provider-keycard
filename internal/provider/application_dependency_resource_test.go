@@ -10,7 +10,6 @@ import (
 )
 
 func TestAccApplicationDependencyResource_basic(t *testing.T) {
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 	appName := acctest.RandomWithPrefix("tftest-app")
 	resourceName := acctest.RandomWithPrefix("tftest-resource")
@@ -21,9 +20,9 @@ func TestAccApplicationDependencyResource_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: testAccApplicationDependencyResourceConfig_basic(zoneName, providerName, appName, resourceName),
+				Config: testAccApplicationDependencyResourceConfig_basic(providerName, appName, resourceName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrPair("keycard_application_dependency.test", "zone_id", "keycard_zone.test", "id"),
+					resource.TestCheckResourceAttrPair("keycard_application_dependency.test", "zone_id", testAccOrgZoneRef, "zone_id"),
 					resource.TestCheckResourceAttrPair("keycard_application_dependency.test", "application_id", "keycard_application.test", "id"),
 					resource.TestCheckResourceAttrPair("keycard_application_dependency.test", "resource_id", "keycard_resource.test", "id"),
 				),
@@ -42,7 +41,6 @@ func TestAccApplicationDependencyResource_basic(t *testing.T) {
 }
 
 func TestAccApplicationDependencyResource_multipleResources(t *testing.T) {
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 	appName := acctest.RandomWithPrefix("tftest-app")
 	resourceName1 := acctest.RandomWithPrefix("tftest-resource1")
@@ -54,7 +52,7 @@ func TestAccApplicationDependencyResource_multipleResources(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create dependencies for multiple resources
 			{
-				Config: testAccApplicationDependencyResourceConfig_multiple(zoneName, providerName, appName, resourceName1, resourceName2),
+				Config: testAccApplicationDependencyResourceConfig_multiple(providerName, appName, resourceName1, resourceName2),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair("keycard_application_dependency.test1", "application_id", "keycard_application.test", "id"),
 					resource.TestCheckResourceAttrPair("keycard_application_dependency.test2", "application_id", "keycard_application.test", "id"),
@@ -67,7 +65,6 @@ func TestAccApplicationDependencyResource_multipleResources(t *testing.T) {
 }
 
 func TestAccApplicationDependencyResource_resourceChange(t *testing.T) {
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 	appName := acctest.RandomWithPrefix("tftest-app")
 	resourceName1 := acctest.RandomWithPrefix("tftest-resource1")
@@ -79,14 +76,14 @@ func TestAccApplicationDependencyResource_resourceChange(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create dependency with first resource
 			{
-				Config: testAccApplicationDependencyResourceConfig_withTwoResources(zoneName, providerName, appName, resourceName1, resourceName2, "test1"),
+				Config: testAccApplicationDependencyResourceConfig_withTwoResources(providerName, appName, resourceName1, resourceName2, "test1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair("keycard_application_dependency.test", "resource_id", "keycard_resource.test1", "id"),
 				),
 			},
 			// Change to second resource (should force replacement)
 			{
-				Config: testAccApplicationDependencyResourceConfig_withTwoResources(zoneName, providerName, appName, resourceName1, resourceName2, "test2"),
+				Config: testAccApplicationDependencyResourceConfig_withTwoResources(providerName, appName, resourceName1, resourceName2, "test2"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair("keycard_application_dependency.test", "resource_id", "keycard_resource.test2", "id"),
 				),
@@ -96,7 +93,6 @@ func TestAccApplicationDependencyResource_resourceChange(t *testing.T) {
 }
 
 func TestAccApplicationDependencyResource_whenAccessing(t *testing.T) {
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 	appName := acctest.RandomWithPrefix("tftest-app")
 	resourceName := acctest.RandomWithPrefix("tftest-resource")
@@ -109,9 +105,9 @@ func TestAccApplicationDependencyResource_whenAccessing(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create dependency with when_accessing
 			{
-				Config: testAccApplicationDependencyResourceConfig_whenAccessing(zoneName, providerName, appName, resourceName, additionalResourceName1, additionalResourceName2),
+				Config: testAccApplicationDependencyResourceConfig_whenAccessing(providerName, appName, resourceName, additionalResourceName1, additionalResourceName2),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrPair("keycard_application_dependency.test", "zone_id", "keycard_zone.test", "id"),
+					resource.TestCheckResourceAttrPair("keycard_application_dependency.test", "zone_id", testAccOrgZoneRef, "zone_id"),
 					resource.TestCheckResourceAttrPair("keycard_application_dependency.test", "application_id", "keycard_application.test", "id"),
 					resource.TestCheckResourceAttrPair("keycard_application_dependency.test", "resource_id", "keycard_resource.test", "id"),
 					resource.TestCheckResourceAttr("keycard_application_dependency.test", "when_accessing.#", "2"),
@@ -132,7 +128,6 @@ func TestAccApplicationDependencyResource_whenAccessing(t *testing.T) {
 }
 
 func TestAccApplicationDependencyResource_whenAccessingSingle(t *testing.T) {
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
 	appName := acctest.RandomWithPrefix("tftest-app")
 	resourceName := acctest.RandomWithPrefix("tftest-resource")
@@ -144,9 +139,9 @@ func TestAccApplicationDependencyResource_whenAccessingSingle(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create dependency with single when_accessing
 			{
-				Config: testAccApplicationDependencyResourceConfig_whenAccessingSingle(zoneName, providerName, appName, resourceName, additionalResourceName),
+				Config: testAccApplicationDependencyResourceConfig_whenAccessingSingle(providerName, appName, resourceName, additionalResourceName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrPair("keycard_application_dependency.test", "zone_id", "keycard_zone.test", "id"),
+					resource.TestCheckResourceAttrPair("keycard_application_dependency.test", "zone_id", testAccOrgZoneRef, "zone_id"),
 					resource.TestCheckResourceAttrPair("keycard_application_dependency.test", "application_id", "keycard_application.test", "id"),
 					resource.TestCheckResourceAttrPair("keycard_application_dependency.test", "resource_id", "keycard_resource.test", "id"),
 					resource.TestCheckResourceAttr("keycard_application_dependency.test", "when_accessing.#", "1"),
@@ -177,180 +172,164 @@ func testAccApplicationDependencyImportStateIdFunc(resourceName string) resource
 	}
 }
 
-func testAccApplicationDependencyResourceConfig_basic(zoneName, providerName, appName, resourceName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccApplicationDependencyResourceConfig_basic(providerName, appName, resourceName string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
-  name       = %[2]q
+  name       = %[1]q
 
   oauth2 = {
-    issuer = "https://%[2]s.example.com"
+    issuer = "https://%[1]s.example.com"
   }
-  zone_id    = keycard_zone.test.id
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_application" "test" {
-  name       = %[3]q
-  identifier = "https://%[3]s.example.com"
-  zone_id    = keycard_zone.test.id
+  name       = %[2]q
+  identifier = "https://%[2]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_resource" "test" {
-  name                   = %[4]q
-  identifier             = "https://%[4]s.example.com"
-  zone_id                = keycard_zone.test.id
+  name                   = %[3]q
+  identifier             = "https://%[3]s.example.com"
+  zone_id                = data.keycard_organization.test.zone_id
   credential_provider_id = keycard_provider.test.id
 }
 
 resource "keycard_application_dependency" "test" {
-  zone_id        = keycard_zone.test.id
+  zone_id        = data.keycard_organization.test.zone_id
   application_id = keycard_application.test.id
   resource_id    = keycard_resource.test.id
 }
-`, zoneName, providerName, appName, resourceName)
+`, providerName, appName, resourceName)
 }
 
-func testAccApplicationDependencyResourceConfig_multiple(zoneName, providerName, appName, resourceName1, resourceName2 string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccApplicationDependencyResourceConfig_multiple(providerName, appName, resourceName1, resourceName2 string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
-  name       = %[2]q
+  name       = %[1]q
 
   oauth2 = {
-    issuer = "https://%[2]s.example.com"
+    issuer = "https://%[1]s.example.com"
   }
-  zone_id    = keycard_zone.test.id
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_application" "test" {
-  name       = %[3]q
-  identifier = "https://%[3]s.example.com"
-  zone_id    = keycard_zone.test.id
+  name       = %[2]q
+  identifier = "https://%[2]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_resource" "test1" {
-  name                   = %[4]q
-  identifier             = "https://%[4]s.example.com"
-  zone_id                = keycard_zone.test.id
+  name                   = %[3]q
+  identifier             = "https://%[3]s.example.com"
+  zone_id                = data.keycard_organization.test.zone_id
   credential_provider_id = keycard_provider.test.id
 }
 
 resource "keycard_resource" "test2" {
-  name                   = %[5]q
-  identifier             = "https://%[5]s.example.com"
-  zone_id                = keycard_zone.test.id
+  name                   = %[4]q
+  identifier             = "https://%[4]s.example.com"
+  zone_id                = data.keycard_organization.test.zone_id
   credential_provider_id = keycard_provider.test.id
 }
 
 resource "keycard_application_dependency" "test1" {
-  zone_id        = keycard_zone.test.id
+  zone_id        = data.keycard_organization.test.zone_id
   application_id = keycard_application.test.id
   resource_id    = keycard_resource.test1.id
 }
 
 resource "keycard_application_dependency" "test2" {
-  zone_id        = keycard_zone.test.id
+  zone_id        = data.keycard_organization.test.zone_id
   application_id = keycard_application.test.id
   resource_id    = keycard_resource.test2.id
 }
-`, zoneName, providerName, appName, resourceName1, resourceName2)
+`, providerName, appName, resourceName1, resourceName2)
 }
 
-func testAccApplicationDependencyResourceConfig_withTwoResources(zoneName, providerName, appName, resourceName1, resourceName2, targetResource string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccApplicationDependencyResourceConfig_withTwoResources(providerName, appName, resourceName1, resourceName2, targetResource string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
-  name       = %[2]q
+  name       = %[1]q
 
   oauth2 = {
-    issuer = "https://%[2]s.example.com"
+    issuer = "https://%[1]s.example.com"
   }
-  zone_id    = keycard_zone.test.id
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_application" "test" {
-  name       = %[3]q
-  identifier = "https://%[3]s.example.com"
-  zone_id    = keycard_zone.test.id
+  name       = %[2]q
+  identifier = "https://%[2]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_resource" "test1" {
-  name                   = %[4]q
-  identifier             = "https://%[4]s.example.com"
-  zone_id                = keycard_zone.test.id
+  name                   = %[3]q
+  identifier             = "https://%[3]s.example.com"
+  zone_id                = data.keycard_organization.test.zone_id
   credential_provider_id = keycard_provider.test.id
 }
 
 resource "keycard_resource" "test2" {
-  name                   = %[5]q
-  identifier             = "https://%[5]s.example.com"
-  zone_id                = keycard_zone.test.id
+  name                   = %[4]q
+  identifier             = "https://%[4]s.example.com"
+  zone_id                = data.keycard_organization.test.zone_id
   credential_provider_id = keycard_provider.test.id
 }
 
 resource "keycard_application_dependency" "test" {
-  zone_id        = keycard_zone.test.id
+  zone_id        = data.keycard_organization.test.zone_id
   application_id = keycard_application.test.id
-  resource_id    = keycard_resource.%[6]s.id
+  resource_id    = keycard_resource.%[5]s.id
 }
-`, zoneName, providerName, appName, resourceName1, resourceName2, targetResource)
-}
-
-func testAccApplicationDependencyResourceConfig_whenAccessing(zoneName, providerName, appName, resourceName, additionalResourceName1, additionalResourceName2 string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
+`, providerName, appName, resourceName1, resourceName2, targetResource)
 }
 
+func testAccApplicationDependencyResourceConfig_whenAccessing(providerName, appName, resourceName, additionalResourceName1, additionalResourceName2 string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
-  name       = %[2]q
+  name       = %[1]q
 
   oauth2 = {
-    issuer = "https://%[2]s.example.com"
+    issuer = "https://%[1]s.example.com"
   }
-  zone_id    = keycard_zone.test.id
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_application" "test" {
-  name       = %[3]q
-  identifier = "https://%[3]s.example.com"
-  zone_id    = keycard_zone.test.id
+  name       = %[2]q
+  identifier = "https://%[2]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_resource" "test" {
-  name                   = %[4]q
-  identifier             = "https://%[4]s.example.com"
-  zone_id                = keycard_zone.test.id
+  name                   = %[3]q
+  identifier             = "https://%[3]s.example.com"
+  zone_id                = data.keycard_organization.test.zone_id
   credential_provider_id = keycard_provider.test.id
 }
 
 resource "keycard_resource" "additional1" {
-  name                   = %[5]q
-  identifier             = "https://%[5]s.example.com"
-  zone_id                = keycard_zone.test.id
+  name                   = %[4]q
+  identifier             = "https://%[4]s.example.com"
+  zone_id                = data.keycard_organization.test.zone_id
   credential_provider_id = keycard_provider.test.id
   application_id         = keycard_application.test.id
 }
 
 resource "keycard_resource" "additional2" {
-  name                   = %[6]q
-  identifier             = "https://%[6]s.example.com"
-  zone_id                = keycard_zone.test.id
+  name                   = %[5]q
+  identifier             = "https://%[5]s.example.com"
+  zone_id                = data.keycard_organization.test.zone_id
   credential_provider_id = keycard_provider.test.id
   application_id         = keycard_application.test.id
 }
 
 resource "keycard_application_dependency" "test" {
-  zone_id        = keycard_zone.test.id
+  zone_id        = data.keycard_organization.test.zone_id
   application_id = keycard_application.test.id
   resource_id    = keycard_resource.test.id
   when_accessing = [
@@ -358,52 +337,48 @@ resource "keycard_application_dependency" "test" {
     keycard_resource.additional2.id,
   ]
 }
-`, zoneName, providerName, appName, resourceName, additionalResourceName1, additionalResourceName2)
+`, providerName, appName, resourceName, additionalResourceName1, additionalResourceName2)
 }
 
-func testAccApplicationDependencyResourceConfig_whenAccessingSingle(zoneName, providerName, appName, resourceName, additionalResourceName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+func testAccApplicationDependencyResourceConfig_whenAccessingSingle(providerName, appName, resourceName, additionalResourceName string) string {
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
-  name       = %[2]q
+  name       = %[1]q
 
   oauth2 = {
-    issuer = "https://%[2]s.example.com"
+    issuer = "https://%[1]s.example.com"
   }
-  zone_id    = keycard_zone.test.id
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_application" "test" {
-  name       = %[3]q
-  identifier = "https://%[3]s.example.com"
-  zone_id    = keycard_zone.test.id
+  name       = %[2]q
+  identifier = "https://%[2]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 }
 
 resource "keycard_resource" "test" {
-  name                   = %[4]q
-  identifier             = "https://%[4]s.example.com"
-  zone_id                = keycard_zone.test.id
+  name                   = %[3]q
+  identifier             = "https://%[3]s.example.com"
+  zone_id                = data.keycard_organization.test.zone_id
   credential_provider_id = keycard_provider.test.id
 }
 
 resource "keycard_resource" "additional" {
-  name                   = %[5]q
-  identifier             = "https://%[5]s.example.com"
-  zone_id                = keycard_zone.test.id
+  name                   = %[4]q
+  identifier             = "https://%[4]s.example.com"
+  zone_id                = data.keycard_organization.test.zone_id
   credential_provider_id = keycard_provider.test.id
   application_id         = keycard_application.test.id
 }
 
 resource "keycard_application_dependency" "test" {
-  zone_id        = keycard_zone.test.id
+  zone_id        = data.keycard_organization.test.zone_id
   application_id = keycard_application.test.id
   resource_id    = keycard_resource.test.id
   when_accessing = [
     keycard_resource.additional.id,
   ]
 }
-`, zoneName, providerName, appName, resourceName, additionalResourceName)
+`, providerName, appName, resourceName, additionalResourceName)
 }
