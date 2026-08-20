@@ -3,12 +3,12 @@
 page_title: "keycard_policy_set_version Resource - keycard"
 subcategory: ""
 description: |-
-  Publishes an immutable manifest snapshot of a keycard_policy_set: an ordered list of {policy_id, policy_version_id} entries pinned to a schema_version. Any change replaces the resource. Use lifecycle { create_before_destroy = true } so the new version is published before the old one is archived. This resource does not activate the version; use keycard_policy_set_activation for that.
+  Publishes an immutable manifest snapshot of a keycard_policy_set: an ordered list of {policy_id, policy_version_id} entries pinned to a schema_version. Any change replaces the resource. Use lifecycle { create_before_destroy = true } so the new version is published before the old one is archived. This resource does not activate the version; use keycard_policy_set_activation for that. Destroying a version that is still bound (active or shadow) cannot archive it (the API has no deactivation operation): the version is removed from Terraform state with a warning and stays live server-side until the binding rolls forward.
 ---
 
 # keycard_policy_set_version (Resource)
 
-Publishes an immutable manifest snapshot of a `keycard_policy_set`: an ordered list of `{policy_id, policy_version_id}` entries pinned to a `schema_version`. Any change replaces the resource. Use `lifecycle { create_before_destroy = true }` so the new version is published before the old one is archived. This resource does not activate the version; use `keycard_policy_set_activation` for that.
+Publishes an immutable manifest snapshot of a `keycard_policy_set`: an ordered list of `{policy_id, policy_version_id}` entries pinned to a `schema_version`. Any change replaces the resource. Use `lifecycle { create_before_destroy = true }` so the new version is published before the old one is archived. This resource does not activate the version; use `keycard_policy_set_activation` for that. Destroying a version that is still bound (active or shadow) cannot archive it (the API has no deactivation operation): the version is removed from Terraform state with a warning and stays live server-side until the binding rolls forward.
 
 ## Example Usage
 

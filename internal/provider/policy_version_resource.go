@@ -62,7 +62,7 @@ func (r *PolicyVersionResource) Metadata(ctx context.Context, req resource.Metad
 
 func (r *PolicyVersionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Publishes an immutable Cedar policy version under a `keycard_policy`. Any change to the content or schema creates a new version; changing an attribute replaces the resource. Use `lifecycle { create_before_destroy = true }` so the replacement version is published before the old one is archived.",
+		MarkdownDescription: "Publishes an immutable Cedar policy version under a `keycard_policy`. Any change to the content or schema creates a new version; changing an attribute replaces the resource. Use `lifecycle { create_before_destroy = true }` so the replacement version is published before the old one is archived. Destroying a version that is still referenced by the zone's active policy set binding cannot archive it (the API has no deactivation operation): the version is removed from Terraform state with a warning and stays live server-side until the binding rolls forward.",
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -304,9 +304,20 @@ func (r *PolicyVersionResource) Delete(ctx context.Context, req resource.DeleteR
 	}
 
 	if deleteResp.StatusCode() == 400 {
+		// The server refuses to archive a version referenced by the zone's active
+		// policy set binding, and there is no deactivation API, so no in-config
+		// ordering can release it. Leave it live and drop it from state; archiving
+		// an actively-evaluated version would break the live PDP anyway.
+		if archiveBlockedInUse(deleteResp.Body, "currently active") {
+			resp.Diagnostics.AddWarning(
+				"Policy Version Left Active",
+				fmt.Sprintf("Policy version %s was removed from Terraform state but not archived: it is referenced by the zone's active policy set binding. Archive it manually once the binding rolls forward to a version that no longer includes it, if desired.", data.ID.ValueString()),
+			)
+			return
+		}
 		resp.Diagnostics.AddError(
 			"API Error",
-			fmt.Sprintf("Unable to archive policy version, got status 400: %s. This version is likely referenced by an active policy set binding; roll the set version/activation forward to a version that no longer includes it before destroying.", string(deleteResp.Body)),
+			fmt.Sprintf("Unable to archive policy version, got status 400: %s.", string(deleteResp.Body)),
 		)
 		return
 	}

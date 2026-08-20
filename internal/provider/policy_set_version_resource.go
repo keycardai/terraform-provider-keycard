@@ -83,7 +83,7 @@ func (r *PolicySetVersionResource) Metadata(ctx context.Context, req resource.Me
 
 func (r *PolicySetVersionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Publishes an immutable manifest snapshot of a `keycard_policy_set`: an ordered list of `{policy_id, policy_version_id}` entries pinned to a `schema_version`. Any change replaces the resource. Use `lifecycle { create_before_destroy = true }` so the new version is published before the old one is archived. This resource does not activate the version; use `keycard_policy_set_activation` for that.",
+		MarkdownDescription: "Publishes an immutable manifest snapshot of a `keycard_policy_set`: an ordered list of `{policy_id, policy_version_id}` entries pinned to a `schema_version`. Any change replaces the resource. Use `lifecycle { create_before_destroy = true }` so the new version is published before the old one is archived. This resource does not activate the version; use `keycard_policy_set_activation` for that. Destroying a version that is still bound (active or shadow) cannot archive it (the API has no deactivation operation): the version is removed from Terraform state with a warning and stays live server-side until the binding rolls forward.",
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -351,9 +351,20 @@ func (r *PolicySetVersionResource) Delete(ctx context.Context, req resource.Dele
 	}
 
 	if deleteResp.StatusCode() == 400 {
+		// The server refuses to archive a bound version (active or shadow), and
+		// there is no deactivation API, so no in-config ordering can release it.
+		// Leave it live and drop it from state; archiving the actively-evaluated
+		// version would break the live PDP anyway.
+		if archiveBlockedInUse(deleteResp.Body, "currently bound") {
+			resp.Diagnostics.AddWarning(
+				"Policy Set Version Left Bound",
+				fmt.Sprintf("Policy set version %s was removed from Terraform state but not archived: it is currently bound (active or shadow). Archive it manually once the binding rolls forward to another version, if desired.", data.ID.ValueString()),
+			)
+			return
+		}
 		resp.Diagnostics.AddError(
 			"API Error",
-			fmt.Sprintf("Unable to archive policy set version, got status 400: %s. This version is currently bound (active or shadow); roll the activation forward to another version or remove the shadow binding before destroying.", string(deleteResp.Body)),
+			fmt.Sprintf("Unable to archive policy set version, got status 400: %s.", string(deleteResp.Body)),
 		)
 		return
 	}

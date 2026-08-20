@@ -71,7 +71,7 @@ func (r *PolicySetResource) Metadata(ctx context.Context, req resource.MetadataR
 
 func (r *PolicySetResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manages a Keycard policy set. A policy set is a container that binds policy set versions to a zone or user scope; its versions are managed separately.",
+		MarkdownDescription: "Manages a Keycard policy set. A policy set is a container that binds policy set versions to a zone or user scope; its versions are managed separately. Destroying a set that still has an active binding cannot archive it (the API has no deactivation operation): the set is removed from Terraform state with a warning and stays live server-side until the zone's binding moves elsewhere.",
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -408,6 +408,18 @@ func (r *PolicySetResource) Delete(ctx context.Context, req resource.DeleteReque
 	deleteResp, err := r.client.ArchivePolicySetWithResponse(ctx, data.ZoneID.ValueString(), data.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete policy set, got error: %s", err))
+		return
+	}
+
+	// The server refuses (409) to archive a set with an active binding, and there
+	// is no deactivation API, so no in-config ordering can release it. Leave it
+	// live and drop it from state; archiving the actively-evaluated set would
+	// break the live PDP anyway.
+	if deleteResp.StatusCode() == 409 && archiveBlockedInUse(deleteResp.Body, "active bindings") {
+		resp.Diagnostics.AddWarning(
+			"Policy Set Left Active",
+			fmt.Sprintf("Policy set %s was removed from Terraform state but not archived: it has an active binding. Archive it manually once the zone's binding moves to another policy set, if desired.", data.ID.ValueString()),
+		)
 		return
 	}
 

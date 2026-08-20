@@ -3,12 +3,12 @@
 page_title: "keycard_policy_version Resource - keycard"
 subcategory: ""
 description: |-
-  Publishes an immutable Cedar policy version under a keycard_policy. Any change to the content or schema creates a new version; changing an attribute replaces the resource. Use lifecycle { create_before_destroy = true } so the replacement version is published before the old one is archived.
+  Publishes an immutable Cedar policy version under a keycard_policy. Any change to the content or schema creates a new version; changing an attribute replaces the resource. Use lifecycle { create_before_destroy = true } so the replacement version is published before the old one is archived. Destroying a version that is still referenced by the zone's active policy set binding cannot archive it (the API has no deactivation operation): the version is removed from Terraform state with a warning and stays live server-side until the binding rolls forward.
 ---
 
 # keycard_policy_version (Resource)
 
-Publishes an immutable Cedar policy version under a `keycard_policy`. Any change to the content or schema creates a new version; changing an attribute replaces the resource. Use `lifecycle { create_before_destroy = true }` so the replacement version is published before the old one is archived.
+Publishes an immutable Cedar policy version under a `keycard_policy`. Any change to the content or schema creates a new version; changing an attribute replaces the resource. Use `lifecycle { create_before_destroy = true }` so the replacement version is published before the old one is archived. Destroying a version that is still referenced by the zone's active policy set binding cannot archive it (the API has no deactivation operation): the version is removed from Terraform state with a warning and stays live server-side until the binding rolls forward.
 
 ## Example Usage
 

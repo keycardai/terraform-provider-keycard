@@ -3,12 +3,12 @@
 page_title: "keycard_policy_set Resource - keycard"
 subcategory: ""
 description: |-
-  Manages a Keycard policy set. A policy set is a container that binds policy set versions to a zone or user scope; its versions are managed separately.
+  Manages a Keycard policy set. A policy set is a container that binds policy set versions to a zone or user scope; its versions are managed separately. Destroying a set that still has an active binding cannot archive it (the API has no deactivation operation): the set is removed from Terraform state with a warning and stays live server-side until the zone's binding moves elsewhere.
 ---
 
 # keycard_policy_set (Resource)
 
-Manages a Keycard policy set. A policy set is a container that binds policy set versions to a zone or user scope; its versions are managed separately.
+Manages a Keycard policy set. A policy set is a container that binds policy set versions to a zone or user scope; its versions are managed separately. Destroying a set that still has an active binding cannot archive it (the API has no deactivation operation): the set is removed from Terraform state with a warning and stays live server-side until the zone's binding moves elsewhere.
 
 ## Example Usage
 
