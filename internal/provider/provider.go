@@ -156,6 +156,9 @@ func (p *KeycardProvider) Resources(ctx context.Context) []func() resource.Resou
 		NewResourceResource,
 		NewApplicationDependencyResource,
 		NewSSOConnectionResource,
+		NewGroupResource,
+		NewGroupMemberResource,
+		NewGroupRoleAssignmentResource,
 		func() resource.Resource {
 			return NewPolicyResource(p.retryWindowOverride)
 		},
@@ -189,6 +192,7 @@ func (p *KeycardProvider) DataSources(ctx context.Context) []func() datasource.D
 		NewApplicationDataSource,
 		NewApplicationWorkloadIdentityDataSource,
 		NewResourceDataSource,
+		NewGroupDataSource,
 		NewAwsKmsKeyPolicyDataSource,
 		func() datasource.DataSource {
 			return NewPolicySchemaDataSource(p.retryWindowOverride)
