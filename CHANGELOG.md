@@ -1,3 +1,27 @@
+## 0.8.0
+
+This release adds declarative group management: create zone-scoped groups, manage their membership, and grant roles to a group that every member inherits. Supporting data sources resolve the caller's organization, look up roles by identifier, and read existing groups.
+
+FEATURES:
+
+* **Groups**: New `keycard_group` resource and data source manage collections of users that can be assigned roles and referenced in policies.
+* **Group Membership**: New `keycard_group_member` resource adds a user to a group, so the user inherits every role assigned to that group.
+* **Group Role Assignments**: New `keycard_group_role_assignment` resource grants a role to a group.
+* **Organization Lookup**: New `keycard_organization` data source returns the organization the authenticated identity belongs to, including its builtin `zone_id` — removing the need to hardcode a zone ID for organization-scoped configuration.
+* **Role Lookup**: New `keycard_role` data source reads a role by `id`, or by `identifier` together with `owner_type` (`platform` or `customer`), so role assignments can reference roles by stable name rather than ID.
+
+RESOURCES:
+
+* `keycard_group` - New resource for managing groups.
+* `keycard_group_member` - New resource adding a user to a group.
+* `keycard_group_role_assignment` - New resource assigning a role to a group, with optional `scope_type`/`scope_id` for a scoped grant.
+
+DATA SOURCES:
+
+* `keycard_organization` - New data source returning the authenticated identity's organization: `id`, `name`, `label`, `sso_enabled`, and the builtin `zone_id`. Takes no arguments.
+* `keycard_group` - New data source for looking up a group by `id` or `identifier`.
+* `keycard_role` - New data source for reading a role by `id` or `identifier`.
+
 ## 0.7.0
 
 This release adds end-to-end declarative Cedar policy management: author policies, compose them into sets, publish immutable versions, and promote an active set per zone — with data sources for lookup and listing at every level.
