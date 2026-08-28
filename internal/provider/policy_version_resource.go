@@ -62,7 +62,7 @@ func (r *PolicyVersionResource) Metadata(ctx context.Context, req resource.Metad
 
 func (r *PolicyVersionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Publishes an immutable Cedar policy version under a `keycard_policy`. Any change to the content or schema creates a new version; changing an attribute replaces the resource. Use `lifecycle { create_before_destroy = true }` so the replacement version is published before the old one is archived. Destroying a version that is still referenced by the zone's active policy set binding cannot archive it (the API has no deactivation operation): the version is removed from Terraform state with a warning and stays live server-side until the binding rolls forward.",
+		MarkdownDescription: "Publishes an immutable Cedar policy version under a `keycard_policy`. Any change to the content or schema creates a new version; changing an attribute replaces the resource. Use `lifecycle { create_before_destroy = true }` so the replacement version is published before the old one is archived. Destroying a version that is still referenced by the zone's active policy set binding cannot archive it (bindings are replaced, never emptied — no deactivation operation exists, by design): the version is removed from Terraform state with a warning and stays live server-side until the binding rolls forward.",
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

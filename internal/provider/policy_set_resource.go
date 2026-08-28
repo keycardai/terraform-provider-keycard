@@ -71,7 +71,7 @@ func (r *PolicySetResource) Metadata(ctx context.Context, req resource.MetadataR
 
 func (r *PolicySetResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manages a Keycard policy set. A policy set is a container that binds policy set versions to a zone or user scope; its versions are managed separately. Destroying a set that still has an active binding cannot archive it (the API has no deactivation operation): the set is removed from Terraform state with a warning and stays live server-side until the zone's binding moves elsewhere.",
+		MarkdownDescription: "Manages a Keycard policy set. A policy set is a container that binds policy set versions to a zone or user scope; its versions are managed separately. Destroying a set that still has an active binding cannot archive it (bindings are replaced, never emptied — no deactivation operation exists, by design): the set is removed from Terraform state with a warning and stays live server-side until the zone's binding moves elsewhere.",
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
