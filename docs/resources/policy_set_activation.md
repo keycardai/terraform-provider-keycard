@@ -4,14 +4,14 @@ page_title: "keycard_policy_set_activation Resource - keycard"
 subcategory: ""
 description: |-
   Binds a keycard_policy_set_version as the active policy set for a zone. A zone has at most one active binding, keyed by the zone itself: activating a version of a different policy set takes over the slot, so declare at most one keycard_policy_set_activation per zone. Changing policy_set_version_id re-activates in place — roll forward or roll back — and the server atomically demotes the previously active version.
-  ~> Destroying this resource does not deactivate anything. The API has no deactivation operation (a zone without an active policy set fails closed), so destroy only removes the binding from Terraform state; the version stays active server-side. While a version is active, it, the policy versions it references, and its policy set cannot be archived — to destroy the whole stack, activate a replacement version outside the configuration first.
+  ~> Destroying this resource does not unbind anything. By design a zone always has an active policy set binding: bindings are replaced, never emptied (a zone without an active policy set fails closed), so no deactivation operation exists. Destroy removes the resource from Terraform state only; the version stays active server-side, and changing what is active means binding a different policy set version. While a version is active, it, the policy versions it references, and its policy set cannot be archived — to destroy the whole stack, activate a replacement version outside the configuration first.
 ---
 
 # keycard_policy_set_activation (Resource)
 
 Binds a `keycard_policy_set_version` as the active policy set for a zone. A zone has at most one active binding, keyed by the zone itself: activating a version of a different policy set takes over the slot, so declare at most one `keycard_policy_set_activation` per zone. Changing `policy_set_version_id` re-activates in place — roll forward or roll back — and the server atomically demotes the previously active version.
 
-~> **Destroying this resource does not deactivate anything.** The API has no deactivation operation (a zone without an active policy set fails closed), so destroy only removes the binding from Terraform state; the version stays active server-side. While a version is active, it, the policy versions it references, and its policy set cannot be archived — to destroy the whole stack, activate a replacement version outside the configuration first.
+~> **Destroying this resource does not unbind anything.** By design a zone always has an active policy set binding: bindings are replaced, never emptied (a zone without an active policy set fails closed), so no deactivation operation exists. Destroy removes the resource from Terraform state only; the version stays active server-side, and changing what is active means binding a different policy set version. While a version is active, it, the policy versions it references, and its policy set cannot be archived — to destroy the whole stack, activate a replacement version outside the configuration first.
 
 ## Example Usage
 

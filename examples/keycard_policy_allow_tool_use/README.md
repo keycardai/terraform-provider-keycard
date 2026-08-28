@@ -48,13 +48,14 @@ terraform apply \
   restrict anything. To make this rule the only path to tool use, drop the
   `concat` and make it the sole manifest entry — Cedar is default-deny, so
   everything else is then denied.
-- **Destroying `keycard_policy_set_activation` does not deactivate the
-  binding.** It only removes the resource from Terraform state; the version
-  stays active in the zone.
+- **Destroying `keycard_policy_set_activation` does not unbind anything.** A
+  zone's active binding is replaced, never emptied, so destroy only removes the
+  resource from Terraform state; the version stays active in the zone.
 - **Rollback**: set `policy_set_version_id` back to the previously active
   version ID and apply — activation updates in place, including to older
   versions.
 - **Teardown**: an active binding blocks archiving the resources it references,
-  so `terraform destroy` will fail on the policy set version and policy version
-  while this version is active. Activate a different version first, then
-  destroy.
+  so `terraform destroy` cannot archive the active policy set version or the
+  policy versions it references — they are dropped from Terraform state with a
+  warning and stay live in the zone. Activate a different version first if you
+  want them archived.
