@@ -104,9 +104,8 @@ func updateProviderDataSourceModelFromAPIResponse(ctx context.Context, provider 
 	return diags
 }
 
-// providerOpenIDObject projects protocols.openid.external_id_claim onto the
-// nested openid object. The object is null when the claim is unset, since
-// external_id_claim is the only openid field the provider exposes.
+// providerOpenIDObject returns a null object when external_id_claim is unset,
+// since it is the only openid field the provider exposes.
 func providerOpenIDObject(ctx context.Context, provider *client.Provider) (basetypes.ObjectValue, diag.Diagnostics) {
 	nullObj := types.ObjectNull(OpenIDProviderModel{}.AttributeTypes())
 

@@ -396,8 +396,8 @@ func (r *ProviderResource) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	// Prior state tells us whether openid was previously set, which decides
-	// whether removing it from config needs an explicit null.
+	// Prior state tells us whether openid was set, so its removal can send
+	// an explicit null.
 	var state ProviderResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -440,12 +440,10 @@ func (r *ProviderResource) Update(ctx context.Context, req resource.UpdateReques
 
 	// Set protocols.oauth2 fields if oauth2 block is provided.
 	//
-	// A null oauth2 means this is a non-OAuth2 provider (e.g. vault) that has
-	// no oauth2 in state, so oauth2 is left out of the request.
-	//
-	// Identifier-only providers always have oauth2 in state (the API copies
-	// identifier into issuer on create), so the plan modifier gives them a
-	// non-null value.
+	// A null oauth2 means a non-OAuth2 provider (e.g. vault) with no oauth2
+	// in state, so oauth2 is left out of the request. Identifier-only
+	// providers always have oauth2 in state (the API copies identifier into
+	// issuer on create), so the plan modifier gives them a non-null value.
 	if !data.OAuth2.IsUnknown() && !data.OAuth2.IsNull() {
 		var oauth2Data OAuth2ProviderModel
 		diags := data.OAuth2.As(ctx, &oauth2Data, basetypes.ObjectAsOptions{})
@@ -471,10 +469,9 @@ func (r *ProviderResource) Update(ctx context.Context, req resource.UpdateReques
 		sendProtocols = true
 	}
 
-	// Set protocols.openid.external_id_claim when the openid block is set now
-	// or was set before. Removing the block sends an explicit null to revert
-	// to the server default; only the claim is nulled, so an out-of-band
-	// userinfo_endpoint survives.
+	// Removing the block sends an explicit null to revert to the server
+	// default. Only the claim is nulled, so an out-of-band userinfo_endpoint
+	// survives.
 	if !data.OpenID.IsUnknown() && (!data.OpenID.IsNull() || !state.OpenID.IsNull()) {
 		externalIDClaim := nullable.NewNullNullable[string]()
 		if !data.OpenID.IsNull() {

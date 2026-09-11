@@ -76,9 +76,8 @@ func (m SSOConnectionOpenIDModel) AttributeTypes() map[string]attr.Type {
 	}
 }
 
-// ssoConnectionOpenIDObject projects protocols.openid.external_id_claim onto
-// the nested openid object. The object is null when the claim is unset, since
-// external_id_claim is the only openid field the provider exposes.
+// ssoConnectionOpenIDObject returns a null object when external_id_claim is
+// unset, since it is the only openid field the provider exposes.
 func ssoConnectionOpenIDObject(ctx context.Context, ssoConn *client.SSOConnection) (basetypes.ObjectValue, diag.Diagnostics) {
 	nullObj := types.ObjectNull(SSOConnectionOpenIDModel{}.AttributeTypes())
 
@@ -101,8 +100,7 @@ func ssoConnectionOpenIDObject(ctx context.Context, ssoConn *client.SSOConnectio
 	return types.ObjectValueFrom(ctx, model.AttributeTypes(), model)
 }
 
-// applySSOConnectionResponse maps an API response onto the model. client_secret
-// is write-only and stays at its plan or state value.
+// applySSOConnectionResponse leaves client_secret untouched; it is write-only.
 func applySSOConnectionResponse(ctx context.Context, ssoConn *client.SSOConnection, orgID, apiEndpoint string, data *SSOConnectionResourceModel) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -325,8 +323,8 @@ func (r *SSOConnectionResource) Update(ctx context.Context, req resource.UpdateR
 		return
 	}
 
-	// Prior state tells us whether openid was previously set, which decides
-	// whether removing it from config needs an explicit null.
+	// Prior state tells us whether openid was set, so its removal can send
+	// an explicit null.
 	var state SSOConnectionResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
@@ -356,9 +354,7 @@ func (r *SSOConnectionResource) Update(ctx context.Context, req resource.UpdateR
 		updateReq.ClientSecret = &clientSecret
 	}
 
-	// Send protocols.openid.external_id_claim when the openid block is set now
-	// or was set before. Removing the block sends an explicit null to revert to
-	// the server default.
+	// Removing the block sends an explicit null to revert to the server default.
 	if !data.OpenID.IsUnknown() && (!data.OpenID.IsNull() || !state.OpenID.IsNull()) {
 		externalIDClaim := nullable.NewNullNullable[string]()
 		if !data.OpenID.IsNull() {

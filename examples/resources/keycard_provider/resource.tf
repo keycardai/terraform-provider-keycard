@@ -15,8 +15,7 @@ resource "keycard_provider" "okta" {
   }
 }
 
-# Entra correlates SCIM-provisioned users on "oid"; its pairwise "sub" differs
-# from the SCIM externalId
+# Entra's pairwise "sub" differs from the SCIM externalId
 resource "keycard_provider" "entra" {
   zone_id       = keycard_zone.dev.id
   name          = "Entra"

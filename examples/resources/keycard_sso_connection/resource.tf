@@ -6,8 +6,7 @@ resource "keycard_sso_connection" "okta" {
   client_secret = var.okta_client_secret
 }
 
-# Configure SSO with Entra. Entra correlates SCIM-provisioned users on "oid";
-# its pairwise "sub" differs from the SCIM externalId
+# Configure SSO with Entra, whose pairwise "sub" differs from the SCIM externalId
 resource "keycard_sso_connection" "azure_ad" {
   identifier    = "https://login.microsoftonline.com/${var.azure_tenant_id}/v2.0"
   client_id     = var.azure_client_id
