@@ -167,6 +167,68 @@ func TestAccProviderResource_oauth2Updates(t *testing.T) {
 	})
 }
 
+func TestAccProviderResource_openidExternalIDClaim(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	issuer := fmt.Sprintf("https://%s.example.com", rName)
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create with external_id_claim
+			{
+				Config: testAccProviderResourceConfig_externalIDClaim(rName, issuer, "oid"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_provider.test", "oauth2.issuer", issuer),
+					resource.TestCheckResourceAttr("keycard_provider.test", "openid.external_id_claim", "oid"),
+				),
+			},
+			// ImportState testing
+			{
+				ResourceName:      "keycard_provider.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(state *terraform.State) (string, error) {
+					rs := state.RootModule().Resources["keycard_provider.test"]
+					return fmt.Sprintf("zones/%s/providers/%s", rs.Primary.Attributes["zone_id"], rs.Primary.ID), nil
+				},
+				ImportStateVerifyIgnore: []string{"client_secret"},
+			},
+			// Change the claim
+			{
+				Config: testAccProviderResourceConfig_externalIDClaim(rName, issuer, "email"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_provider.test", "openid.external_id_claim", "email"),
+				),
+			},
+			// Remove the openid block, reverting to the server default
+			{
+				Config: testAccProviderResourceConfig_basic(rName, issuer),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_provider.test", "oauth2.issuer", issuer),
+					resource.TestCheckNoResourceAttr("keycard_provider.test", "openid.external_id_claim"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccProviderResource_emptyExternalIDClaimInvalid(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	issuer := fmt.Sprintf("https://%s.example.com", rName)
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccProviderResourceConfig_externalIDClaim(rName, issuer, ""),
+				ExpectError: regexp.MustCompile(`Attribute openid.external_id_claim string length must be at least 1`),
+			},
+		},
+	})
+}
+
 func TestAccProviderResource_customIdentifier(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	issuer := fmt.Sprintf("https://%s.example.com", rName)
@@ -373,6 +435,23 @@ resource "keycard_provider" "test" {
   }
 }
 `, name, issuer)
+}
+
+func testAccProviderResourceConfig_externalIDClaim(name, issuer, externalIDClaim string) string {
+	return testAccOrgZone + fmt.Sprintf(`
+resource "keycard_provider" "test" {
+  name    = %[1]q
+  zone_id = data.keycard_organization.test.zone_id
+
+  oauth2 = {
+    issuer = %[2]q
+  }
+
+  openid = {
+    external_id_claim = %[3]q
+  }
+}
+`, name, issuer, externalIDClaim)
 }
 
 func testAccProviderResourceConfig_withIdentifier(name, issuer, identifier string) string {

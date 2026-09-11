@@ -3095,6 +3095,12 @@ components:
           type: string
           format: uri
           nullable: true
+        external_id_claim:
+          description: Name of the OIDC claim carrying the stable external id used to
+            correlate logins with externally provisioned (SCIM) users. Defaults
+            to "sub".
+          type: string
+          nullable: true
       nullable: true
       title: Provider OpenID Connect Protocol
     ProviderOAuth2ProtocolCreate:
@@ -3133,6 +3139,12 @@ components:
         userinfo_endpoint:
           type: string
           format: uri
+        external_id_claim:
+          description: Name of the OIDC claim carrying the stable external id used to
+            correlate logins with externally provisioned (SCIM) users. Defaults
+            to "sub". Set to "oid" for Entra, whose pairwise "sub" differs from
+            the SCIM externalId.
+          type: string
       title: Provider OpenID Connect Protocol Create
     ProviderProtocolCreate:
       description: Protocol-specific configuration for provider creation
@@ -3186,6 +3198,12 @@ components:
         userinfo_endpoint:
           type: string
           format: uri
+          nullable: true
+        external_id_claim:
+          description: Name of the OIDC claim carrying the stable external id used to
+            correlate logins with externally provisioned (SCIM) users. Defaults
+            to "sub". Set to null to revert to the default.
+          type: string
           nullable: true
       nullable: true
       title: Provider OpenID Connect Protocol Update
@@ -4241,6 +4259,49 @@ components:
       description: Organization ID or label identifier
       minLength: 1
       maxLength: 255
+    SSOConnectionProtocolOpenID:
+      description: OpenID Connect protocol configuration for SSO connection
+      type: object
+      properties:
+        external_id_claim:
+          description: Name of the OIDC claim carrying the stable external id used to
+            correlate logins with externally provisioned (SCIM) users. Defaults
+            to "sub".
+          type: string
+          nullable: true
+      nullable: true
+      title: SSO Connection OpenID Connect Protocol
+    SSOConnectionProtocol:
+      description: Protocol configuration for SSO connection
+      type: object
+      properties:
+        openid:
+          $ref: '#/components/schemas/SSOConnectionProtocolOpenID'
+      nullable: true
+      title: SSO Connection Protocol
+    SSOConnectionProtocolOpenIDUpdate:
+      description: OpenID Connect protocol configuration for an SSO connection update.
+        Each field is tri-state, omit to leave unchanged, send null to clear,
+        send a value to set.
+      type: object
+      properties:
+        external_id_claim:
+          description: Name of the OIDC claim carrying the stable external id used to
+            correlate logins with externally provisioned (SCIM) users. Set to
+            null to clear (falls back to "sub").
+          type: string
+          nullable: true
+      nullable: true
+      title: SSO Connection OpenID Connect Protocol Update
+    SSOConnectionProtocolUpdate:
+      description: Protocol configuration for an SSO connection update. Omit a protocol
+        to leave it unchanged.
+      type: object
+      properties:
+        openid:
+          $ref: '#/components/schemas/SSOConnectionProtocolOpenIDUpdate'
+      nullable: true
+      title: SSO Connection Protocol Update
     SSOConnection:
       description: SSO connection configuration for an organization
       type: object
@@ -4260,6 +4321,8 @@ components:
         client_secret_set:
           description: Whether a client secret is configured
           type: boolean
+        protocols:
+          $ref: '#/components/schemas/SSOConnectionProtocol'
         created_at:
           description: Entity creation timestamp
           type: string
@@ -4291,6 +4354,8 @@ components:
         client_secret:
           description: OAuth 2.0 client secret (optional, will be encrypted if provided)
           type: string
+        protocols:
+          $ref: '#/components/schemas/SSOConnectionProtocol'
       required:
         - identifier
         - client_id
@@ -4310,6 +4375,8 @@ components:
         client_secret:
           description: OAuth 2.0 client secret (set to null to remove)
           type: string
+        protocols:
+          $ref: '#/components/schemas/SSOConnectionProtocolUpdate'
       title: SSO Connection Update
     SchemaVersionWithZoneInfo:
       description: A versioned Cedar schema that defines the entity model, actions, and context shape used for policy evaluation. Mirrors the published PDP management API (keycard-api).

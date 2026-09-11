@@ -98,6 +98,64 @@ func TestAccSSOConnectionResource_withClientSecret(t *testing.T) {
 	})
 }
 
+func TestAccSSOConnectionResource_openidExternalIDClaim(t *testing.T) {
+	identifier := fmt.Sprintf("https://%s.example.com", acctest.RandomWithPrefix("tftest"))
+	clientID := acctest.RandomWithPrefix("client")
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheckBasic(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create with external_id_claim
+			{
+				Config: testAccSSOConnectionResourceConfig_externalIDClaim(identifier, clientID, "oid"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_sso_connection.test", "identifier", identifier),
+					resource.TestCheckResourceAttr("keycard_sso_connection.test", "openid.external_id_claim", "oid"),
+				),
+			},
+			// ImportState testing
+			{
+				ResourceName:            "keycard_sso_connection.test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"client_secret"},
+			},
+			// Change the claim
+			{
+				Config: testAccSSOConnectionResourceConfig_externalIDClaim(identifier, clientID, "email"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_sso_connection.test", "openid.external_id_claim", "email"),
+				),
+			},
+			// Remove the openid block, reverting to the server default
+			{
+				Config: testAccSSOConnectionResourceConfig_basic(identifier, clientID),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_sso_connection.test", "identifier", identifier),
+					resource.TestCheckNoResourceAttr("keycard_sso_connection.test", "openid.external_id_claim"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccSSOConnectionResource_emptyExternalIDClaimInvalid(t *testing.T) {
+	identifier := fmt.Sprintf("https://%s.example.com", acctest.RandomWithPrefix("tftest"))
+	clientID := acctest.RandomWithPrefix("client")
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheckBasic(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccSSOConnectionResourceConfig_externalIDClaim(identifier, clientID, ""),
+				ExpectError: regexp.MustCompile(`Attribute openid.external_id_claim string length must be at least 1`),
+			},
+		},
+	})
+}
+
 func TestAccSSOConnectionResource_emptyClientIdInvalid(t *testing.T) {
 	identifier := fmt.Sprintf("https://%s.example.com", acctest.RandomWithPrefix("tftest"))
 
@@ -151,6 +209,19 @@ resource "keycard_sso_connection" "test" {
   client_id  = %[2]q
 }
 `, identifier, clientID)
+}
+
+func testAccSSOConnectionResourceConfig_externalIDClaim(identifier, clientID, externalIDClaim string) string {
+	return fmt.Sprintf(`
+resource "keycard_sso_connection" "test" {
+  identifier = %[1]q
+  client_id  = %[2]q
+
+  openid = {
+    external_id_claim = %[3]q
+  }
+}
+`, identifier, clientID, externalIDClaim)
 }
 
 func testAccSSOConnectionResourceConfig_withClientSecret(identifier, clientID, clientSecret string) string {

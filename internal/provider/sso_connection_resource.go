@@ -6,6 +6,8 @@ import (
 	"net/url"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -13,7 +15,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
+	"github.com/oapi-codegen/nullable"
 )
 
 // ssoLoginURL builds the IdP-initiated login URL for this SSO connection.
@@ -57,7 +61,72 @@ type SSOConnectionResourceModel struct {
 	Identifier   types.String `tfsdk:"identifier"`
 	ClientID     types.String `tfsdk:"client_id"`
 	ClientSecret types.String `tfsdk:"client_secret"`
+	OpenID       types.Object `tfsdk:"openid"`
 	LoginURL     types.String `tfsdk:"login_url"`
+}
+
+// SSOConnectionOpenIDModel describes the nested openid block data model.
+type SSOConnectionOpenIDModel struct {
+	ExternalIDClaim types.String `tfsdk:"external_id_claim"`
+}
+
+func (m SSOConnectionOpenIDModel) AttributeTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"external_id_claim": types.StringType,
+	}
+}
+
+// ssoConnectionOpenIDObject projects protocols.openid.external_id_claim onto
+// the nested openid object. The object is null when the claim is unset, since
+// external_id_claim is the only openid field the provider exposes.
+func ssoConnectionOpenIDObject(ctx context.Context, ssoConn *client.SSOConnection) (basetypes.ObjectValue, diag.Diagnostics) {
+	nullObj := types.ObjectNull(SSOConnectionOpenIDModel{}.AttributeTypes())
+
+	protocols, err := ssoConn.Protocols.Get()
+	if err != nil {
+		return nullObj, nil
+	}
+
+	openid, err := protocols.Openid.Get()
+	if err != nil {
+		return nullObj, nil
+	}
+
+	externalIDClaim, err := openid.ExternalIdClaim.Get()
+	if err != nil {
+		return nullObj, nil
+	}
+
+	model := SSOConnectionOpenIDModel{ExternalIDClaim: types.StringValue(externalIDClaim)}
+	return types.ObjectValueFrom(ctx, model.AttributeTypes(), model)
+}
+
+// applySSOConnectionResponse maps an API response onto the model. client_secret
+// is write-only and stays at its plan or state value.
+func applySSOConnectionResponse(ctx context.Context, ssoConn *client.SSOConnection, orgID, apiEndpoint string, data *SSOConnectionResourceModel) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	data.ID = types.StringValue(ssoConn.Id)
+	data.Identifier = types.StringValue(ssoConn.Identifier)
+	if ssoConn.ClientId.IsSpecified() && !ssoConn.ClientId.IsNull() {
+		data.ClientID = types.StringValue(ssoConn.ClientId.MustGet())
+	}
+
+	openidObj, openidDiags := ssoConnectionOpenIDObject(ctx, ssoConn)
+	diags.Append(openidDiags...)
+	if diags.HasError() {
+		return diags
+	}
+	data.OpenID = openidObj
+
+	loginURL, err := ssoLoginURL(ssoConn.Identifier, orgID, apiEndpoint)
+	if err != nil {
+		diags.AddError("Configuration Error", err.Error())
+		return diags
+	}
+	data.LoginURL = types.StringValue(loginURL)
+
+	return diags
 }
 
 func (r *SSOConnectionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -97,6 +166,19 @@ func (r *SSOConnectionResource) Schema(ctx context.Context, req resource.SchemaR
 				Sensitive:           true,
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
+				},
+			},
+			"openid": schema.SingleNestedAttribute{
+				MarkdownDescription: "OpenID Connect protocol configuration. Omit the block to use the server defaults.",
+				Optional:            true,
+				Attributes: map[string]schema.Attribute{
+					"external_id_claim": schema.StringAttribute{
+						MarkdownDescription: "Name of the OIDC claim carrying the stable external ID used to correlate logins with SCIM-provisioned users. Defaults to `sub` when the block is omitted. Set to `oid` for Entra, whose pairwise `sub` differs from the SCIM `externalId`.",
+						Required:            true,
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
+					},
 				},
 			},
 			"login_url": schema.StringAttribute{
@@ -148,6 +230,20 @@ func (r *SSOConnectionResource) Create(ctx context.Context, req resource.CreateR
 		createReq.ClientSecret = &clientSecret
 	}
 
+	if !data.OpenID.IsNull() && !data.OpenID.IsUnknown() {
+		var openidData SSOConnectionOpenIDModel
+		resp.Diagnostics.Append(data.OpenID.As(ctx, &openidData, basetypes.ObjectAsOptions{})...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		createReq.Protocols = nullable.NewNullableWithValue(client.SSOConnectionProtocol{
+			Openid: nullable.NewNullableWithValue(client.SSOConnectionProtocolOpenID{
+				ExternalIdClaim: stringValueNullable(openidData.ExternalIDClaim),
+			}),
+		})
+	}
+
 	createResp, err := r.client.EnableSSOConnectionWithResponse(ctx, orgID, createReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create SSO connection, got error: %s", err))
@@ -167,19 +263,10 @@ func (r *SSOConnectionResource) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
-	ssoConn := createResp.JSON201
-	data.ID = types.StringValue(ssoConn.Id)
-	data.Identifier = types.StringValue(ssoConn.Identifier)
-	if ssoConn.ClientId.IsSpecified() && !ssoConn.ClientId.IsNull() {
-		data.ClientID = types.StringValue(ssoConn.ClientId.MustGet())
-	}
-	// client_secret is write-only, preserve the configured value
-	loginURL, err := ssoLoginURL(ssoConn.Identifier, orgID, r.client.Endpoint())
-	if err != nil {
-		resp.Diagnostics.AddError("Configuration Error", err.Error())
+	resp.Diagnostics.Append(applySSOConnectionResponse(ctx, createResp.JSON201, orgID, r.client.Endpoint(), &data)...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
-	data.LoginURL = types.StringValue(loginURL)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -222,19 +309,10 @@ func (r *SSOConnectionResource) Read(ctx context.Context, req resource.ReadReque
 		return
 	}
 
-	ssoConn := getResp.JSON200
-	data.ID = types.StringValue(ssoConn.Id)
-	data.Identifier = types.StringValue(ssoConn.Identifier)
-	if ssoConn.ClientId.IsSpecified() && !ssoConn.ClientId.IsNull() {
-		data.ClientID = types.StringValue(ssoConn.ClientId.MustGet())
-	}
-	// client_secret is write-only, preserve state value
-	loginURL, err := ssoLoginURL(ssoConn.Identifier, orgID, r.client.Endpoint())
-	if err != nil {
-		resp.Diagnostics.AddError("Configuration Error", err.Error())
+	resp.Diagnostics.Append(applySSOConnectionResponse(ctx, getResp.JSON200, orgID, r.client.Endpoint(), &data)...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
-	data.LoginURL = types.StringValue(loginURL)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -243,6 +321,14 @@ func (r *SSOConnectionResource) Update(ctx context.Context, req resource.UpdateR
 	var data SSOConnectionResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Prior state tells us whether openid was previously set, which decides
+	// whether removing it from config needs an explicit null.
+	var state SSOConnectionResourceModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -270,6 +356,28 @@ func (r *SSOConnectionResource) Update(ctx context.Context, req resource.UpdateR
 		updateReq.ClientSecret = &clientSecret
 	}
 
+	// Send protocols.openid.external_id_claim when the openid block is set now
+	// or was set before. Removing the block sends an explicit null to revert to
+	// the server default.
+	if !data.OpenID.IsUnknown() && (!data.OpenID.IsNull() || !state.OpenID.IsNull()) {
+		externalIDClaim := nullable.NewNullNullable[string]()
+		if !data.OpenID.IsNull() {
+			var openidData SSOConnectionOpenIDModel
+			resp.Diagnostics.Append(data.OpenID.As(ctx, &openidData, basetypes.ObjectAsOptions{})...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+
+			externalIDClaim = stringValueNullable(openidData.ExternalIDClaim)
+		}
+
+		updateReq.Protocols = nullable.NewNullableWithValue(client.SSOConnectionProtocolUpdate{
+			Openid: nullable.NewNullableWithValue(client.SSOConnectionProtocolOpenIDUpdate{
+				ExternalIdClaim: externalIDClaim,
+			}),
+		})
+	}
+
 	updateResp, err := r.client.UpdateSSOConnectionWithResponse(ctx, orgID, updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update SSO connection, got error: %s", err))
@@ -289,19 +397,10 @@ func (r *SSOConnectionResource) Update(ctx context.Context, req resource.UpdateR
 		return
 	}
 
-	ssoConn := updateResp.JSON200
-	data.ID = types.StringValue(ssoConn.Id)
-	data.Identifier = types.StringValue(ssoConn.Identifier)
-	if ssoConn.ClientId.IsSpecified() && !ssoConn.ClientId.IsNull() {
-		data.ClientID = types.StringValue(ssoConn.ClientId.MustGet())
-	}
-	// client_secret is write-only, preserve the configured value
-	loginURL, err := ssoLoginURL(ssoConn.Identifier, orgID, r.client.Endpoint())
-	if err != nil {
-		resp.Diagnostics.AddError("Configuration Error", err.Error())
+	resp.Diagnostics.Append(applySSOConnectionResponse(ctx, updateResp.JSON200, orgID, r.client.Endpoint(), &data)...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
-	data.LoginURL = types.StringValue(loginURL)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -372,6 +471,12 @@ func (r *SSOConnectionResource) ImportState(ctx context.Context, req resource.Im
 	if ssoConn.ClientId.IsSpecified() && !ssoConn.ClientId.IsNull() {
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("client_id"), ssoConn.ClientId.MustGet())...)
 	}
+	openidObj, openidDiags := ssoConnectionOpenIDObject(ctx, ssoConn)
+	resp.Diagnostics.Append(openidDiags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("openid"), openidObj)...)
 	loginURL, err := ssoLoginURL(ssoConn.Identifier, orgID, r.client.Endpoint())
 	if err != nil {
 		resp.Diagnostics.AddError("Configuration Error", err.Error())

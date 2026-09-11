@@ -37,6 +37,7 @@ type ProviderDataSourceModel struct {
 	Identifier  types.String `tfsdk:"identifier"`
 	ClientID    types.String `tfsdk:"client_id"`
 	OAuth2      types.Object `tfsdk:"oauth2"`
+	OpenID      types.Object `tfsdk:"openid"`
 }
 
 func (d *ProviderDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -88,6 +89,16 @@ func (d *ProviderDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 					},
 					"token_endpoint": schema.StringAttribute{
 						MarkdownDescription: "OAuth 2.0 Token endpoint URL. May be empty.",
+						Computed:            true,
+					},
+				},
+			},
+			"openid": schema.SingleNestedAttribute{
+				MarkdownDescription: "OpenID Connect protocol configuration. May be empty.",
+				Computed:            true,
+				Attributes: map[string]schema.Attribute{
+					"external_id_claim": schema.StringAttribute{
+						MarkdownDescription: "Name of the OIDC claim carrying the stable external ID used to correlate logins with SCIM-provisioned users. Empty when the provider uses the `sub` default.",
 						Computed:            true,
 					},
 				},

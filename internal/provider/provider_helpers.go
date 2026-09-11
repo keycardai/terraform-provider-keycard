@@ -49,6 +49,13 @@ func updateProviderModelFromAPIResponse(ctx context.Context, provider *client.Pr
 		data.OAuth2 = types.ObjectNull(OAuth2ProviderModel{}.AttributeTypes())
 	}
 
+	openidObj, openidDiags := providerOpenIDObject(ctx, provider)
+	diags.Append(openidDiags...)
+	if diags.HasError() {
+		return diags
+	}
+	data.OpenID = openidObj
+
 	return diags
 }
 
@@ -87,7 +94,39 @@ func updateProviderDataSourceModelFromAPIResponse(ctx context.Context, provider 
 		data.OAuth2 = types.ObjectNull(OAuth2ProviderModel{}.AttributeTypes())
 	}
 
+	openidObj, openidDiags := providerOpenIDObject(ctx, provider)
+	diags.Append(openidDiags...)
+	if diags.HasError() {
+		return diags
+	}
+	data.OpenID = openidObj
+
 	return diags
+}
+
+// providerOpenIDObject projects protocols.openid.external_id_claim onto the
+// nested openid object. The object is null when the claim is unset, since
+// external_id_claim is the only openid field the provider exposes.
+func providerOpenIDObject(ctx context.Context, provider *client.Provider) (basetypes.ObjectValue, diag.Diagnostics) {
+	nullObj := types.ObjectNull(OpenIDProviderModel{}.AttributeTypes())
+
+	protocols, err := provider.Protocols.Get()
+	if err != nil {
+		return nullObj, nil
+	}
+
+	openid, err := protocols.Openid.Get()
+	if err != nil {
+		return nullObj, nil
+	}
+
+	externalIDClaim, err := openid.ExternalIdClaim.Get()
+	if err != nil {
+		return nullObj, nil
+	}
+
+	model := OpenIDProviderModel{ExternalIDClaim: types.StringValue(externalIDClaim)}
+	return types.ObjectValueFrom(ctx, model.AttributeTypes(), model)
 }
 
 // isArchived reports whether an archived_at timestamp is present and non-null,

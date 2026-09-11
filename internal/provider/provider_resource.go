@@ -47,6 +47,7 @@ type ProviderResourceModel struct {
 	ClientID     types.String `tfsdk:"client_id"`
 	ClientSecret types.String `tfsdk:"client_secret"`
 	OAuth2       types.Object `tfsdk:"oauth2"`
+	OpenID       types.Object `tfsdk:"openid"`
 }
 
 // OAuth2ProviderModel describes the nested oauth2 block data model.
@@ -61,6 +62,17 @@ func (m OAuth2ProviderModel) AttributeTypes() map[string]attr.Type {
 		"issuer":                 types.StringType,
 		"authorization_endpoint": types.StringType,
 		"token_endpoint":         types.StringType,
+	}
+}
+
+// OpenIDProviderModel describes the nested openid block data model.
+type OpenIDProviderModel struct {
+	ExternalIDClaim types.String `tfsdk:"external_id_claim"`
+}
+
+func (m OpenIDProviderModel) AttributeTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"external_id_claim": types.StringType,
 	}
 }
 
@@ -160,6 +172,19 @@ func (r *ProviderResource) Schema(ctx context.Context, req resource.SchemaReques
 				},
 				PlanModifiers: []planmodifier.Object{
 					syncOAuth2WithIdentifierModifier{},
+				},
+			},
+			"openid": schema.SingleNestedAttribute{
+				MarkdownDescription: "OpenID Connect protocol configuration. Omit the block to use the server defaults.",
+				Optional:            true,
+				Attributes: map[string]schema.Attribute{
+					"external_id_claim": schema.StringAttribute{
+						MarkdownDescription: "Name of the OIDC claim carrying the stable external ID used to correlate logins with SCIM-provisioned users. Defaults to `sub` when the block is omitted. Set to `oid` for Entra, whose pairwise `sub` differs from the SCIM `externalId`.",
+						Required:            true,
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
+					},
 				},
 			},
 		},
@@ -266,6 +291,23 @@ func (r *ProviderResource) Create(ctx context.Context, req resource.CreateReques
 		}
 	}
 
+	// Set protocols.openid fields if openid block is provided
+	if !data.OpenID.IsNull() && !data.OpenID.IsUnknown() {
+		var openidData OpenIDProviderModel
+		diags := data.OpenID.As(ctx, &openidData, basetypes.ObjectAsOptions{})
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		if createReq.Protocols == nil {
+			createReq.Protocols = &client.ProviderProtocolCreate{}
+		}
+		createReq.Protocols.Openid = &client.ProviderOpenIDProtocolCreate{
+			ExternalIdClaim: openidData.ExternalIDClaim.ValueStringPointer(),
+		}
+	}
+
 	// Create the provider
 	createResp, err := r.client.CreateProviderWithResponse(ctx, data.ZoneID.ValueString(), createReq)
 	if err != nil {
@@ -354,6 +396,15 @@ func (r *ProviderResource) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
+	// Prior state tells us whether openid was previously set, which decides
+	// whether removing it from config needs an explicit null.
+	var state ProviderResourceModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// Build the update request
 	updateReq := client.ProviderUpdate{}
 
@@ -384,41 +435,67 @@ func (r *ProviderResource) Update(ctx context.Context, req resource.UpdateReques
 		updateReq.ClientSecret = stringValueNullable(data.ClientSecret)
 	}
 
-	// Set protocols.oauth2 fields if oauth2 block is provided
-	if !data.OAuth2.IsUnknown() {
-		if data.OAuth2.IsNull() {
-			// Null means this is a non-OAuth2 provider (e.g. vault) that has
-			// no oauth2 in state. Don't send protocols.
-			//
-			// Identifier-only providers always have oauth2 in state (the API
-			// copies identifier into issuer on create), so the plan modifier
-			// gives them a non-null value and they go through the else branch.
-		} else {
-			var oauth2Data OAuth2ProviderModel
-			diags := data.OAuth2.As(ctx, &oauth2Data, basetypes.ObjectAsOptions{})
+	protocolUpdate := client.ProviderProtocolUpdate{}
+	sendProtocols := false
+
+	// Set protocols.oauth2 fields if oauth2 block is provided.
+	//
+	// A null oauth2 means this is a non-OAuth2 provider (e.g. vault) that has
+	// no oauth2 in state, so oauth2 is left out of the request.
+	//
+	// Identifier-only providers always have oauth2 in state (the API copies
+	// identifier into issuer on create), so the plan modifier gives them a
+	// non-null value.
+	if !data.OAuth2.IsUnknown() && !data.OAuth2.IsNull() {
+		var oauth2Data OAuth2ProviderModel
+		diags := data.OAuth2.As(ctx, &oauth2Data, basetypes.ObjectAsOptions{})
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		oauth2Update := client.ProviderOAuth2ProtocolUpdate{
+			// Always send issuer explicitly — it cannot be null once stored
+			Issuer: oauth2Data.Issuer.ValueStringPointer(),
+		}
+
+		if !oauth2Data.AuthorizationEndpoint.IsNull() && !oauth2Data.AuthorizationEndpoint.IsUnknown() {
+			oauth2Update.AuthorizationEndpoint = stringValueNullable(oauth2Data.AuthorizationEndpoint)
+		}
+
+		if !oauth2Data.TokenEndpoint.IsNull() && !oauth2Data.TokenEndpoint.IsUnknown() {
+			oauth2Update.TokenEndpoint = stringValueNullable(oauth2Data.TokenEndpoint)
+		}
+
+		protocolUpdate.Oauth2 = nullable.NewNullableWithValue(oauth2Update)
+		sendProtocols = true
+	}
+
+	// Set protocols.openid.external_id_claim when the openid block is set now
+	// or was set before. Removing the block sends an explicit null to revert
+	// to the server default; only the claim is nulled, so an out-of-band
+	// userinfo_endpoint survives.
+	if !data.OpenID.IsUnknown() && (!data.OpenID.IsNull() || !state.OpenID.IsNull()) {
+		externalIDClaim := nullable.NewNullNullable[string]()
+		if !data.OpenID.IsNull() {
+			var openidData OpenIDProviderModel
+			diags := data.OpenID.As(ctx, &openidData, basetypes.ObjectAsOptions{})
 			resp.Diagnostics.Append(diags...)
 			if resp.Diagnostics.HasError() {
 				return
 			}
 
-			oauth2Update := client.ProviderOAuth2ProtocolUpdate{
-				// Always send issuer explicitly — it cannot be null once stored
-				Issuer: oauth2Data.Issuer.ValueStringPointer(),
-			}
-
-			if !oauth2Data.AuthorizationEndpoint.IsNull() && !oauth2Data.AuthorizationEndpoint.IsUnknown() {
-				oauth2Update.AuthorizationEndpoint = stringValueNullable(oauth2Data.AuthorizationEndpoint)
-			}
-
-			if !oauth2Data.TokenEndpoint.IsNull() && !oauth2Data.TokenEndpoint.IsUnknown() {
-				oauth2Update.TokenEndpoint = stringValueNullable(oauth2Data.TokenEndpoint)
-			}
-
-			protocolUpdate := client.ProviderProtocolUpdate{
-				Oauth2: nullable.NewNullableWithValue(oauth2Update),
-			}
-			updateReq.Protocols = nullable.NewNullableWithValue(protocolUpdate)
+			externalIDClaim = stringValueNullable(openidData.ExternalIDClaim)
 		}
+
+		protocolUpdate.Openid = nullable.NewNullableWithValue(client.ProviderOpenIDProtocolUpdate{
+			ExternalIdClaim: externalIDClaim,
+		})
+		sendProtocols = true
+	}
+
+	if sendProtocols {
+		updateReq.Protocols = nullable.NewNullableWithValue(protocolUpdate)
 	}
 
 	// Update the provider
@@ -581,6 +658,7 @@ func (r *ProviderResource) UpgradeState(ctx context.Context) map[int64]resource.
 					ClientID:     priorState.ClientID,
 					ClientSecret: priorState.ClientSecret,
 					OAuth2:       oauth2Obj,
+					OpenID:       types.ObjectNull(OpenIDProviderModel{}.AttributeTypes()),
 				}
 				resp.Diagnostics.Append(resp.State.Set(ctx, upgradedState)...)
 			},

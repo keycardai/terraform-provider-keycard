@@ -51,6 +51,7 @@ resource "keycard_resource" "google_photos" {
 - `description` (String) Optional description of the provider's purpose. May be empty.
 - `name` (String) Human-readable name for the provider.
 - `oauth2` (Attributes) OAuth 2.0 protocol configuration. May be empty. (see [below for nested schema](#nestedatt--oauth2))
+- `openid` (Attributes) OpenID Connect protocol configuration. May be empty. (see [below for nested schema](#nestedatt--openid))
 
 <a id="nestedatt--oauth2"></a>
 ### Nested Schema for `oauth2`
@@ -60,3 +61,11 @@ Read-Only:
 - `authorization_endpoint` (String) OAuth 2.0 Authorization endpoint URL. May be empty.
 - `issuer` (String) OIDC issuer URL used for discovery and token validation.
 - `token_endpoint` (String) OAuth 2.0 Token endpoint URL. May be empty.
+
+
+<a id="nestedatt--openid"></a>
+### Nested Schema for `openid`
+
+Read-Only:
+
+- `external_id_claim` (String) Name of the OIDC claim carrying the stable external ID used to correlate logins with SCIM-provisioned users. Empty when the provider uses the `sub` default.

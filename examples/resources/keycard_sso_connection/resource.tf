@@ -6,11 +6,16 @@ resource "keycard_sso_connection" "okta" {
   client_secret = var.okta_client_secret
 }
 
-# Configure SSO with Azure AD
+# Configure SSO with Entra. Entra correlates SCIM-provisioned users on "oid";
+# its pairwise "sub" differs from the SCIM externalId
 resource "keycard_sso_connection" "azure_ad" {
   identifier    = "https://login.microsoftonline.com/${var.azure_tenant_id}/v2.0"
   client_id     = var.azure_client_id
   client_secret = var.azure_client_secret
+
+  openid = {
+    external_id_claim = "oid"
+  }
 }
 
 # Configure SSO with Google Workspace

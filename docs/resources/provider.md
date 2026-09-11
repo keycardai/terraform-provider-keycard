@@ -30,6 +30,23 @@ resource "keycard_provider" "okta" {
   }
 }
 
+# Entra correlates SCIM-provisioned users on "oid"; its pairwise "sub" differs
+# from the SCIM externalId
+resource "keycard_provider" "entra" {
+  zone_id       = keycard_zone.dev.id
+  name          = "Entra"
+  client_id     = var.entra_oauth_client_id
+  client_secret = var.entra_oauth_client_secret
+
+  oauth2 = {
+    issuer = "https://login.microsoftonline.com/${var.entra_tenant_id}/v2.0"
+  }
+
+  openid = {
+    external_id_claim = "oid"
+  }
+}
+
 # Configure the zone to use Okta for user authentication
 resource "keycard_zone_user_identity_config" "dev" {
   zone_id     = keycard_zone.dev.id
@@ -127,6 +144,7 @@ resource "keycard_provider" "acme_engineering" {
 - `description` (String) Optional description of the provider's purpose.
 - `identifier` (String) User-specified identifier, must be unique within the zone. Defaults to the `oauth2.issuer` value when not set.
 - `oauth2` (Attributes) OAuth 2.0 protocol configuration. When provided, `issuer` is required. If `identifier` is not set, it defaults to the `issuer` value. (see [below for nested schema](#nestedatt--oauth2))
+- `openid` (Attributes) OpenID Connect protocol configuration. Omit the block to use the server defaults. (see [below for nested schema](#nestedatt--openid))
 
 ### Read-Only
 
@@ -143,6 +161,14 @@ Optional:
 
 - `authorization_endpoint` (String) OAuth 2.0 Authorization endpoint URL.
 - `token_endpoint` (String) OAuth 2.0 Token endpoint URL.
+
+
+<a id="nestedatt--openid"></a>
+### Nested Schema for `openid`
+
+Required:
+
+- `external_id_claim` (String) Name of the OIDC claim carrying the stable external ID used to correlate logins with SCIM-provisioned users. Defaults to `sub` when the block is omitted. Set to `oid` for Entra, whose pairwise `sub` differs from the SCIM `externalId`.
 
 ## Import
 

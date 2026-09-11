@@ -21,11 +21,16 @@ resource "keycard_sso_connection" "okta" {
   client_secret = var.okta_client_secret
 }
 
-# Configure SSO with Azure AD
+# Configure SSO with Entra. Entra correlates SCIM-provisioned users on "oid";
+# its pairwise "sub" differs from the SCIM externalId
 resource "keycard_sso_connection" "azure_ad" {
   identifier    = "https://login.microsoftonline.com/${var.azure_tenant_id}/v2.0"
   client_id     = var.azure_client_id
   client_secret = var.azure_client_secret
+
+  openid = {
+    external_id_claim = "oid"
+  }
 }
 
 # Configure SSO with Google Workspace
@@ -47,11 +52,19 @@ resource "keycard_sso_connection" "google" {
 ### Optional
 
 - `client_secret` (String, Sensitive) OAuth 2.0 client secret from your identity provider.
+- `openid` (Attributes) OpenID Connect protocol configuration. Omit the block to use the server defaults. (see [below for nested schema](#nestedatt--openid))
 
 ### Read-Only
 
 - `id` (String) Unique identifier of the SSO connection.
 - `login_url` (String) IdP-initiated login URL for this SSO connection. Use this as the `login_uri` on your identity provider's OAuth app to enable IdP-initiated login to Keycard.
+
+<a id="nestedatt--openid"></a>
+### Nested Schema for `openid`
+
+Required:
+
+- `external_id_claim` (String) Name of the OIDC claim carrying the stable external ID used to correlate logins with SCIM-provisioned users. Defaults to `sub` when the block is omitted. Set to `oid` for Entra, whose pairwise `sub` differs from the SCIM `externalId`.
 
 ## Import
 
