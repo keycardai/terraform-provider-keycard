@@ -53,6 +53,14 @@ func (d *GroupDataSource) Schema(ctx context.Context, req datasource.SchemaReque
 				Optional:            true,
 				Computed:            true,
 			},
+			"external": schema.BoolAttribute{
+				MarkdownDescription: "Whether the group is synced from an external directory over SCIM.",
+				Computed:            true,
+			},
+			"external_issuer": schema.StringAttribute{
+				MarkdownDescription: "Issuer of the external directory the group was synced from. `null` for groups managed in Keycard.",
+				Computed:            true,
+			},
 		},
 	}
 }

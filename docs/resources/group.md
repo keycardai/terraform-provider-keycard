@@ -3,12 +3,12 @@
 page_title: "keycard_group Resource - keycard"
 subcategory: ""
 description: |-
-  Manages a Keycard group. A group is a zone-scoped collection of users that can be assigned roles and referenced in policies. Roles assigned to a group are inherited by its members.
+  Manages a Keycard group. A group is a zone-scoped collection of users that can be assigned roles and referenced in policies. Roles assigned to a group are inherited by its members. Groups synced from an external directory over SCIM cannot be managed by this resource; read them with the keycard_group data source.
 ---
 
 # keycard_group (Resource)
 
-Manages a Keycard group. A group is a zone-scoped collection of users that can be assigned roles and referenced in policies. Roles assigned to a group are inherited by its members.
+Manages a Keycard group. A group is a zone-scoped collection of users that can be assigned roles and referenced in policies. Roles assigned to a group are inherited by its members. Groups synced from an external directory over SCIM cannot be managed by this resource; read them with the `keycard_group` data source.
 
 ## Example Usage
 
@@ -44,6 +44,8 @@ resource "keycard_group" "oncall" {
 
 ### Read-Only
 
+- `external` (Boolean) Whether the group is synced from an external directory over SCIM. Always `false` for groups created by this resource.
+- `external_issuer` (String) Issuer of the external directory the group was synced from. `null` for groups managed in Keycard.
 - `id` (String) Unique identifier of the group.
 
 ## Import

@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -37,6 +38,9 @@ type GroupModel struct {
 	ZoneID     types.String `tfsdk:"zone_id"`
 	Name       types.String `tfsdk:"name"`
 	Identifier types.String `tfsdk:"identifier"`
+	// Directory-sync fields, set by SCIM only.
+	External       types.Bool   `tfsdk:"external"`
+	ExternalIssuer types.String `tfsdk:"external_issuer"`
 }
 
 func (r *GroupResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -45,7 +49,7 @@ func (r *GroupResource) Metadata(ctx context.Context, req resource.MetadataReque
 
 func (r *GroupResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manages a Keycard group. A group is a zone-scoped collection of users that can be assigned roles and referenced in policies. Roles assigned to a group are inherited by its members.",
+		MarkdownDescription: "Manages a Keycard group. A group is a zone-scoped collection of users that can be assigned roles and referenced in policies. Roles assigned to a group are inherited by its members. Groups synced from an external directory over SCIM cannot be managed by this resource; read them with the `keycard_group` data source.",
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -76,6 +80,20 @@ func (r *GroupResource) Schema(ctx context.Context, req resource.SchemaRequest, 
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(1, 2048),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"external": schema.BoolAttribute{
+				MarkdownDescription: "Whether the group is synced from an external directory over SCIM. Always `false` for groups created by this resource.",
+				Computed:            true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"external_issuer": schema.StringAttribute{
+				MarkdownDescription: "Issuer of the external directory the group was synced from. `null` for groups managed in Keycard.",
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -183,6 +201,17 @@ func (r *GroupResource) Read(ctx context.Context, req resource.ReadRequest, resp
 		return
 	}
 
+	// Directory-owned groups cannot be managed here: Terraform must not take
+	// over a name or membership that SCIM controls.
+	if getResp.JSON200.External {
+		resp.Diagnostics.AddError(
+			"External Group",
+			fmt.Sprintf("Group %s in zone %s is synced from an external directory and cannot be managed by the keycard_group resource. Read it with the keycard_group data source instead.",
+				data.ID.ValueString(), data.ZoneID.ValueString()),
+		)
+		return
+	}
+
 	updateGroupModelFromAPIResponse(getResp.JSON200, &data)
 
 	// Save updated data into Terraform state
@@ -282,4 +311,6 @@ func updateGroupModelFromAPIResponse(apiGroup *client.Group, data *GroupModel) {
 	data.ZoneID = types.StringValue(apiGroup.ZoneId)
 	data.Name = types.StringValue(apiGroup.Name)
 	data.Identifier = types.StringValue(apiGroup.Identifier)
+	data.External = types.BoolValue(apiGroup.External)
+	data.ExternalIssuer = nullableStringValue(apiGroup.ExternalIssuer)
 }

@@ -25,6 +25,9 @@ func TestAccGroupResource_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet("keycard_group.test", "id"),
 					// Not configured, so the API derives it from the name.
 					resource.TestCheckResourceAttrSet("keycard_group.test", "identifier"),
+					// Only SCIM creates external groups.
+					resource.TestCheckResourceAttr("keycard_group.test", "external", "false"),
+					resource.TestCheckNoResourceAttr("keycard_group.test", "external_issuer"),
 				),
 			},
 			// ImportState testing
