@@ -35,4 +35,5 @@ output "user_identity_provider" {
 
 ### Read-Only
 
+- `external_sync_enabled` (Boolean) Whether external directory sync (SCIM) is enabled for the zone.
 - `provider_id` (String) The ID of the provider configured for user authentication in this zone.

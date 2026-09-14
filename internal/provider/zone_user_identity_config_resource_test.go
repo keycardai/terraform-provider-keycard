@@ -32,6 +32,7 @@ func TestAccZoneUserIdentityConfigResource_basic(t *testing.T) {
 						"keycard_zone_user_identity_config.test", "provider_id",
 						"keycard_provider.test", "id",
 					),
+					resource.TestCheckResourceAttr("keycard_zone_user_identity_config.test", "external_sync_enabled", "false"),
 				),
 			},
 			// ImportState testing
@@ -132,6 +133,41 @@ func TestAccZoneUserIdentityConfigResource_replaceOnZoneChange(t *testing.T) {
 	})
 }
 
+func TestAccZoneUserIdentityConfigResource_externalSync(t *testing.T) {
+	zoneName := acctest.RandomWithPrefix("tftest")
+	providerName := acctest.RandomWithPrefix("tftest-provider")
+	identifier := fmt.Sprintf("https://%s.example.com", providerName)
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Enable on create
+			{
+				Config: testAccZoneUserIdentityConfigResourceConfig_externalSync(zoneName, providerName, identifier, true),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_zone_user_identity_config.test", "external_sync_enabled", "true"),
+				),
+			},
+			// Import round-trips the toggle
+			{
+				ResourceName:                         "keycard_zone_user_identity_config.test",
+				ImportState:                          true,
+				ImportStateVerify:                    true,
+				ImportStateIdFunc:                    testAccZoneUserIdentityConfigImportStateIdFunc,
+				ImportStateVerifyIdentifierAttribute: "zone_id",
+			},
+			// Disable
+			{
+				Config: testAccZoneUserIdentityConfigResourceConfig_externalSync(zoneName, providerName, identifier, false),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_zone_user_identity_config.test", "external_sync_enabled", "false"),
+				),
+			},
+		},
+	})
+}
+
 func testAccZoneUserIdentityConfigImportStateIdFunc(s *terraform.State) (string, error) {
 	rs, ok := s.RootModule().Resources["keycard_zone_user_identity_config.test"]
 	if !ok {
@@ -219,4 +255,27 @@ resource "keycard_zone_user_identity_config" "test" {
   provider_id = keycard_provider.test.id
 }
 `, zone1Name, zone2Name, providerName, identifier, identityZoneId)
+}
+
+func testAccZoneUserIdentityConfigResourceConfig_externalSync(zoneName, providerName, identifier string, syncEnabled bool) string {
+	return fmt.Sprintf(`
+resource "keycard_zone" "test" {
+  name = %[1]q
+}
+
+resource "keycard_provider" "test" {
+  name       = %[2]q
+  zone_id    = keycard_zone.test.id
+
+  oauth2 = {
+    issuer = %[3]q
+  }
+}
+
+resource "keycard_zone_user_identity_config" "test" {
+  zone_id               = keycard_zone.test.id
+  provider_id           = keycard_provider.test.id
+  external_sync_enabled = %[4]t
+}
+`, zoneName, providerName, identifier, syncEnabled)
 }
