@@ -25,6 +25,7 @@ func TestAccSSOConnectionResource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("keycard_sso_connection.test", "client_id", clientID),
 					resource.TestCheckResourceAttrSet("keycard_sso_connection.test", "id"),
 					resource.TestCheckResourceAttrSet("keycard_sso_connection.test", "login_url"),
+					resource.TestCheckResourceAttr("keycard_sso_connection.test", "external_sync_enabled", "false"),
 				),
 			},
 			// ImportState testing
@@ -161,4 +162,47 @@ resource "keycard_sso_connection" "test" {
   client_secret = %[3]q
 }
 `, identifier, clientID, clientSecret)
+}
+
+func TestAccSSOConnectionResource_externalSync(t *testing.T) {
+	identifier := fmt.Sprintf("https://%s.example.com", acctest.RandomWithPrefix("tftest"))
+	clientID := acctest.RandomWithPrefix("client")
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheckBasic(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Enable on create
+			{
+				Config: testAccSSOConnectionResourceConfig_externalSync(identifier, clientID, true),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_sso_connection.test", "external_sync_enabled", "true"),
+				),
+			},
+			// Import round-trips the toggle
+			{
+				ResourceName:            "keycard_sso_connection.test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"client_secret"},
+			},
+			// Disable
+			{
+				Config: testAccSSOConnectionResourceConfig_externalSync(identifier, clientID, false),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_sso_connection.test", "external_sync_enabled", "false"),
+				),
+			},
+		},
+	})
+}
+
+func testAccSSOConnectionResourceConfig_externalSync(identifier, clientID string, syncEnabled bool) string {
+	return fmt.Sprintf(`
+resource "keycard_sso_connection" "test" {
+  identifier            = %[1]q
+  client_id             = %[2]q
+  external_sync_enabled = %[3]t
+}
+`, identifier, clientID, syncEnabled)
 }

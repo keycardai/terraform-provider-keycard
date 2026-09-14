@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -53,11 +54,12 @@ type SSOConnectionResource struct {
 
 // SSOConnectionResourceModel describes the resource data model.
 type SSOConnectionResourceModel struct {
-	ID           types.String `tfsdk:"id"`
-	Identifier   types.String `tfsdk:"identifier"`
-	ClientID     types.String `tfsdk:"client_id"`
-	ClientSecret types.String `tfsdk:"client_secret"`
-	LoginURL     types.String `tfsdk:"login_url"`
+	ID                  types.String `tfsdk:"id"`
+	Identifier          types.String `tfsdk:"identifier"`
+	ClientID            types.String `tfsdk:"client_id"`
+	ClientSecret        types.String `tfsdk:"client_secret"`
+	LoginURL            types.String `tfsdk:"login_url"`
+	ExternalSyncEnabled types.Bool   `tfsdk:"external_sync_enabled"`
 }
 
 func (r *SSOConnectionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -103,8 +105,39 @@ func (r *SSOConnectionResource) Schema(ctx context.Context, req resource.SchemaR
 				MarkdownDescription: "IdP-initiated login URL for this SSO connection. Use this as the `login_uri` on your identity provider's OAuth app to enable IdP-initiated login to Keycard.",
 				Computed:            true,
 			},
+			"external_sync_enabled": schema.BoolAttribute{
+				MarkdownDescription: "Whether external directory sync (SCIM) from the SSO identity provider is enabled for the organization zone. Defaults to false. " +
+					"Disabling stops SCIM requests but does not delete provisioned users, groups, or sync tokens.",
+				Optional: true,
+				Computed: true,
+				Default:  booldefault.StaticBool(false),
+			},
 		},
 	}
+}
+
+// setOrgZoneExternalSync toggles external sync on the organization zone.
+func (r *SSOConnectionResource) setOrgZoneExternalSync(ctx context.Context, zoneID string, enabled bool) error {
+	resp, err := r.client.UpdateZoneWithResponse(ctx, zoneID, client.ZoneUpdate{ExternalSyncEnabled: &enabled})
+	if err != nil {
+		return fmt.Errorf("unable to update organization zone external sync, got error: %w", err)
+	}
+	if resp.StatusCode() != 200 {
+		return fmt.Errorf("unable to update organization zone external sync, got status %d: %s", resp.StatusCode(), string(resp.Body))
+	}
+	return nil
+}
+
+// readOrgZoneExternalSync returns the organization zone's external sync state.
+func (r *SSOConnectionResource) readOrgZoneExternalSync(ctx context.Context, zoneID string) (bool, error) {
+	resp, err := r.client.GetZoneWithResponse(ctx, zoneID)
+	if err != nil {
+		return false, fmt.Errorf("unable to read organization zone, got error: %w", err)
+	}
+	if resp.StatusCode() != 200 || resp.JSON200 == nil {
+		return false, fmt.Errorf("unable to read organization zone, got status %d: %s", resp.StatusCode(), string(resp.Body))
+	}
+	return resp.JSON200.ExternalSyncEnabled, nil
 }
 
 func (r *SSOConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -132,9 +165,9 @@ func (r *SSOConnectionResource) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
-	orgID, err := GetOrganizationID(ctx, r.client)
+	orgID, zoneID, err := getOrganizationZoneID(ctx, r.client)
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get organization ID: %s", err))
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get organization: %s", err))
 		return
 	}
 
@@ -181,6 +214,27 @@ func (r *SSOConnectionResource) Create(ctx context.Context, req resource.CreateR
 	}
 	data.LoginURL = types.StringValue(loginURL)
 
+	// Persist the connection before touching the zone so a failed toggle
+	// leaves the connection tracked.
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if data.ExternalSyncEnabled.ValueBool() {
+		if err := r.setOrgZoneExternalSync(ctx, zoneID, true); err != nil {
+			resp.Diagnostics.AddError("API Error", err.Error())
+			return
+		}
+	}
+
+	syncEnabled, err := r.readOrgZoneExternalSync(ctx, zoneID)
+	if err != nil {
+		resp.Diagnostics.AddError("API Error", err.Error())
+		return
+	}
+	data.ExternalSyncEnabled = types.BoolValue(syncEnabled)
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -192,9 +246,9 @@ func (r *SSOConnectionResource) Read(ctx context.Context, req resource.ReadReque
 		return
 	}
 
-	orgID, err := GetOrganizationID(ctx, r.client)
+	orgID, zoneID, err := getOrganizationZoneID(ctx, r.client)
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get organization ID: %s", err))
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get organization: %s", err))
 		return
 	}
 
@@ -236,6 +290,13 @@ func (r *SSOConnectionResource) Read(ctx context.Context, req resource.ReadReque
 	}
 	data.LoginURL = types.StringValue(loginURL)
 
+	syncEnabled, err := r.readOrgZoneExternalSync(ctx, zoneID)
+	if err != nil {
+		resp.Diagnostics.AddError("API Error", err.Error())
+		return
+	}
+	data.ExternalSyncEnabled = types.BoolValue(syncEnabled)
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -247,9 +308,16 @@ func (r *SSOConnectionResource) Update(ctx context.Context, req resource.UpdateR
 		return
 	}
 
-	orgID, err := GetOrganizationID(ctx, r.client)
+	// Prior state is needed to detect an external_sync_enabled toggle.
+	var state SSOConnectionResourceModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	orgID, zoneID, err := getOrganizationZoneID(ctx, r.client)
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get organization ID: %s", err))
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get organization: %s", err))
 		return
 	}
 
@@ -303,6 +371,20 @@ func (r *SSOConnectionResource) Update(ctx context.Context, req resource.UpdateR
 	}
 	data.LoginURL = types.StringValue(loginURL)
 
+	if !data.ExternalSyncEnabled.Equal(state.ExternalSyncEnabled) {
+		if err := r.setOrgZoneExternalSync(ctx, zoneID, data.ExternalSyncEnabled.ValueBool()); err != nil {
+			resp.Diagnostics.AddError("API Error", err.Error())
+			return
+		}
+	}
+
+	syncEnabled, err := r.readOrgZoneExternalSync(ctx, zoneID)
+	if err != nil {
+		resp.Diagnostics.AddError("API Error", err.Error())
+		return
+	}
+	data.ExternalSyncEnabled = types.BoolValue(syncEnabled)
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -314,10 +396,19 @@ func (r *SSOConnectionResource) Delete(ctx context.Context, req resource.DeleteR
 		return
 	}
 
-	orgID, err := GetOrganizationID(ctx, r.client)
+	orgID, zoneID, err := getOrganizationZoneID(ctx, r.client)
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get organization ID: %s", err))
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get organization: %s", err))
 		return
+	}
+
+	// Disabling SSO reverts the zone's identity provider to Keycard ID but
+	// leaves external sync untouched, so turn it off first.
+	if data.ExternalSyncEnabled.ValueBool() {
+		if err := r.setOrgZoneExternalSync(ctx, zoneID, false); err != nil {
+			resp.Diagnostics.AddError("API Error", err.Error())
+			return
+		}
 	}
 
 	deleteResp, err := r.client.DisableSSOConnectionWithResponse(ctx, orgID)
@@ -336,9 +427,9 @@ func (r *SSOConnectionResource) Delete(ctx context.Context, req resource.DeleteR
 }
 
 func (r *SSOConnectionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	orgID, err := GetOrganizationID(ctx, r.client)
+	orgID, zoneID, err := getOrganizationZoneID(ctx, r.client)
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get organization ID: %s", err))
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get organization: %s", err))
 		return
 	}
 
@@ -378,4 +469,11 @@ func (r *SSOConnectionResource) ImportState(ctx context.Context, req resource.Im
 		return
 	}
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("login_url"), loginURL)...)
+
+	syncEnabled, err := r.readOrgZoneExternalSync(ctx, zoneID)
+	if err != nil {
+		resp.Diagnostics.AddError("API Error", err.Error())
+		return
+	}
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("external_sync_enabled"), syncEnabled)...)
 }
