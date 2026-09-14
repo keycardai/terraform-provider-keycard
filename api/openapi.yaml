@@ -917,6 +917,98 @@ paths:
         - bearerAuth: []
       tags:
         - Application Credentials
+  '/zones/{zoneId}/external-sync-tokens':
+    post:
+      operationId: createExternalSyncToken
+      summary: Create external sync token
+      description: >-
+        Creates a token an identity provider can use to provision users into
+        this zone over SCIM. The zone must have external sync enabled and a user
+        identity provider set. The token value is returned only in this response.
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A new external sync token, including the token value
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalSyncTokenCreateResponse'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - External Sync Tokens
+  '/zones/{zoneId}/external-sync-tokens/{id}':
+    get:
+      operationId: getExternalSyncToken
+      summary: Get external sync token
+      description: Returns an external sync token by ID. The token value is never returned.
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalSyncToken'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - External Sync Tokens
+    delete:
+      operationId: deleteExternalSyncToken
+      summary: Delete external sync token
+      description: Deletes an external sync token. The token stops working immediately.
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Default Response
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - External Sync Tokens
   '/zones/{zoneId}/providers':
     get:
       operationId: listProviders
@@ -4090,6 +4182,56 @@ components:
         - $ref: '#/components/schemas/UrlCredentialUpdate'
         - $ref: '#/components/schemas/PublicCredentialUpdate'
       title: Application Credential Update
+    ExternalSyncToken:
+      description: Token an identity provider uses to provision users into a zone over SCIM.
+      type: object
+      properties:
+        id:
+          description: Unique identifier of the token
+          type: string
+        organization_id:
+          description: Organization that owns this token
+          type: string
+        zone_id:
+          description: Zone this token provisions users into
+          type: string
+        provider_id:
+          description: Identity provider this token provisions users for
+          type: string
+        last_used_at:
+          description: When the token was last used. `null` if it has never been used.
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          description: Entity creation timestamp
+          type: string
+          format: date-time
+        updated_at:
+          description: Entity update timestamp
+          type: string
+          format: date-time
+      required:
+        - id
+        - organization_id
+        - zone_id
+        - provider_id
+        - last_used_at
+        - created_at
+        - updated_at
+      title: External Sync Token
+    ExternalSyncTokenCreateResponse:
+      description: A new external sync token, including the token value
+      allOf:
+        - $ref: '#/components/schemas/ExternalSyncToken'
+        - type: object
+          properties:
+            token:
+              description: The token value to configure in the identity provider. Returned only when the token is created.
+              type: string
+          required:
+            - token
+      title: External Sync Token Create Response
     Zone:
       description: A zone for organizing resources within an organization
       type: object
