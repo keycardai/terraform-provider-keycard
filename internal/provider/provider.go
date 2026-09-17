@@ -194,6 +194,7 @@ func (p *KeycardProvider) DataSources(ctx context.Context) []func() datasource.D
 		NewApplicationWorkloadIdentityDataSource,
 		NewResourceDataSource,
 		NewGroupDataSource,
+		NewUserDataSource,
 		NewAwsKmsKeyPolicyDataSource,
 		func() datasource.DataSource {
 			return NewPolicySchemaDataSource(p.retryWindowOverride)

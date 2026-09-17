@@ -2885,6 +2885,116 @@ paths:
         - bearerAuth: []
       tags:
         - SSO
+  '/zones/{zoneId}/users':
+    get:
+      operationId: listUsers
+      summary: List users in a zone
+      description: Returns a paginated list of users in the zone.
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          description: Zone ID
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Maximum number of items to return
+          required: false
+          schema:
+            type: integer
+        - name: filter[email]
+          in: query
+          description: Filter by exact email address. Repeatable; multiple values are OR-ed.
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+        - name: filter[identifier]
+          in: query
+          description: Filter by exact user identifier. Repeatable; multiple values are OR-ed.
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+        - name: filter[subject]
+          in: query
+          description: Filter by exact `subject`. Repeatable; multiple values are OR-ed.
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+        - name: filter[issuer]
+          in: query
+          description: Filter by exact `issuer`. Repeatable; multiple values are OR-ed.
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: A paginated list of users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsersList'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Users
+  '/zones/{zoneId}/users/{userId}':
+    get:
+      operationId: getUser
+      summary: Get a user by ID
+      description: Returns a user by ID.
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          description: Zone ID
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          description: User ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The requested user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+      tags:
+        - Users
   '/zones/{zoneId}/roles':
     get:
       operationId: listRoles
@@ -5076,6 +5186,63 @@ components:
         - items
         - pagination
       title: Groups List
+    User:
+      title: User
+      description: An authenticated user entity
+      type: object
+      required:
+        - id
+        - zone_id
+        - identifier
+        - email
+        - status
+        - external
+      properties:
+        id:
+          description: Unique identifier of the user
+          type: string
+        zone_id:
+          description: Zone this user belongs to
+          type: string
+        identifier:
+          description: Zone-scoped user identifier. Defaults to the user's Keycard ID.
+          type: string
+        subject:
+          description: Subject identifier from the identity provider
+          type: string
+        issuer:
+          description: Issuer identifier of the identity provider
+          type: string
+        email:
+          format: email
+          description: Email address of the user
+          type: string
+        status:
+          type: string
+          enum:
+            - active
+            - disabled
+          description: Status of the user. Disabled users cannot authenticate.
+        external:
+          description: Whether the user is synced from an external directory over SCIM.
+          type: boolean
+        provider_id:
+          description: Reference to the identity provider. Undefined when the source identity provider is deleted but the user is not.
+          type: string
+    UsersList:
+      description: A paginated list of users
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+      required:
+        - items
+        - pagination
+      title: Users List
     GroupMember:
       description: A user's membership in a group
       type: object
