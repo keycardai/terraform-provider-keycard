@@ -13,7 +13,7 @@ data "keycard_user" "alice_okta" {
   issuer  = "https://acme.okta.com"
 }
 
-# Look up a SCIM-provisioned user by the identity provider's subject
+# Look up a user by the identity provider's subject
 data "keycard_user" "bob" {
   zone_id = data.keycard_organization.example.zone_id
   subject = "00u1abcd2efGHIJK3l4m"

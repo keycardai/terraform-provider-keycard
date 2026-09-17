@@ -3,15 +3,15 @@
 page_title: "keycard_user Data Source - keycard"
 subcategory: ""
 description: |-
-  Resolves a Keycard user from a federated or SCIM identity so it can be referenced in role assignments and group memberships.
-  Exactly one lookup must be set: id, identifier, email optionally scoped by issuer, or subject with issuer. The lookup must match exactly one user; zero or multiple matches are an error.
+  Resolves a Keycard user in a zone so it can be referenced in role assignments and group memberships.
+  Exactly one lookup must be set: id, identifier, email (optionally scoped by issuer), or subject with issuer. The lookup must match exactly one user; zero or multiple matches return an error.
 ---
 
 # keycard_user (Data Source)
 
-Resolves a Keycard user from a federated or SCIM identity so it can be referenced in role assignments and group memberships.
+Resolves a Keycard user in a zone so it can be referenced in role assignments and group memberships.
 
-Exactly one lookup must be set: `id`, `identifier`, `email` optionally scoped by `issuer`, or `subject` with `issuer`. The lookup must match exactly one user; zero or multiple matches are an error.
+Exactly one lookup must be set: `id`, `identifier`, `email` (optionally scoped by `issuer`), or `subject` with `issuer`. The lookup must match exactly one user; zero or multiple matches return an error.
 
 ## Example Usage
 
@@ -31,7 +31,7 @@ data "keycard_user" "alice_okta" {
   issuer  = "https://acme.okta.com"
 }
 
-# Look up a SCIM-provisioned user by the identity provider's subject
+# Look up a user by the identity provider's subject
 data "keycard_user" "bob" {
   zone_id = data.keycard_organization.example.zone_id
   subject = "00u1abcd2efGHIJK3l4m"
@@ -60,14 +60,14 @@ resource "keycard_group_member" "alice_oncall" {
 
 ### Optional
 
-- `email` (String) Email address of the user. Lookup key. Add `issuer` when more than one user in the zone shares the address.
+- `email` (String) Email address of the user. Add `issuer` when more than one user in the zone shares the address.
 - `id` (String) Unique identifier of the user. Lookup key; conflicts with every other lookup attribute.
-- `identifier` (String) Zone-scoped user identifier. Lookup key; conflicts with every other lookup attribute.
-- `issuer` (String) Issuer of the identity provider. Scopes an `email` or `subject` lookup. `null` until a SCIM-created user first logs in.
-- `subject` (String) Subject identifier from the identity provider. Lookup key; requires `issuer`. `null` until a SCIM-created user first logs in.
+- `identifier` (String) User identifier, unique within the zone.
+- `issuer` (String) Issuer of the identity provider. Scopes an `email` or `subject` lookup.
+- `subject` (String) Subject identifier from the identity provider; requires `issuer`.
 
 ### Read-Only
 
 - `external` (Boolean) Whether the user is synced from an external directory over SCIM.
-- `provider_id` (String) ID of the identity provider the user authenticated through. `null` when the provider has been deleted.
+- `provider_id` (String) ID of the provider the user authenticated through. May be `null` when the provider has been deleted.
 - `status` (String) Status of the user: `active` or `disabled`.

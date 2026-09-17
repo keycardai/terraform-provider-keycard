@@ -48,9 +48,9 @@ func (d *UserDataSource) Metadata(ctx context.Context, req datasource.MetadataRe
 
 func (d *UserDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Resolves a Keycard user from a federated or SCIM identity so it can be referenced in role assignments and group memberships.\n\n" +
-			"Exactly one lookup must be set: `id`, `identifier`, `email` optionally scoped by `issuer`, or `subject` with `issuer`. " +
-			"The lookup must match exactly one user; zero or multiple matches are an error.",
+		MarkdownDescription: "Resolves a Keycard user in a zone so it can be referenced in role assignments and group memberships.\n\n" +
+			"Exactly one lookup must be set: `id`, `identifier`, `email` (optionally scoped by `issuer`), or `subject` with `issuer`. " +
+			"The lookup must match exactly one user; zero or multiple matches return an error.",
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -63,17 +63,17 @@ func (d *UserDataSource) Schema(ctx context.Context, req datasource.SchemaReques
 				Required:            true,
 			},
 			"identifier": schema.StringAttribute{
-				MarkdownDescription: "Zone-scoped user identifier. Lookup key; conflicts with every other lookup attribute.",
+				MarkdownDescription: "User identifier, unique within the zone.",
 				Optional:            true,
 				Computed:            true,
 			},
 			"email": schema.StringAttribute{
-				MarkdownDescription: "Email address of the user. Lookup key. Add `issuer` when more than one user in the zone shares the address.",
+				MarkdownDescription: "Email address of the user. Add `issuer` when more than one user in the zone shares the address.",
 				Optional:            true,
 				Computed:            true,
 			},
 			"subject": schema.StringAttribute{
-				MarkdownDescription: "Subject identifier from the identity provider. Lookup key; requires `issuer`. `null` until a SCIM-created user first logs in.",
+				MarkdownDescription: "Subject identifier from the identity provider; requires `issuer`.",
 				Optional:            true,
 				Computed:            true,
 				Validators: []validator.String{
@@ -81,7 +81,7 @@ func (d *UserDataSource) Schema(ctx context.Context, req datasource.SchemaReques
 				},
 			},
 			"issuer": schema.StringAttribute{
-				MarkdownDescription: "Issuer of the identity provider. Scopes an `email` or `subject` lookup. `null` until a SCIM-created user first logs in.",
+				MarkdownDescription: "Issuer of the identity provider. Scopes an `email` or `subject` lookup.",
 				Optional:            true,
 				Computed:            true,
 			},
@@ -94,7 +94,7 @@ func (d *UserDataSource) Schema(ctx context.Context, req datasource.SchemaReques
 				Computed:            true,
 			},
 			"provider_id": schema.StringAttribute{
-				MarkdownDescription: "ID of the identity provider the user authenticated through. `null` when the provider has been deleted.",
+				MarkdownDescription: "ID of the provider the user authenticated through. May be `null` when the provider has been deleted.",
 				Computed:            true,
 			},
 		},
