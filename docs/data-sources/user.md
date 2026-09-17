@@ -4,22 +4,28 @@ page_title: "keycard_user Data Source - keycard"
 subcategory: ""
 description: |-
   Resolves a Keycard user from a federated or SCIM identity so it can be referenced in role assignments and group memberships.
-  Exactly one lookup must be set: id, identifier, email with issuer, or subject with issuer. The lookup must match exactly one user; zero or multiple matches are an error.
+  Exactly one lookup must be set: id, identifier, email optionally scoped by issuer, or subject with issuer. The lookup must match exactly one user; zero or multiple matches are an error.
 ---
 
 # keycard_user (Data Source)
 
 Resolves a Keycard user from a federated or SCIM identity so it can be referenced in role assignments and group memberships.
 
-Exactly one lookup must be set: `id`, `identifier`, `email` with `issuer`, or `subject` with `issuer`. The lookup must match exactly one user; zero or multiple matches are an error.
+Exactly one lookup must be set: `id`, `identifier`, `email` optionally scoped by `issuer`, or `subject` with `issuer`. The lookup must match exactly one user; zero or multiple matches are an error.
 
 ## Example Usage
 
 ```terraform
 data "keycard_organization" "example" {}
 
-# Look up a federated user by email, scoped to the identity provider that issued it
+# Look up a user by email
 data "keycard_user" "alice" {
+  zone_id = data.keycard_organization.example.zone_id
+  email   = "alice@example.com"
+}
+
+# Scope by issuer when more than one identity in the zone shares the email
+data "keycard_user" "alice_okta" {
   zone_id = data.keycard_organization.example.zone_id
   email   = "alice@example.com"
   issuer  = "https://acme.okta.com"
@@ -54,7 +60,7 @@ resource "keycard_group_member" "alice_oncall" {
 
 ### Optional
 
-- `email` (String) Email address of the user. Lookup key; requires `issuer`.
+- `email` (String) Email address of the user. Lookup key. Add `issuer` when more than one user in the zone shares the address.
 - `id` (String) Unique identifier of the user. Lookup key; conflicts with every other lookup attribute.
 - `identifier` (String) Zone-scoped user identifier. Lookup key; conflicts with every other lookup attribute.
 - `issuer` (String) Issuer of the identity provider. Scopes an `email` or `subject` lookup. `null` until a SCIM-created user first logs in.

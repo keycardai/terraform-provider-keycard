@@ -49,7 +49,7 @@ func (d *UserDataSource) Metadata(ctx context.Context, req datasource.MetadataRe
 func (d *UserDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "Resolves a Keycard user from a federated or SCIM identity so it can be referenced in role assignments and group memberships.\n\n" +
-			"Exactly one lookup must be set: `id`, `identifier`, `email` with `issuer`, or `subject` with `issuer`. " +
+			"Exactly one lookup must be set: `id`, `identifier`, `email` optionally scoped by `issuer`, or `subject` with `issuer`. " +
 			"The lookup must match exactly one user; zero or multiple matches are an error.",
 
 		Attributes: map[string]schema.Attribute{
@@ -68,12 +68,9 @@ func (d *UserDataSource) Schema(ctx context.Context, req datasource.SchemaReques
 				Computed:            true,
 			},
 			"email": schema.StringAttribute{
-				MarkdownDescription: "Email address of the user. Lookup key; requires `issuer`.",
+				MarkdownDescription: "Email address of the user. Lookup key. Add `issuer` when more than one user in the zone shares the address.",
 				Optional:            true,
 				Computed:            true,
-				Validators: []validator.String{
-					stringvalidator.AlsoRequires(path.MatchRoot("issuer")),
-				},
 			},
 			"subject": schema.StringAttribute{
 				MarkdownDescription: "Subject identifier from the identity provider. Lookup key; requires `issuer`. `null` until a SCIM-created user first logs in.",
@@ -258,10 +255,14 @@ func (d *UserDataSource) findUser(ctx context.Context, data UserModel, resp *dat
 		for i, u := range items {
 			ids[i] = u.Id
 		}
+		hint := "Look the user up by `id` instead."
+		if data.Issuer.IsNull() {
+			hint = "Add `issuer` to disambiguate, or look the user up by `id`."
+		}
 		resp.Diagnostics.AddError(
 			"Multiple Users Found",
-			fmt.Sprintf("Expected exactly 1 user with %s in zone '%s', but found matches: %s. Look the user up by `id` instead.",
-				lookupDesc, data.ZoneID.ValueString(), strings.Join(ids, ", ")),
+			fmt.Sprintf("Expected exactly 1 user with %s in zone '%s', but found matches: %s. %s",
+				lookupDesc, data.ZoneID.ValueString(), strings.Join(ids, ", "), hint),
 		)
 		return nil
 	}

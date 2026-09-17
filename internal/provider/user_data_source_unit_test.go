@@ -85,7 +85,7 @@ func TestUserDataSourceValidators(t *testing.T) {
 		"email+issuer":           {map[string]string{"zone_id": "z", "email": "a@x.io", "issuer": "https://idp"}, false},
 		"subject+issuer":         {map[string]string{"zone_id": "z", "subject": "s", "issuer": "https://idp"}, false},
 		"none":                   {map[string]string{"zone_id": "z"}, true},
-		"email without issuer":   {map[string]string{"zone_id": "z", "email": "a@x.io"}, true},
+		"email without issuer":   {map[string]string{"zone_id": "z", "email": "a@x.io"}, false},
 		"subject without issuer": {map[string]string{"zone_id": "z", "subject": "s"}, true},
 		"issuer alone":           {map[string]string{"zone_id": "z", "issuer": "https://idp"}, true},
 		"id and identifier":      {map[string]string{"zone_id": "z", "id": "u", "identifier": "alice"}, true},
@@ -264,16 +264,50 @@ func TestUserDataSourceRead_zeroMatches(t *testing.T) {
 	}
 }
 
-func TestUserDataSourceRead_multipleMatches(t *testing.T) {
+func TestUserDataSourceRead_byEmailOnly(t *testing.T) {
+	var q url.Values
+	srv := userServer(t, nil, []map[string]any{userItem("u1", "alice@example.com")}, &q)
+	defer srv.Close()
+
+	data, resp := readUser(t, srv, map[string]string{"zone_id": "z1", "email": "alice@example.com"})
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("unexpected diagnostics: %s", resp.Diagnostics)
+	}
+	if data.ID.ValueString() != "u1" {
+		t.Errorf("id = %q, want u1", data.ID.ValueString())
+	}
+	if q.Has("filter[issuer]") {
+		t.Errorf("unexpected filter[issuer] in query: %v", q)
+	}
+}
+
+func TestUserDataSourceRead_multipleMatchesByEmailSuggestsIssuer(t *testing.T) {
 	srv := userServer(t, nil, []map[string]any{userItem("u1", "a@x.io"), userItem("u2", "a@x.io")}, nil)
 	defer srv.Close()
 
-	_, resp := readUser(t, srv, map[string]string{"zone_id": "z1", "identifier": "dup"})
+	_, resp := readUser(t, srv, map[string]string{"zone_id": "z1", "email": "a@x.io"})
 	if !resp.Diagnostics.HasError() {
 		t.Fatal("expected ambiguity error")
 	}
 	got := resp.Diagnostics.Errors()[0].Detail()
 	if !strings.Contains(got, "u1") || !strings.Contains(got, "u2") {
 		t.Errorf("error should list every matched id, got: %s", got)
+	}
+	if !strings.Contains(got, "issuer") {
+		t.Errorf("error should tell the caller to add issuer, got: %s", got)
+	}
+}
+
+func TestUserDataSourceRead_multipleMatchesWithIssuerSuggestsID(t *testing.T) {
+	srv := userServer(t, nil, []map[string]any{userItem("u1", "a@x.io"), userItem("u2", "a@x.io")}, nil)
+	defer srv.Close()
+
+	_, resp := readUser(t, srv, map[string]string{"zone_id": "z1", "email": "a@x.io", "issuer": "https://idp.example.com"})
+	if !resp.Diagnostics.HasError() {
+		t.Fatal("expected ambiguity error")
+	}
+	got := resp.Diagnostics.Errors()[0].Detail()
+	if strings.Contains(got, "add `issuer`") || !strings.Contains(got, "`id`") {
+		t.Errorf("error should tell the caller to use id, got: %s", got)
 	}
 }

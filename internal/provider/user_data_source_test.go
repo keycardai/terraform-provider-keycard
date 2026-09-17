@@ -109,7 +109,7 @@ func TestAccUserDataSource_bySubjectAndIssuer(t *testing.T) {
 	})
 }
 
-func TestAccUserDataSource_emailWithoutIssuer(t *testing.T) {
+func TestAccUserDataSource_subjectWithoutIssuer(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheckBasic(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -118,7 +118,7 @@ func TestAccUserDataSource_emailWithoutIssuer(t *testing.T) {
 				Config: testAccOrgZone + `
 data "keycard_user" "test" {
   zone_id = data.keycard_organization.test.zone_id
-  email   = "nobody@example.com"
+  subject = "nobody"
 }
 `,
 				ExpectError: regexp.MustCompile(`Invalid Attribute Combination`),

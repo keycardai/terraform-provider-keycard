@@ -1,7 +1,13 @@
 data "keycard_organization" "example" {}
 
-# Look up a federated user by email, scoped to the identity provider that issued it
+# Look up a user by email
 data "keycard_user" "alice" {
+  zone_id = data.keycard_organization.example.zone_id
+  email   = "alice@example.com"
+}
+
+# Scope by issuer when more than one identity in the zone shares the email
+data "keycard_user" "alice_okta" {
   zone_id = data.keycard_organization.example.zone_id
   email   = "alice@example.com"
   issuer  = "https://acme.okta.com"
