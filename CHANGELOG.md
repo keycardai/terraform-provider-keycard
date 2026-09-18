@@ -1,3 +1,25 @@
+## 0.9.0
+
+This release adds directory sync (SCIM) support: enable sync on a zone or from an SSO connection, mint the bearer token the identity provider uses to provision users and groups, and see which groups are directory-owned.
+
+FEATURES:
+
+* **Directory Sync Toggle**: New `external_sync_enabled` attribute on `keycard_zone_user_identity_config` and `keycard_sso_connection` turns SCIM provisioning on or off for a zone. Disabling stops SCIM requests but does not delete provisioned users, groups, or sync tokens.
+* **SCIM Tokens**: New `keycard_external_sync_token` resource mints the bearer token an identity provider presents to Keycard's SCIM endpoint.
+* **External Group Visibility**: `keycard_group` resource and data source expose `external` and `external_issuer`, so a plan shows whether a group is synced from an external directory.
+
+RESOURCES:
+
+* `keycard_external_sync_token` - New resource minting a SCIM bearer token for a zone. The `token` value is only returned on creation; if state is lost the resource must be recreated. Import is not supported.
+* `keycard_zone_user_identity_config` - Added `external_sync_enabled` (defaults to `false`).
+* `keycard_sso_connection` - Added `external_sync_enabled` (defaults to `false`), enabling SCIM on the organization zone.
+* `keycard_group` - Added computed `external` and `external_issuer`. Groups synced over SCIM cannot be managed by this resource; import of an external group fails with a diagnostic pointing to the `keycard_group` data source.
+
+DATA SOURCES:
+
+* `keycard_zone_user_identity_config` - Added `external_sync_enabled`.
+* `keycard_group` - Added `external` and `external_issuer`.
+
 ## 0.8.0
 
 This release adds declarative group management: create zone-scoped groups, manage their membership, and grant roles to a group that every member inherits. Supporting data sources resolve the caller's organization, look up roles by identifier, and read existing groups.
