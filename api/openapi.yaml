@@ -4841,6 +4841,17 @@ components:
         name:
           description: Human-readable group name
           type: string
+        external:
+          description: Whether the group is synced from an external directory over SCIM.
+            When true the group is directory-owned and its membership is
+            read-only while the zone has `external_sync_enabled` set.
+          type: boolean
+        external_issuer:
+          type: string
+          nullable: true
+          description: "Issuer of the external directory the group was synced from.
+            `null` for groups managed in Keycard. Read-only: set by
+            external sync, never by the caller."
         member_count:
           description: Number of users in the group. Only included when `expand[]=member_count` is requested.
           type: integer
@@ -4863,6 +4874,8 @@ components:
         - organization_id
         - identifier
         - name
+        - external
+        - external_issuer
         - created_at
         - updated_at
       title: Group

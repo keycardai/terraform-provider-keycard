@@ -55,4 +55,6 @@ resource "keycard_group_role_assignment" "oncall_viewer" {
 
 ### Read-Only
 
+- `external` (Boolean) Whether the group is synced from an external directory over SCIM.
+- `external_issuer` (String) Issuer of the external directory the group was synced from. `null` for groups managed in Keycard.
 - `name` (String) Human-readable name for the group.
