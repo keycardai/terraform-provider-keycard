@@ -10,11 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-// Note: the "cannot archive a currently-bound version" 400 path is not covered
-// here; binding is exercised in the keycard_policy_set_activation tests, which
-// release the zone binding before teardown. Delete here only exercises the
-// unbound (happy) archive path.
-
 func TestAccPolicySetVersionResource_basic(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	zoneName := acctest.RandomWithPrefix("tftest-zone")
@@ -95,6 +90,34 @@ func TestAccPolicySetVersionResource_manifestChangeForcesNew(t *testing.T) {
 					resource.TestCheckResourceAttrSet("keycard_policy_set_version.test", "active"),
 					testAccCheckResourceAttrDiffers("keycard_policy_set_version.test", "id", &originalID),
 					testAccCheckResourceAttrDiffers("keycard_policy_set_version.test", "manifest_sha", &originalSha),
+				),
+			},
+		},
+	})
+}
+
+// A full version → set version → activation stack must destroy cleanly even
+// though the binding cannot be released (activation Delete is a no-op; the API
+// has no deactivation operation). The bound set version, the policy version it
+// references, and the policy set are forgotten with a warning instead of
+// failing the destroy — covering all three "in use" archive refusals in the
+// framework's final destroy of this config.
+func TestAccPolicySetVersionResource_destroyWhileBound(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheckBasic(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPolicySetActivationConfig(zoneName, rName, 0),
+			},
+			{
+				PreConfig: waitForZoneBootstrap,
+				Config:    testAccPolicySetActivationConfig(zoneName, rName, 1),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrPair("keycard_policy_set_activation.test", "policy_set_version_id", "keycard_policy_set_version.v1", "id"),
 				),
 			},
 		},

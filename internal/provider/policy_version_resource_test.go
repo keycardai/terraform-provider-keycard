@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -8,6 +9,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+
+	"github.com/keycardai/terraform-provider-keycard/internal/client"
 )
 
 func TestAccPolicyVersionResource_basic(t *testing.T) {
@@ -100,6 +103,117 @@ func TestAccPolicyVersionResource_contentChangeForcesNew(t *testing.T) {
 			},
 		},
 	})
+}
+
+// ACC-931: replacing a policy version while the old one is still referenced by
+// the zone's active policy set binding must succeed. The binding may be managed
+// in another stack or out of band, so no in-config ordering can roll it forward;
+// the deposed version cannot be archived (400 "currently active") and is
+// forgotten with a warning instead of failing the apply.
+func TestAccPolicyVersionResource_replaceWhileActiveBound(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	zoneName := acctest.RandomWithPrefix("tftest-zone")
+
+	var zoneID, policyID, v1ID, schemaVersion string
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheckBasic(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPolicyResourceConfig_basic(zoneName, rName),
+			},
+			{
+				PreConfig: waitForZoneBootstrap,
+				Config:    testAccPolicyVersionConfig(zoneName, rName, "permit (principal, action, resource);\n", true),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccCaptureResourceAttr("keycard_zone.test", "id", &zoneID),
+					testAccCaptureResourceAttr("keycard_policy.test", "id", &policyID),
+					testAccCaptureResourceAttr("keycard_policy_version.test", "id", &v1ID),
+					testAccCaptureResourceAttr("data.keycard_policy_schema.default", "version", &schemaVersion),
+				),
+			},
+			// Bind v1 via an out-of-band policy set + activation (never in state),
+			// then change cedar: the create-before-destroy replace must succeed and
+			// leave the deposed v1 live server-side. Teardown needs no binding
+			// release: the replacement version and the policy are unbound, and the
+			// out-of-band set is abandoned with the zone like the sacrificial
+			// bindings in testAccReleaseZoneBinding.
+			{
+				PreConfig: testAccBindPolicyVersionOutOfBand(t, &zoneID, &policyID, &v1ID, &schemaVersion),
+				Config:    testAccPolicyVersionConfig(zoneName, rName, "forbid (principal, action, resource);\n", true),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("keycard_policy_version.test", plancheck.ResourceActionCreateBeforeDestroy),
+					},
+				},
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccCheckResourceAttrDiffers("keycard_policy_version.test", "id", &v1ID),
+					testAccCheckPolicyVersionLive(t, &zoneID, &policyID, &v1ID),
+				),
+			},
+		},
+	})
+}
+
+// testAccBindPolicyVersionOutOfBand returns a PreConfig that creates a policy
+// set + set version referencing the captured policy version and activates it,
+// all outside Terraform state — simulating a binding managed in another stack.
+// Pointers are dereferenced at call time so captured values are resolved.
+func testAccBindPolicyVersionOutOfBand(t *testing.T, zoneID, policyID, versionID, schemaVersion *string) func() {
+	return func() {
+		t.Helper()
+
+		ctx := context.Background()
+		c := testAccOutOfBandClient(t)
+		name := acctest.RandomWithPrefix("tftest-oob")
+
+		setResp, err := callWithRetry(ctx, func() (*client.CreatePolicySetResponse, error) {
+			return c.CreatePolicySetWithResponse(ctx, *zoneID, client.CreatePolicySetRequest{Name: name})
+		}, retryOnNotFound)
+		if err != nil {
+			t.Fatalf("failed to create out-of-band policy set: %s", err)
+		}
+		if setResp.JSON201 == nil {
+			t.Fatalf("failed to create out-of-band policy set, got status %d: %s", setResp.StatusCode(), string(setResp.Body))
+		}
+
+		setVersionResp, err := callWithRetry(ctx, func() (*client.CreatePolicySetVersionResponse, error) {
+			return c.CreatePolicySetVersionWithResponse(ctx, *zoneID, setResp.JSON201.Id, client.CreatePolicySetVersionRequest{
+				Manifest: client.PolicySetManifest{Entries: []client.PolicySetManifestEntry{{
+					PolicyId:        *policyID,
+					PolicyVersionId: *versionID,
+				}}},
+				SchemaVersion: *schemaVersion,
+			})
+		}, retryOnNotFound)
+		if err != nil {
+			t.Fatalf("failed to create out-of-band policy set version: %s", err)
+		}
+		if setVersionResp.JSON201 == nil {
+			t.Fatalf("failed to create out-of-band policy set version, got status %d: %s", setVersionResp.StatusCode(), string(setVersionResp.Body))
+		}
+
+		activateOutOfBand(t, c, *zoneID, setResp.JSON201.Id, setVersionResp.JSON201.Id)
+	}
+}
+
+// testAccCheckPolicyVersionLive asserts the version still exists un-archived
+// server-side, i.e. it was forgotten rather than archived.
+func testAccCheckPolicyVersionLive(t *testing.T, zoneID, policyID, versionID *string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		getResp, err := testAccOutOfBandClient(t).GetPolicyVersionWithResponse(context.Background(), *zoneID, *policyID, *versionID)
+		if err != nil {
+			return fmt.Errorf("failed to read deposed version %s: %w", *versionID, err)
+		}
+		if getResp.StatusCode() != 200 || getResp.JSON200 == nil {
+			return fmt.Errorf("expected deposed version %s to remain live, got status %d: %s", *versionID, getResp.StatusCode(), string(getResp.Body))
+		}
+		if isArchived(getResp.JSON200.ArchivedAt) {
+			return fmt.Errorf("expected deposed version %s to remain un-archived, but archived_at is set", *versionID)
+		}
+		return nil
+	}
 }
 
 // testAccCaptureResourceAttr stores the named attribute's current value in dst
