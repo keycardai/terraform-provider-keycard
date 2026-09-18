@@ -13,6 +13,15 @@ resource "keycard_sso_connection" "azure_ad" {
   client_secret = var.azure_client_secret
 }
 
+# Enable directory sync (SCIM) from the SSO identity provider.
+# Setting it back to false stops SCIM but keeps provisioned users and groups.
+resource "keycard_sso_connection" "okta_synced" {
+  identifier            = "https://your-org.okta.com"
+  client_id             = var.okta_client_id
+  client_secret         = var.okta_client_secret
+  external_sync_enabled = true
+}
+
 # Configure SSO with Google Workspace
 resource "keycard_sso_connection" "google" {
   identifier    = "https://accounts.google.com"

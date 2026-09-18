@@ -476,33 +476,52 @@ func updateApplicationPublicCredentialModelFromAPIResponse(cred *client.Applicat
 	return diags
 }
 
-// GetOrganizationID retrieves the organization ID from the API using ListOrganizations.
-// Service account credentials are scoped to a single organization, so this returns the
-// one organization the credentials have access to.
-func GetOrganizationID(ctx context.Context, apiClient *client.ClientWithResponses) (string, error) {
+// getOrganization returns the one organization the credentials are scoped to.
+func getOrganization(ctx context.Context, apiClient *client.ClientWithResponses) (*client.Organization, error) {
 	listOrgsParams := client.ListOrganizationsParams{}
 
 	orgResp, err := apiClient.ListOrganizationsWithResponse(ctx, &listOrgsParams)
 	if err != nil {
-		return "", fmt.Errorf("failed to list organizations: %w", err)
+		return nil, fmt.Errorf("failed to list organizations: %w", err)
 	}
 
 	if orgResp.StatusCode() != 200 {
-		return "", fmt.Errorf("failed to list organizations: status %d", orgResp.StatusCode())
+		return nil, fmt.Errorf("failed to list organizations: status %d", orgResp.StatusCode())
 	}
 
 	if orgResp.JSON200 == nil {
-		return "", fmt.Errorf("unable to list organizations: no response body")
+		return nil, fmt.Errorf("unable to list organizations: no response body")
 	}
 
 	if len(orgResp.JSON200.Items) != 1 {
-		return "", fmt.Errorf("unexpected number of organizations: %d", len(orgResp.JSON200.Items))
+		return nil, fmt.Errorf("unexpected number of organizations: %d", len(orgResp.JSON200.Items))
 	}
 
 	thisOrg := orgResp.JSON200.Items[0]
 	if thisOrg.Id == nil {
-		return "", fmt.Errorf("missing organization ID")
+		return nil, fmt.Errorf("missing organization ID")
 	}
 
-	return *thisOrg.Id, nil
+	return &thisOrg, nil
+}
+
+// GetOrganizationID returns the ID of the organization the credentials are scoped to.
+func GetOrganizationID(ctx context.Context, apiClient *client.ClientWithResponses) (string, error) {
+	org, err := getOrganization(ctx, apiClient)
+	if err != nil {
+		return "", err
+	}
+	return *org.Id, nil
+}
+
+// getOrganizationZoneID returns the organization ID and its builtin zone ID.
+func getOrganizationZoneID(ctx context.Context, apiClient *client.ClientWithResponses) (orgID, zoneID string, err error) {
+	org, err := getOrganization(ctx, apiClient)
+	if err != nil {
+		return "", "", err
+	}
+	if org.ZoneId == nil || *org.ZoneId == "" {
+		return "", "", fmt.Errorf("organization %s has no builtin zone", *org.Id)
+	}
+	return *org.Id, *org.ZoneId, nil
 }

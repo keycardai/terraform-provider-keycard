@@ -43,6 +43,7 @@ func TestAccZoneUserIdentityConfigDataSource_basic(t *testing.T) {
 					// Verify both attributes are set
 					resource.TestCheckResourceAttrSet("data.keycard_zone_user_identity_config.test", "zone_id"),
 					resource.TestCheckResourceAttrSet("data.keycard_zone_user_identity_config.test", "provider_id"),
+					resource.TestCheckResourceAttr("data.keycard_zone_user_identity_config.test", "external_sync_enabled", "false"),
 				),
 			},
 		},

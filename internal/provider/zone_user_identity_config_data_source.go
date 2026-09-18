@@ -24,8 +24,9 @@ type ZoneUserIdentityConfigDataSource struct {
 
 // ZoneUserIdentityConfigDataSourceModel describes the data source data model.
 type ZoneUserIdentityConfigDataSourceModel struct {
-	ZoneID     types.String `tfsdk:"zone_id"`
-	ProviderID types.String `tfsdk:"provider_id"`
+	ZoneID              types.String `tfsdk:"zone_id"`
+	ProviderID          types.String `tfsdk:"provider_id"`
+	ExternalSyncEnabled types.Bool   `tfsdk:"external_sync_enabled"`
 }
 
 func (d *ZoneUserIdentityConfigDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -43,6 +44,10 @@ func (d *ZoneUserIdentityConfigDataSource) Schema(ctx context.Context, req datas
 			},
 			"provider_id": schema.StringAttribute{
 				MarkdownDescription: "The ID of the provider configured for user authentication in this zone.",
+				Computed:            true,
+			},
+			"external_sync_enabled": schema.BoolAttribute{
+				MarkdownDescription: "Whether external directory sync (SCIM) is enabled for the zone.",
 				Computed:            true,
 			},
 		},
@@ -120,6 +125,7 @@ func (d *ZoneUserIdentityConfigDataSource) Read(ctx context.Context, req datasou
 
 	// Set provider_id from the zone's current configuration
 	data.ProviderID = types.StringPointerValue(zone.UserIdentityProviderId)
+	data.ExternalSyncEnabled = types.BoolValue(zone.ExternalSyncEnabled)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

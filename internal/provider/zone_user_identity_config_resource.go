@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -31,8 +32,9 @@ type ZoneUserIdentityConfigResource struct {
 
 // ZoneUserIdentityConfigResourceModel describes the resource data model.
 type ZoneUserIdentityConfigResourceModel struct {
-	ZoneID     types.String `tfsdk:"zone_id"`
-	ProviderID types.String `tfsdk:"provider_id"`
+	ZoneID              types.String `tfsdk:"zone_id"`
+	ProviderID          types.String `tfsdk:"provider_id"`
+	ExternalSyncEnabled types.Bool   `tfsdk:"external_sync_enabled"`
 }
 
 func (r *ZoneUserIdentityConfigResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -57,7 +59,23 @@ func (r *ZoneUserIdentityConfigResource) Schema(ctx context.Context, req resourc
 				MarkdownDescription: "The ID of the provider to use for user authentication in this zone.",
 				Required:            true,
 			},
+			"external_sync_enabled": schema.BoolAttribute{
+				MarkdownDescription: "Whether external directory sync (SCIM) is enabled for the zone. Defaults to false. " +
+					"Disabling stops SCIM requests but does not delete provisioned users, groups, or sync tokens.",
+				Optional: true,
+				Computed: true,
+				Default:  booldefault.StaticBool(false),
+			},
 		},
+	}
+}
+
+// zoneUserIdentityConfigUpdate builds the PATCH body that applies the full
+// resource configuration to the zone.
+func zoneUserIdentityConfigUpdate(data ZoneUserIdentityConfigResourceModel) client.ZoneUpdate {
+	return client.ZoneUpdate{
+		UserIdentityProviderId: stringValueNullable(data.ProviderID),
+		ExternalSyncEnabled:    data.ExternalSyncEnabled.ValueBoolPointer(),
 	}
 }
 
@@ -91,10 +109,7 @@ func (r *ZoneUserIdentityConfigResource) Create(ctx context.Context, req resourc
 		return
 	}
 
-	// Build the update request to set the user identity provider
-	updateReq := client.ZoneUpdate{
-		UserIdentityProviderId: stringValueNullable(data.ProviderID),
-	}
+	updateReq := zoneUserIdentityConfigUpdate(data)
 
 	// Update the zone to set the user identity provider
 	updateResp, err := r.client.UpdateZoneWithResponse(ctx, data.ZoneID.ValueString(), updateReq)
@@ -125,6 +140,7 @@ func (r *ZoneUserIdentityConfigResource) Create(ctx context.Context, req resourc
 		)
 		return
 	}
+	data.ExternalSyncEnabled = types.BoolValue(zone.ExternalSyncEnabled)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -178,6 +194,7 @@ func (r *ZoneUserIdentityConfigResource) Read(ctx context.Context, req resource.
 	// Update provider_id from the zone's current configuration
 	// This allows Terraform to detect drift if the provider was changed externally
 	data.ProviderID = types.StringPointerValue(zone.UserIdentityProviderId)
+	data.ExternalSyncEnabled = types.BoolValue(zone.ExternalSyncEnabled)
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -193,10 +210,7 @@ func (r *ZoneUserIdentityConfigResource) Update(ctx context.Context, req resourc
 		return
 	}
 
-	// Build the update request to change the user identity provider
-	updateReq := client.ZoneUpdate{
-		UserIdentityProviderId: stringValueNullable(data.ProviderID),
-	}
+	updateReq := zoneUserIdentityConfigUpdate(data)
 
 	// Update the zone
 	updateResp, err := r.client.UpdateZoneWithResponse(ctx, data.ZoneID.ValueString(), updateReq)
@@ -227,6 +241,7 @@ func (r *ZoneUserIdentityConfigResource) Update(ctx context.Context, req resourc
 		)
 		return
 	}
+	data.ExternalSyncEnabled = types.BoolValue(zone.ExternalSyncEnabled)
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -242,9 +257,12 @@ func (r *ZoneUserIdentityConfigResource) Delete(ctx context.Context, req resourc
 		return
 	}
 
-	// Build the update request to remove the user identity provider
+	// Unset the provider and turn sync off together so a zone is never left
+	// syncing without a provider.
+	syncDisabled := false
 	updateReq := client.ZoneUpdate{
 		UserIdentityProviderId: nullable.NewNullNullable[string](),
+		ExternalSyncEnabled:    &syncDisabled,
 	}
 
 	// Update the zone to unset the user identity provider

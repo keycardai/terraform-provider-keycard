@@ -4124,6 +4124,9 @@ components:
         user_identity_provider_id:
           description: Provider ID configured for user login
           type: string
+        external_sync_enabled:
+          description: Whether external directory sync (SCIM) is enabled for this zone.
+          type: boolean
         protocols:
           description: Protocol configuration for a zone
           type: object
@@ -4150,6 +4153,7 @@ components:
         - organization_id
         - slug
         - name
+        - external_sync_enabled
         - protocols
         - created_at
         - updated_at
@@ -4204,6 +4208,9 @@ components:
           description: Provider ID to configure for user login (set to null to unset)
           type: string
           nullable: true
+        external_sync_enabled:
+          description: Whether external directory sync (SCIM) is enabled for this zone.
+          type: boolean
         protocols:
           $ref: '#/components/schemas/ZoneProtocolUpdate'
         encryption_key:

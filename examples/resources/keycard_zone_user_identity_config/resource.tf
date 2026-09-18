@@ -18,3 +18,11 @@ resource "keycard_zone_user_identity_config" "production" {
   zone_id     = keycard_zone.dev.id
   provider_id = keycard_provider.okta.id
 }
+
+# Enable directory sync (SCIM) from the identity provider.
+# Setting it back to false stops SCIM but keeps provisioned users and groups.
+resource "keycard_zone_user_identity_config" "synced" {
+  zone_id               = keycard_zone.dev.id
+  provider_id           = keycard_provider.okta.id
+  external_sync_enabled = true
+}
