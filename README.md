@@ -5,7 +5,7 @@ This is the official Terraform provider for [Keycard](https://keycard.ai), enabl
 ## Requirements
 
 - [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.7
-- [Go](https://golang.org/doc/install) >= 1.24 (for development)
+- [Go](https://golang.org/doc/install) >= 1.26.10 (for development)
 
 ## Installation
 
