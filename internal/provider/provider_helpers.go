@@ -2,8 +2,10 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -94,6 +96,20 @@ func updateProviderDataSourceModelFromAPIResponse(ctx context.Context, provider 
 // i.e. the resource has been soft-deleted server-side.
 func isArchived(archivedAt nullable.Nullable[time.Time]) bool {
 	return archivedAt.IsSpecified() && !archivedAt.IsNull()
+}
+
+// archiveBlockedInUse reports whether an archive error response is the server
+// refusing because the object is referenced by the zone's active binding. The
+// error code is a generic bad_request/conflict, so the message text is the only
+// discriminator; msgSubstring is the svc-pdp wording for the resource kind. A
+// malformed body or any other message returns false so the caller falls back to
+// a hard error.
+func archiveBlockedInUse(body []byte, msgSubstring string) bool {
+	var apiErr client.Error
+	if err := json.Unmarshal(body, &apiErr); err != nil {
+		return false
+	}
+	return strings.Contains(apiErr.Message, msgSubstring)
 }
 
 func nullableStringValue(val nullable.Nullable[string]) basetypes.StringValue {
