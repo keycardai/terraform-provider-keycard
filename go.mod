@@ -1,6 +1,6 @@
 module github.com/keycardai/terraform-provider-keycard
 
-go 1.25.8
+go 1.26.10
 
 require (
 	github.com/getkin/kin-openapi v0.140.0
