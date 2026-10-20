@@ -1,3 +1,11 @@
+## 0.9.1
+
+This release rebuilds the provider with Go 1.26.10, which fixes a certificate verification vulnerability in `crypto/x509`.
+
+SECURITY FIXES:
+
+* Upgraded the Go toolchain from 1.25.8 to 1.26.10 to pick up the `crypto/x509` security fix ([announcement](https://groups.google.com/a/mozilla.org/g/dev-security-policy/c/0R3XLJL6FuE/m/0XofdebrAAAJ)).
+
 ## 0.9.0
 
 This release adds directory sync (SCIM) support: enable sync on a zone or from an SSO connection, mint the bearer token the identity provider uses to provision users and groups, and see which groups are directory-owned.
