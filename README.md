@@ -248,4 +248,6 @@ If you encounter issues or have questions, please refer to the [official documen
 
 ## License
 
-Mozilla Public License 2.0 - see [LICENSE](LICENSE) for details.
+Apache-2.0 — see [LICENSE](LICENSE) and, for the copyright and upstream
+attribution, [NOTICE](NOTICE). The Keycard name and logo are trademarks;
+[TRADEMARKS.md](TRADEMARKS.md) states how they may be used.
