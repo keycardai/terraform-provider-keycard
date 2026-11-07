@@ -259,7 +259,7 @@ func TestAccProviderResource_jwksPrivateKeyRejected(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccProviderResourceConfig_jwksEncoded(rName, issuer, jwks),
-				ExpectError: regexp.MustCompile(`private key material`),
+				ExpectError: regexp.MustCompile(`private key\s+material`),
 			},
 		},
 	})
