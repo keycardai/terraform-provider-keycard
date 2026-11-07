@@ -16,8 +16,6 @@ import (
 // updateProviderModelFromAPIResponse updates the model with data from a provider API response.
 // It handles mapping of all fields except client_secret, which should be preserved from plan/state.
 func updateProviderModelFromAPIResponse(ctx context.Context, provider *client.Provider, data *ProviderResourceModel) diag.Diagnostics {
-	var diags diag.Diagnostics
-
 	// Map basic fields
 	data.ID = types.StringValue(provider.Id)
 	data.Name = types.StringValue(provider.Name)
@@ -27,36 +25,14 @@ func updateProviderModelFromAPIResponse(ctx context.Context, provider *client.Pr
 
 	// Note: client_secret is not updated here as it's write-only in the API
 	// It should already be set from plan/state in the calling method
-	protocols, err := provider.Protocols.Get()
-	if err == nil {
-		oauth2, err := protocols.Oauth2.Get()
-		if err == nil {
-			oauth2Model := OAuth2ProviderModel{
-				Issuer:                types.StringValue(oauth2.Issuer),
-				AuthorizationEndpoint: nullableStringValue(oauth2.AuthorizationEndpoint),
-				TokenEndpoint:         nullableStringValue(oauth2.TokenEndpoint),
-			}
-			oauth2Obj, oauth2Diags := types.ObjectValueFrom(ctx, oauth2Model.AttributeTypes(), oauth2Model)
-			diags.Append(oauth2Diags...)
-			if diags.HasError() {
-				return diags
-			}
-			data.OAuth2 = oauth2Obj
-		} else {
-			data.OAuth2 = types.ObjectNull(OAuth2ProviderModel{}.AttributeTypes())
-		}
-	} else {
-		data.OAuth2 = types.ObjectNull(OAuth2ProviderModel{}.AttributeTypes())
-	}
-
+	oauth2Obj, diags := providerOAuth2FromAPIResponse(ctx, provider)
+	data.OAuth2 = oauth2Obj
 	return diags
 }
 
 // updateProviderDataSourceModelFromAPIResponse updates the data source model with data from a provider API response.
 // This is used by the provider data source which doesn't include client_secret.
 func updateProviderDataSourceModelFromAPIResponse(ctx context.Context, provider *client.Provider, data *ProviderDataSourceModel) diag.Diagnostics {
-	var diags diag.Diagnostics
-
 	// Map basic fields
 	data.ID = types.StringValue(provider.Id)
 	data.Name = types.StringValue(provider.Name)
@@ -64,30 +40,44 @@ func updateProviderDataSourceModelFromAPIResponse(ctx context.Context, provider 
 	data.Identifier = types.StringValue(provider.Identifier)
 	data.ClientID = nullableStringValue(provider.ClientId)
 
-	// Map protocols.oauth2 fields if present
+	oauth2Obj, diags := providerOAuth2FromAPIResponse(ctx, provider)
+	data.OAuth2 = oauth2Obj
+	return diags
+}
+
+// providerOAuth2FromAPIResponse maps protocols.oauth2 to the oauth2 object
+// shared by the provider resource and data source. It returns a null object
+// when the provider has no OAuth 2.0 configuration.
+func providerOAuth2FromAPIResponse(ctx context.Context, provider *client.Provider) (types.Object, diag.Diagnostics) {
+	nullObj := types.ObjectNull(OAuth2ProviderModel{}.AttributeTypes())
+
 	protocols, err := provider.Protocols.Get()
-	if err == nil {
-		oauth2, err := protocols.Oauth2.Get()
-		if err == nil {
-			oauth2Model := OAuth2ProviderModel{
-				Issuer:                types.StringValue(oauth2.Issuer),
-				AuthorizationEndpoint: nullableStringValue(oauth2.AuthorizationEndpoint),
-				TokenEndpoint:         nullableStringValue(oauth2.TokenEndpoint),
-			}
-			oauth2Obj, oauth2Diags := types.ObjectValueFrom(ctx, oauth2Model.AttributeTypes(), oauth2Model)
-			diags.Append(oauth2Diags...)
-			if diags.HasError() {
-				return diags
-			}
-			data.OAuth2 = oauth2Obj
-		} else {
-			data.OAuth2 = types.ObjectNull(OAuth2ProviderModel{}.AttributeTypes())
-		}
-	} else {
-		data.OAuth2 = types.ObjectNull(OAuth2ProviderModel{}.AttributeTypes())
+	if err != nil {
+		return nullObj, nil
+	}
+	oauth2, err := protocols.Oauth2.Get()
+	if err != nil {
+		return nullObj, nil
 	}
 
-	return diags
+	jwks, diags := jwksToTerraform(oauth2.Jwks)
+	if diags.HasError() {
+		return nullObj, diags
+	}
+
+	oauth2Model := OAuth2ProviderModel{
+		Issuer:                types.StringValue(oauth2.Issuer),
+		AuthorizationEndpoint: nullableStringValue(oauth2.AuthorizationEndpoint),
+		TokenEndpoint:         nullableStringValue(oauth2.TokenEndpoint),
+		JwksURI:               nullableStringValue(oauth2.JwksUri),
+		Jwks:                  jwks,
+	}
+	oauth2Obj, objDiags := types.ObjectValueFrom(ctx, oauth2Model.AttributeTypes(), oauth2Model)
+	diags.Append(objDiags...)
+	if diags.HasError() {
+		return nullObj, diags
+	}
+	return oauth2Obj, diags
 }
 
 // isArchived reports whether an archived_at timestamp is present and non-null,

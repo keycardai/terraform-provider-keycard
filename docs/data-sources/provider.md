@@ -59,4 +59,6 @@ Read-Only:
 
 - `authorization_endpoint` (String) OAuth 2.0 Authorization endpoint URL. May be empty.
 - `issuer` (String) OIDC issuer URL used for discovery and token validation.
+- `jwks` (String) Static JSON Web Key Set (RFC 7517) used to verify the provider's tokens, as a JSON string. Use `jsondecode()` to read individual keys. May be empty.
+- `jwks_uri` (String) URL of the provider's JSON Web Key Set, used instead of OIDC discovery to fetch signing keys. May be empty.
 - `token_endpoint` (String) OAuth 2.0 Token endpoint URL. May be empty.

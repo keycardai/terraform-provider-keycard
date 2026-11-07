@@ -3141,6 +3141,49 @@ components:
         - type
         - arn
       title: AWS KMS Encryption Key Configuration Update
+    ProviderJsonWebKey:
+      title: Provider JSON Web Key
+      description: A public JSON Web Key (RFC 7517). Members beyond those listed, such
+        as n and e, or crv, x and y, are kept as given. Private key material is
+        rejected.
+      additionalProperties: true
+      type: object
+      required:
+        - kty
+        - kid
+      properties:
+        kty:
+          description: 'Key type: "RSA", or "EC" on P-256, P-384 or P-521.'
+          type: string
+        kid:
+          minLength: 1
+          description: Key ID, unique within the set.
+          type: string
+        use:
+          description: Public key use. Must be "sig" when set.
+          type: string
+        alg:
+          description: "Algorithm the key verifies: RS256 for RSA, ES256, ES384 or ES512
+            for EC on the matching curve."
+          type: string
+    ProviderJwks:
+      title: Provider JWKS
+      description: Inline JSON Web Key Set (RFC 7517) used to verify the provider's
+        tokens instead of fetching jwks_uri or discovery, for issuers Keycard
+        can't reach, such as a local Kubernetes cluster. Mutually exclusive with
+        jwks_uri. Keys stay trusted until removed, so add a rotated key before
+        the issuer signs with it.
+      nullable: true
+      type: object
+      required:
+        - keys
+      properties:
+        keys:
+          minItems: 1
+          maxItems: 20
+          type: array
+          items:
+            $ref: "#/components/schemas/ProviderJsonWebKey"
     ProviderOAuth2Protocol:
       description: OAuth 2.0 protocol configuration
       type: object
@@ -3167,6 +3210,8 @@ components:
           type: string
           format: uri
           nullable: true
+        jwks:
+          $ref: "#/components/schemas/ProviderJwks"
         code_challenge_methods_supported:
           type: array
           items:
@@ -3209,6 +3254,8 @@ components:
         jwks_uri:
           type: string
           format: uri
+        jwks:
+          $ref: "#/components/schemas/ProviderJwks"
         code_challenge_methods_supported:
           type: array
           items:
@@ -3259,6 +3306,8 @@ components:
           type: string
           format: uri
           nullable: true
+        jwks:
+          $ref: "#/components/schemas/ProviderJwks"
         code_challenge_methods_supported:
           type: array
           items:

@@ -1,3 +1,17 @@
+## Unreleased
+
+FEATURES:
+
+* **Provider Signing Keys**: `keycard_provider` can now say where Keycard gets the provider's signing keys. `oauth2.jwks_uri` points at the issuer's JWKS endpoint for issuers without OIDC discovery, such as SPIFFE/SPIRE. `oauth2.jwks` holds a static JWK Set for issuers Keycard can't reach, such as a local Kubernetes cluster or an air-gapped IdP.
+
+RESOURCES:
+
+* `keycard_provider` - Added `oauth2.jwks_uri` and `oauth2.jwks`. They can't both be set. `jwks` is a JSON string, such as `jsonencode({ keys = [...] })` or `file("jwks.json")`, and changes in whitespace or member order don't cause a diff. Removing either attribute from the configuration clears it on the provider. A provider that configures `oauth2` and already has a `jwks_uri` set outside Terraform will plan its removal; add it to the configuration to keep it.
+
+DATA SOURCES:
+
+* `keycard_provider` - Added `oauth2.jwks_uri` and `oauth2.jwks`.
+
 ## 0.9.1
 
 This release rebuilds the provider with Go 1.26.10, which fixes a certificate verification vulnerability in `crypto/x509`.
