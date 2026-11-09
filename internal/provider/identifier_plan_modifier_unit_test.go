@@ -83,7 +83,7 @@ func TestSyncOAuth2WithIdentifierModifier_clearsKeySources(t *testing.T) {
 
 			req := planmodifier.ObjectRequest{
 				Path:        path.Root("oauth2"),
-				Config:      tfsdk.Config{Schema: configState.Schema, Raw: configState.Raw},
+				Config:      tfsdk.Config(configState),
 				ConfigValue: nullOAuth2,
 				State:       state,
 				StateValue:  stateOAuth2,
