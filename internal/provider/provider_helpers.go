@@ -117,6 +117,34 @@ func stringValueNullable(val basetypes.StringValue) nullable.Nullable[string] {
 	}
 }
 
+// clearableUpdateValue returns the PATCH value for an attribute that removing
+// from config clears. A configured value is converted and sent. A value
+// removed from config is sent as null so the API clears it. A value that was
+// never set, or is still unknown, is omitted, so the request doesn't name a
+// field the provider never managed.
+func clearableUpdateValue[T any](planned, prior basetypes.StringValue, convert func(string) (T, diag.Diagnostics)) (nullable.Nullable[T], diag.Diagnostics) {
+	switch {
+	case planned.IsUnknown():
+		return nullable.Nullable[T]{}, nil
+	case planned.IsNull():
+		if prior.IsNull() || prior.IsUnknown() {
+			return nullable.Nullable[T]{}, nil
+		}
+		return nullable.NewNullNullable[T](), nil
+	default:
+		val, diags := convert(planned.ValueString())
+		return nullable.NewNullableWithValue(val), diags
+	}
+}
+
+// clearableStringUpdateValue is clearableUpdateValue for a plain string.
+func clearableStringUpdateValue(planned, prior basetypes.StringValue) nullable.Nullable[string] {
+	val, _ := clearableUpdateValue(planned, prior, func(s string) (string, diag.Diagnostics) {
+		return s, nil
+	})
+	return val
+}
+
 func boolValueNullable(val basetypes.BoolValue) nullable.Nullable[bool] {
 	switch {
 	case val.IsNull():

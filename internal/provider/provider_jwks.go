@@ -10,7 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
 	"github.com/oapi-codegen/nullable"
 )
@@ -48,23 +47,12 @@ func jwksToTerraform(val nullable.Nullable[client.ProviderJwks]) (jsontypes.Norm
 	return jsontypes.NewNormalizedValue(string(encoded)), diags
 }
 
-// jwksUpdateValue returns the jwks value for a PATCH request. A configured
-// value is sent as is. A value removed from config is sent as null so the API
-// clears it. A value that was never set is omitted, so the request doesn't
-// name a field the provider never managed.
+// jwksUpdateValue returns the jwks value for a PATCH request, following
+// clearableUpdateValue.
 func jwksUpdateValue(planned, prior jsontypes.Normalized) (nullable.Nullable[client.ProviderJwks], diag.Diagnostics) {
-	switch {
-	case planned.IsUnknown():
-		return nullable.Nullable[client.ProviderJwks]{}, nil
-	case planned.IsNull():
-		if prior.IsNull() || prior.IsUnknown() {
-			return nullable.Nullable[client.ProviderJwks]{}, nil
-		}
-		return nullable.NewNullNullable[client.ProviderJwks](), nil
-	default:
-		jwks, diags := jwksFromTerraform(planned)
-		return nullable.NewNullableWithValue(jwks), diags
-	}
+	return clearableUpdateValue(planned.StringValue, prior.StringValue, func(string) (client.ProviderJwks, diag.Diagnostics) {
+		return jwksFromTerraform(planned)
+	})
 }
 
 // jwksSetValidator checks that a value is a JWK Set: a JSON object whose only
@@ -157,22 +145,5 @@ func (m jwksSemanticEqualityModifier) PlanModifyString(ctx context.Context, req 
 	resp.Diagnostics.Append(diags...)
 	if equal {
 		resp.PlanValue = req.StateValue
-	}
-}
-
-// clearableStringUpdateValue returns a string value for a PATCH request with
-// the same rules as jwksUpdateValue: send a configured value, send null for a
-// value removed from config, and omit a value that was never set.
-func clearableStringUpdateValue(planned, prior basetypes.StringValue) nullable.Nullable[string] {
-	switch {
-	case planned.IsUnknown():
-		return nullable.Nullable[string]{}
-	case planned.IsNull():
-		if prior.IsNull() || prior.IsUnknown() {
-			return nullable.Nullable[string]{}
-		}
-		return nullable.NewNullNullable[string]()
-	default:
-		return nullable.NewNullableWithValue(planned.ValueString())
 	}
 }
