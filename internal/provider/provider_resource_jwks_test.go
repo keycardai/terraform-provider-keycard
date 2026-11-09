@@ -165,6 +165,37 @@ func TestAccProviderResource_jwks(t *testing.T) {
 	})
 }
 
+// Removing the whole oauth2 block clears jwks too, though oauth2 is computed
+// and the rest of the block carries forward from state.
+func TestAccProviderResource_jwksClearedWithOAuth2Block(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	issuer := fmt.Sprintf("https://%s.example.com", rName)
+	jwks, _ := testAccJWKS(t, testAccRSAJWK(t, "rsa-1"))
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccProviderResourceConfig_jwksEncoded(rName, issuer, jwks),
+				Check:  resource.TestCheckResourceAttr("keycard_provider.test", "oauth2.jwks", jwks),
+			},
+			{
+				Config: testAccProviderResourceConfig_identifierOnly(rName, issuer),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("keycard_provider.test", plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_provider.test", "oauth2.issuer", issuer),
+					resource.TestCheckNoResourceAttr("keycard_provider.test", "oauth2.jwks"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccProviderResource_switchJwksURIAndJwks(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	issuer := fmt.Sprintf("https://%s.example.com", rName)

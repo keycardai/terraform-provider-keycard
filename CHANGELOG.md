@@ -6,7 +6,7 @@ FEATURES:
 
 RESOURCES:
 
-* `keycard_provider` - Added `oauth2.jwks_uri` and `oauth2.jwks`. They can't both be set. `jwks` is a JSON string, such as `jsonencode({ keys = [...] })` or `file("jwks.json")`, and changes in whitespace or member order don't cause a diff. Removing either attribute from the configuration clears it on the provider. A provider that configures `oauth2` and already has a `jwks_uri` set outside Terraform will plan its removal; add it to the configuration to keep it.
+* `keycard_provider` - Added `oauth2.jwks_uri` and `oauth2.jwks`. They can't both be set. `jwks` is a JSON string, such as `jsonencode({ keys = [...] })` or `file("jwks.json")`, and changes in whitespace or member order don't cause a diff. Removing either attribute, or the whole `oauth2` block, from the configuration clears it on the provider. A provider that already has a `jwks_uri` or `jwks` set outside Terraform will plan its removal; add it to the configuration to keep it.
 
 DATA SOURCES:
 

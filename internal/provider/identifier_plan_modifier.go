@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -52,23 +53,29 @@ func (m defaultIdentifierFromIssuerModifier) PlanModifyString(ctx context.Contex
 	}
 }
 
-// syncOAuth2WithIdentifierModifier keeps oauth2.issuer in sync with the
-// identifier for providers that don't have an explicit oauth2 block.
+// syncOAuth2WithIdentifierModifier plans oauth2 for providers that don't
+// have an oauth2 block in their configuration.
 //
 // When the user only sets identifier (no oauth2 block), identifier and
 // issuer should always match. On updates, if the user changes the
 // identifier, this modifier ensures the issuer in the plan follows.
+//
+// The block is otherwise carried forward from state, except jwks_uri and
+// jwks. They aren't computed, so with no oauth2 block in the configuration
+// they're cleared, as removing them from the block would. Carrying jwks
+// forward would leave the provider trusting keys the configuration no longer
+// names.
 //
 // When the user sets oauth2 explicitly, this modifier does nothing —
 // identifier and issuer are independent.
 type syncOAuth2WithIdentifierModifier struct{}
 
 func (m syncOAuth2WithIdentifierModifier) Description(_ context.Context) string {
-	return "Keeps oauth2.issuer in sync with identifier when oauth2 is not explicitly configured."
+	return "Keeps oauth2.issuer in sync with identifier and clears oauth2.jwks_uri and oauth2.jwks when oauth2 is not explicitly configured."
 }
 
 func (m syncOAuth2WithIdentifierModifier) MarkdownDescription(_ context.Context) string {
-	return "Keeps `oauth2.issuer` in sync with `identifier` when `oauth2` is not explicitly configured."
+	return "Keeps `oauth2.issuer` in sync with `identifier` and clears `oauth2.jwks_uri` and `oauth2.jwks` when `oauth2` is not explicitly configured."
 }
 
 func (m syncOAuth2WithIdentifierModifier) PlanModifyObject(ctx context.Context, req planmodifier.ObjectRequest, resp *planmodifier.ObjectResponse) {
@@ -95,6 +102,16 @@ func (m syncOAuth2WithIdentifierModifier) PlanModifyObject(ctx context.Context, 
 		return
 	}
 
+	var stateOAuth2 OAuth2ProviderModel
+	resp.Diagnostics.Append(req.StateValue.As(ctx, &stateOAuth2, basetypes.ObjectAsOptions{})...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// With no oauth2 block, the configuration sets neither key source.
+	stateOAuth2.JwksURI = types.StringNull()
+	stateOAuth2.Jwks = jsontypes.NewNormalizedNull()
+
 	// The user didn't set oauth2 in config, so this is an identifier-only
 	// provider where identifier and issuer should match. Read identifier
 	// from config (not plan) because plan modifier execution order across
@@ -105,24 +122,10 @@ func (m syncOAuth2WithIdentifierModifier) PlanModifyObject(ctx context.Context, 
 		return
 	}
 
-	// Identifier not in config either — nothing to sync.
-	if identifierConfig.IsNull() || identifierConfig.IsUnknown() {
-		return
-	}
-
-	var stateOAuth2 OAuth2ProviderModel
-	resp.Diagnostics.Append(req.StateValue.As(ctx, &stateOAuth2, basetypes.ObjectAsOptions{})...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Issuer already matches — no update needed.
-	if stateOAuth2.Issuer.ValueString() == identifierConfig.ValueString() {
-		return
-	}
-
 	// Identifier changed — update issuer to match.
-	stateOAuth2.Issuer = identifierConfig
+	if !identifierConfig.IsNull() && !identifierConfig.IsUnknown() {
+		stateOAuth2.Issuer = identifierConfig
+	}
 
 	var diags diag.Diagnostics
 	resp.PlanValue, diags = types.ObjectValueFrom(ctx, stateOAuth2.AttributeTypes(), stateOAuth2)
