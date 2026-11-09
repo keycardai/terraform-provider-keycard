@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -51,9 +52,11 @@ type ProviderResourceModel struct {
 
 // OAuth2ProviderModel describes the nested oauth2 block data model.
 type OAuth2ProviderModel struct {
-	Issuer                types.String `tfsdk:"issuer"`
-	AuthorizationEndpoint types.String `tfsdk:"authorization_endpoint"`
-	TokenEndpoint         types.String `tfsdk:"token_endpoint"`
+	Issuer                types.String         `tfsdk:"issuer"`
+	AuthorizationEndpoint types.String         `tfsdk:"authorization_endpoint"`
+	TokenEndpoint         types.String         `tfsdk:"token_endpoint"`
+	JwksURI               types.String         `tfsdk:"jwks_uri"`
+	Jwks                  jsontypes.Normalized `tfsdk:"jwks"`
 }
 
 func (m OAuth2ProviderModel) AttributeTypes() map[string]attr.Type {
@@ -61,6 +64,8 @@ func (m OAuth2ProviderModel) AttributeTypes() map[string]attr.Type {
 		"issuer":                 types.StringType,
 		"authorization_endpoint": types.StringType,
 		"token_endpoint":         types.StringType,
+		"jwks_uri":               types.StringType,
+		"jwks":                   jsontypes.NormalizedType{},
 	}
 }
 
@@ -155,6 +160,26 @@ func (r *ProviderResource) Schema(ctx context.Context, req resource.SchemaReques
 						},
 						PlanModifiers: []planmodifier.String{
 							stringplanmodifier.UseStateForUnknown(),
+						},
+					},
+					"jwks_uri": schema.StringAttribute{
+						MarkdownDescription: "URL of the provider's JSON Web Key Set. When set, Keycard fetches signing keys from this URL instead of using OIDC discovery, which suits issuers without a discovery document, such as SPIFFE/SPIRE. Conflicts with `jwks`. Removing it from the configuration clears it on the provider.",
+						Optional:            true,
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+							IsValidURI(),
+						},
+					},
+					"jwks": schema.StringAttribute{
+						MarkdownDescription: "Static JSON Web Key Set (RFC 7517), as a JSON string such as `jsonencode({ keys = [...] })` or `file(\"jwks.json\")`. Keycard verifies the provider's tokens against these keys and never contacts the issuer, which suits local or air-gapped issuers Keycard can't reach. The set holds 1 to 20 public RSA or EC (P-256, P-384, P-521) keys, each with a unique `kid`. Keys stay trusted until removed, so add a rotated key before the issuer starts signing with it. Conflicts with `jwks_uri`. Removing it from the configuration clears it on the provider.",
+						Optional:            true,
+						CustomType:          jsontypes.NormalizedType{},
+						Validators: []validator.String{
+							jwksSetValidator{},
+							stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("jwks_uri")),
+						},
+						PlanModifiers: []planmodifier.String{
+							jwksSemanticEqualityModifier{},
 						},
 					},
 				},
@@ -264,6 +289,19 @@ func (r *ProviderResource) Create(ctx context.Context, req resource.CreateReques
 		if !oauth2Data.TokenEndpoint.IsNull() && !oauth2Data.TokenEndpoint.IsUnknown() {
 			createReq.Protocols.Oauth2.TokenEndpoint = oauth2Data.TokenEndpoint.ValueStringPointer()
 		}
+
+		if !oauth2Data.JwksURI.IsNull() && !oauth2Data.JwksURI.IsUnknown() {
+			createReq.Protocols.Oauth2.JwksUri = oauth2Data.JwksURI.ValueStringPointer()
+		}
+
+		if !oauth2Data.Jwks.IsNull() && !oauth2Data.Jwks.IsUnknown() {
+			jwks, diags := jwksFromTerraform(oauth2Data.Jwks)
+			resp.Diagnostics.Append(diags...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+			createReq.Protocols.Oauth2.Jwks = nullable.NewNullableWithValue(jwks)
+		}
 	}
 
 	// Create the provider
@@ -345,10 +383,13 @@ func (r *ProviderResource) Read(ctx context.Context, req resource.ReadRequest, r
 }
 
 func (r *ProviderResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data ProviderResourceModel
+	var data, prior ProviderResourceModel
 
 	// Read Terraform plan data into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	// Read prior state, to tell a field removed from config from one never set
+	resp.Diagnostics.Append(req.State.Get(ctx, &prior)...)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -413,6 +454,29 @@ func (r *ProviderResource) Update(ctx context.Context, req resource.UpdateReques
 			if !oauth2Data.TokenEndpoint.IsNull() && !oauth2Data.TokenEndpoint.IsUnknown() {
 				oauth2Update.TokenEndpoint = stringValueNullable(oauth2Data.TokenEndpoint)
 			}
+
+			// jwks_uri and jwks are not computed: removing one from config
+			// clears it. Switching between them nulls one and sets the other
+			// in the same request.
+			priorOAuth2 := OAuth2ProviderModel{
+				JwksURI: types.StringNull(),
+				Jwks:    jsontypes.NewNormalizedNull(),
+			}
+			if !prior.OAuth2.IsNull() && !prior.OAuth2.IsUnknown() {
+				resp.Diagnostics.Append(prior.OAuth2.As(ctx, &priorOAuth2, basetypes.ObjectAsOptions{})...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+			}
+
+			oauth2Update.JwksUri = clearableStringUpdateValue(oauth2Data.JwksURI, priorOAuth2.JwksURI)
+
+			jwks, diags := jwksUpdateValue(oauth2Data.Jwks, priorOAuth2.Jwks)
+			resp.Diagnostics.Append(diags...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+			oauth2Update.Jwks = jwks
 
 			protocolUpdate := client.ProviderProtocolUpdate{
 				Oauth2: nullable.NewNullableWithValue(oauth2Update),
@@ -560,6 +624,8 @@ func (r *ProviderResource) UpgradeState(ctx context.Context) map[int64]resource.
 						Issuer:                priorState.Identifier,
 						AuthorizationEndpoint: oauth2.AuthorizationEndpoint,
 						TokenEndpoint:         oauth2.TokenEndpoint,
+						JwksURI:               types.StringNull(),
+						Jwks:                  jsontypes.NewNormalizedNull(),
 					}
 					var diags diag.Diagnostics
 					oauth2Obj, diags = types.ObjectValueFrom(ctx, newOAuth2.AttributeTypes(), newOAuth2)

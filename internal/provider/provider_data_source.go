@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/datasourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -89,6 +90,15 @@ func (d *ProviderDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 					"token_endpoint": schema.StringAttribute{
 						MarkdownDescription: "OAuth 2.0 Token endpoint URL. May be empty.",
 						Computed:            true,
+					},
+					"jwks_uri": schema.StringAttribute{
+						MarkdownDescription: "URL of the provider's JSON Web Key Set, used instead of OIDC discovery to fetch signing keys. May be empty.",
+						Computed:            true,
+					},
+					"jwks": schema.StringAttribute{
+						MarkdownDescription: "Static JSON Web Key Set (RFC 7517) used to verify the provider's tokens, as a JSON string. Use `jsondecode()` to read individual keys. May be empty.",
+						Computed:            true,
+						CustomType:          jsontypes.NormalizedType{},
 					},
 				},
 			},
