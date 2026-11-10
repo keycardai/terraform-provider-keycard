@@ -54,7 +54,7 @@ jobs:
     name: Terraform Provider Acceptance Tests
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
@@ -81,8 +81,11 @@ jobs:
           KEYCARD_ENDPOINT: ${{ secrets.KEYCARD_ENDPOINT }}
           KEYCARD_TEST_KMS_KEY_1: ${{ secrets.KEYCARD_TEST_KMS_KEY_1 }}
           KEYCARD_TEST_KMS_KEY_2: ${{ secrets.KEYCARD_TEST_KMS_KEY_2 }}
-        run: go test -v -cover -timeout 600s -parallel=5 -skip 'TestAccSSOConnection' ./internal/provider/
-        timeout-minutes: 15
+        # A go test timeout kills every running test before it can destroy what
+        # it created, so leave headroom over the slowest passing runs (~10m).
+        # The step timeout stays above it so go test, not the runner, times out.
+        run: go test -v -cover -timeout 900s -parallel=5 -skip 'TestAccSSOConnection' ./internal/provider/
+        timeout-minutes: 18
       - name: Upload Terraform test logs
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
