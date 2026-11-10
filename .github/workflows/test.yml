@@ -94,45 +94,17 @@ jobs:
           path: ${{ runner.temp }}/terraform-test.log
           if-no-files-found: warn
 
-  # SSO tests run separately and serialized across PRs (shared org resource)
+  # SSO tests share the organization's SSO connection, so they run one at a
+  # time across every PR. The concurrency group sits on this calling job, not
+  # on the matrix legs in test-sso.yml: GitHub keeps one pending job per group
+  # and cancels the older pending job when another arrives, so legs that each
+  # joined the group cancelled each other whenever two runs overlapped. Here
+  # each run joins once and waits for the whole matrix of the run ahead of it.
   test-sso:
     name: SSO Acceptance Tests
     needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
     concurrency:
       group: sso-acceptance-tests
       cancel-in-progress: false
-    strategy:
-      fail-fast: false
-      max-parallel: 1
-      matrix:
-        terraform:
-          - '1.7'
-          - '1.8'
-          - '1.9'
-          - '1.10'
-          - '1.11'
-          - '1.12'
-          - '1.13'
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - uses: ./.github/actions/setup-test-env
-        with:
-          terraform_version: ${{ matrix.terraform }}
-      - env:
-          TF_ACC: "1"
-          TF_ACC_LOG_PATH: ${{ runner.temp }}/terraform-sso-test.log
-          TF_ACC_LOG: DEBUG
-          KEYCARD_CLIENT_ID: ${{ secrets.KEYCARD_CLIENT_ID }}
-          KEYCARD_CLIENT_SECRET: ${{ secrets.KEYCARD_CLIENT_SECRET }}
-          KEYCARD_ENDPOINT: ${{ secrets.KEYCARD_ENDPOINT }}
-        run: go test -v -cover -timeout 300s -parallel=1 -run 'TestAccSSOConnection' ./internal/provider/
-        timeout-minutes: 10
-      - name: Upload SSO test logs
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: always()
-        with:
-          name: terraform-sso-test-logs-${{ matrix.terraform }}
-          path: ${{ runner.temp }}/terraform-sso-test.log
-          if-no-files-found: warn
+    uses: ./.github/workflows/test-sso.yml
+    secrets: inherit
