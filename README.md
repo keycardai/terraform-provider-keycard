@@ -161,7 +161,7 @@ make sweep
 
 **Note:** Acceptance tests interact with the real Keycard API and may incur costs or modify resources. Set up appropriate test credentials before running.
 
-A test that is killed or fails during destroy can leave its zone behind. `make sweep` deletes every zone in the credentials' organization whose name starts with `tftest-` and that is more than an hour old. Deleting a zone deletes everything in it and can't be undone. The `Sweep` workflow runs it daily against the CI organization.
+A test that is killed or fails during destroy can leave its zone behind. `make sweep` deletes every zone in the credentials' organization whose name starts with `tftest-` and that is more than an hour old. Deleting a zone deletes everything in it and can't be undone. The `Sweep` workflow runs it daily against the CI organization. Starting the workflow by hand runs a dry run by default; untick `dry_run` to delete.
 
 When you run `make sweep` by hand, run `make sweep SWEEP_DRY_RUN=1` first. It lists the zones it would delete, so you can check that `KEYCARD_*` points at the organization you meant and that nothing on the list is a real zone.
 
