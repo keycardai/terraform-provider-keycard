@@ -1,6 +1,6 @@
 # Deletes zones that acceptance tests left in the CI organization. A test that
 # is killed (go test timeout, cancelled job) or fails during destroy never
-# deletes its zone. See sweepZones in internal/provider/sweeper_test.go.
+# deletes its zone. See cmd/sweep.
 #
 # Scheduled runs delete. A run started by hand is a dry run unless dry_run is
 # unticked, so the list can be checked before anything is deleted.
