@@ -99,8 +99,9 @@ paths:
           required: false
           schema:
             type: string
-        - name: cursor
+        - name: after
           in: query
+          description: Cursor for forward pagination
           required: false
           schema:
             type: string
@@ -109,8 +110,8 @@ paths:
           required: false
           schema:
             type: integer
-            default: 100
-            maximum: 1000
+            default: 20
+            maximum: 100
             minimum: 1
       responses:
         '200':
@@ -126,9 +127,12 @@ paths:
                       $ref: '#/components/schemas/Zone'
                   page_info:
                     $ref: '#/components/schemas/PageInfo'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
                 required:
                   - items
                   - page_info
+                  - pagination
         default:
           description: Error response
           content:

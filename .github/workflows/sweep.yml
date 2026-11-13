@@ -1,0 +1,44 @@
+# Deletes zones that acceptance tests left in the CI organization. A test that
+# is killed (go test timeout, cancelled job) or fails during destroy never
+# deletes its zone. See cmd/sweep.
+#
+# Scheduled runs delete. A run started by hand is a dry run unless dry_run is
+# unticked, so the list can be checked before anything is deleted.
+name: Sweep
+run-name: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && 'Sweep (dry run)' || 'Sweep' }}
+
+on:
+  schedule:
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'List the zones that would be deleted, without deleting them'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sweep
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    name: Sweep leaked test zones
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - env:
+          KEYCARD_CLIENT_ID: ${{ secrets.KEYCARD_CLIENT_ID }}
+          KEYCARD_CLIENT_SECRET: ${{ secrets.KEYCARD_CLIENT_SECRET }}
+          KEYCARD_ENDPOINT: ${{ secrets.KEYCARD_ENDPOINT }}
+          # inputs.dry_run is unset on scheduled runs, which therefore delete.
+          SWEEP_DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && '1' || '0' }}
+        run: make sweep

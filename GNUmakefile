@@ -4,7 +4,7 @@ build:
 	go build -v ./...
 
 install: build
-	go install -v ./...
+	go install -v .
 
 lint:
 	golangci-lint run
@@ -26,4 +26,10 @@ test:
 testacc:
 	TF_ACC=1 go test -v -cover -timeout=500s -parallel=5 ./...
 
-.PHONY: fmt lint test testacc build install generate-client generate-docs generate
+# Deletes tftest-* zones older than an hour in the org of the KEYCARD_* credentials.
+# SWEEP_DRY_RUN=1 lists them without deleting; check that first when running it by hand.
+SWEEP_DRY_RUN ?= false
+sweep:
+	go run ./cmd/sweep -dry-run=$(SWEEP_DRY_RUN)
+
+.PHONY: fmt lint test testacc sweep build install generate-client generate-docs generate
