@@ -34,4 +34,6 @@ For information on local development and testing, see the [README.md](README.md#
 
 ## License
 
-This provider is licensed under the [Mozilla Public License 2.0](LICENSE).
+This provider is licensed under the [Apache License 2.0](LICENSE). It derives from
+HashiCorp's terraform-provider-scaffolding-framework, and files retained from that
+template remain under the MPL-2.0; see [NOTICE](NOTICE).
