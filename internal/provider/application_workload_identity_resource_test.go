@@ -8,8 +8,10 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
 )
 
 func TestAccApplicationWorkloadIdentityResource_basic(t *testing.T) {
@@ -130,6 +132,11 @@ func TestAccApplicationWorkloadIdentityResource_v2Fields(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testAccApplicationWorkloadIdentityResourceConfig_v2(rName, subject, audience1, condition1),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectKnownValue("keycard_application_workload_identity.test", tfjsonpath.New("version"), knownvalue.Int64Exact(2)),
+					},
+				},
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_application_workload_identity.test", "version", "2"),
 					resource.TestCheckResourceAttrPair(

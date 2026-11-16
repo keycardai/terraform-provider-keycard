@@ -190,6 +190,7 @@ func (r *ApplicationWorkloadIdentityResource) ModifyPlan(ctx context.Context, re
 				"Set `subject` or `authentication_condition`. A credential that constrains neither would accept any token the provider issues.",
 			)
 		}
+		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("version"), types.Int64Value(2))...)
 		return
 	}
 
