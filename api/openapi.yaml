@@ -3416,8 +3416,22 @@ components:
           description: ID of the provider issuing tokens this credential verifies
           type: string
         subject:
-          description: 'Subject identifier for the token. When omitted, any token from the provider is accepted without checking application-specific claims.'
+          description: 'Subject identifier for the token. When omitted, any token from the provider is accepted without checking application-specific claims. A version 2 credential must set subject or authentication_condition.'
           type: string
+        version:
+          description: Credential behavior version. Immutable. Defaults to 1 when omitted. A version 2 credential's identifier is its ID, which the workload sends as client_id.
+          type: integer
+          enum:
+            - 1
+            - 2
+        allowed_audience:
+          description: Version 2 only. Audience the token's `aud` must contain. When omitted, the zone's issuer URL is required.
+          type: string
+          minLength: 1
+        authentication_condition:
+          description: Version 2 only. CEL predicate over the token's `claims` that must evaluate to true.
+          type: string
+          minLength: 1
       required:
         - application_id
         - type
@@ -4055,10 +4069,24 @@ components:
               $ref: '#/components/schemas/Provider'
               deprecated: true
             identifier:
-              description: 'Identifier for this credential. For token type, this equals the subject value, or ''*'' when subject is not specified.'
+              description: 'Identifier for this credential. For version 2, this equals the credential ID and is the OAuth 2.0 client ID the workload sends. For version 1, this equals the subject value, or ''*'' when subject is not specified.'
               type: string
             subject:
               description: 'Subject identifier for the token. When null or omitted, any token from the provider is accepted without checking application-specific claims.'
+              type: string
+              nullable: true
+            version:
+              description: Credential behavior version.
+              type: integer
+              enum:
+                - 1
+                - 2
+            allowed_audience:
+              description: Version 2 only. Audience the token's `aud` must contain. `null` when unset, in which case the zone's issuer URL is required.
+              type: string
+              nullable: true
+            authentication_condition:
+              description: Version 2 only. CEL predicate over the token's `claims` that must evaluate to true. `null` when unset.
               type: string
               nullable: true
           required:
@@ -4182,6 +4210,16 @@ components:
           description: 'Subject identifier for the token. Set to null to unset, which allows any token from the provider to be accepted without checking application-specific claims.'
           type: string
           nullable: true
+        allowed_audience:
+          description: Version 2 only. Audience the token's `aud` must contain. Set to null to unset, which requires the zone's issuer URL.
+          type: string
+          nullable: true
+          minLength: 1
+        authentication_condition:
+          description: Version 2 only. CEL predicate over the token's `claims` that must evaluate to true. Set to null to unset.
+          type: string
+          nullable: true
+          minLength: 1
       title: Token Credential Update
     PasswordCredentialUpdate:
       description: Schema for updating a password credential

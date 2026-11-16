@@ -3,10 +3,12 @@ package provider
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
@@ -45,6 +47,13 @@ func TestAccApplicationWorkloadIdentityResource_basic(t *testing.T) {
 						"keycard_application_workload_identity.test", "provider_id",
 						"keycard_provider.test", "id",
 					),
+					resource.TestCheckResourceAttr("keycard_application_workload_identity.test", "version", "2"),
+					resource.TestCheckResourceAttrPair(
+						"keycard_application_workload_identity.test", "client_id",
+						"keycard_application_workload_identity.test", "id",
+					),
+					resource.TestCheckNoResourceAttr("keycard_application_workload_identity.test", "allowed_audience"),
+					resource.TestCheckNoResourceAttr("keycard_application_workload_identity.test", "authentication_condition"),
 				),
 			},
 			// ImportState testing
@@ -106,32 +115,117 @@ func TestAccApplicationWorkloadIdentityResource_updateSubject(t *testing.T) {
 	})
 }
 
-func TestAccApplicationWorkloadIdentityResource_removeSubject(t *testing.T) {
+func TestAccApplicationWorkloadIdentityResource_v2Fields(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
-	namespace := acctest.RandomWithPrefix("ns")
-	serviceAccount := acctest.RandomWithPrefix("sa")
-	subject := fmt.Sprintf("system:serviceaccount:%s:%s", namespace, serviceAccount)
+	org := acctest.RandomWithPrefix("org")
+	subject := fmt.Sprintf("repo:%s/api:*", org)
+	condition1 := fmt.Sprintf("claims.repository_owner == %q", org)
+	condition2 := fmt.Sprintf("claims.repository_owner == %q && claims.ref == \"refs/heads/main\"", org)
+	audience1 := "https://github.com/" + org
+	audience2 := "https://keycard.example.com/" + org
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
-			// Create with subject
 			{
-				Config: testAccApplicationWorkloadIdentityResourceConfig_ownZone(zoneName, rName, subject),
+				Config: testAccApplicationWorkloadIdentityResourceConfig_v2(rName, subject, audience1, condition1),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet("keycard_application_workload_identity.test", "id"),
+					resource.TestCheckResourceAttr("keycard_application_workload_identity.test", "version", "2"),
+					resource.TestCheckResourceAttrPair(
+						"keycard_application_workload_identity.test", "client_id",
+						"keycard_application_workload_identity.test", "id",
+					),
 					resource.TestCheckResourceAttr("keycard_application_workload_identity.test", "subject", subject),
+					resource.TestCheckResourceAttr("keycard_application_workload_identity.test", "allowed_audience", audience1),
+					resource.TestCheckResourceAttr("keycard_application_workload_identity.test", "authentication_condition", condition1),
 				),
 			},
-			// Remove subject (should accept any token from provider)
+			// Update in place
 			{
-				Config: testAccApplicationWorkloadIdentityResourceConfig_ownZone(zoneName, rName, ""),
+				Config: testAccApplicationWorkloadIdentityResourceConfig_v2(rName, subject, audience2, condition2),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("keycard_application_workload_identity.test", plancheck.ResourceActionUpdate),
+					},
+				},
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet("keycard_application_workload_identity.test", "id"),
-					resource.TestCheckNoResourceAttr("keycard_application_workload_identity.test", "subject"),
+					resource.TestCheckResourceAttr("keycard_application_workload_identity.test", "allowed_audience", audience2),
+					resource.TestCheckResourceAttr("keycard_application_workload_identity.test", "authentication_condition", condition2),
 				),
+			},
+			// Clear subject and audience, keeping the condition
+			{
+				Config: testAccApplicationWorkloadIdentityResourceConfig_v2(rName, "", "", condition2),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckNoResourceAttr("keycard_application_workload_identity.test", "subject"),
+					resource.TestCheckNoResourceAttr("keycard_application_workload_identity.test", "allowed_audience"),
+					resource.TestCheckResourceAttr("keycard_application_workload_identity.test", "authentication_condition", condition2),
+				),
+			},
+			{
+				ResourceName:      "keycard_application_workload_identity.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs := s.RootModule().Resources["keycard_application_workload_identity.test"]
+					return fmt.Sprintf("zones/%s/application-credentials/%s", rs.Primary.Attributes["zone_id"], rs.Primary.ID), nil
+				},
+			},
+		},
+	})
+}
+
+func TestAccApplicationWorkloadIdentityResource_noConstraintInvalid(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccApplicationWorkloadIdentityResourceConfig_v2(rName, "", "https://example.com", ""),
+				ExpectError: regexp.MustCompile(`Missing Token Constraint`),
+			},
+		},
+	})
+}
+
+// Credentials created by provider releases before version 2 support stay
+// version 1 after upgrading and reject the version 2 fields.
+func TestAccApplicationWorkloadIdentityResource_v1Compat(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	namespace := acctest.RandomWithPrefix("ns")
+	serviceAccount := acctest.RandomWithPrefix("sa")
+	config := testAccApplicationWorkloadIdentityResourceConfig_kubernetes(rName, namespace, serviceAccount)
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck: func() { testAccPreCheck(t) },
+		Steps: []resource.TestStep{
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"keycard": {Source: "keycardai/keycard", VersionConstraint: "0.9.1"},
+				},
+				Config: config,
+			},
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Config:                   config,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{plancheck.ExpectEmptyPlan()},
+				},
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_application_workload_identity.test", "version", "1"),
+					resource.TestCheckNoResourceAttr("keycard_application_workload_identity.test", "client_id"),
+				),
+			},
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Config: strings.Replace(config,
+					`subject        = "system`,
+					`allowed_audience = "https://example.com"
+  subject        = "system`, 1),
+				ExpectError: regexp.MustCompile(`Unsupported On Version 1 Credential`),
 			},
 		},
 	})
@@ -305,43 +399,42 @@ resource "keycard_application_workload_identity" "test" {
 `, appName, namespace, serviceAccount)
 }
 
-// A workload identity created without a subject gets the server-assigned
-// credential identifier "*" (see api/openapi.yaml), which must be unique within
-// the zone and cannot be varied per test. Tests that create one need their own
-// zone. Passing an empty subject omits the attribute.
-func testAccApplicationWorkloadIdentityResourceConfig_ownZone(zoneName, appName, subject string) string {
+// testAccApplicationWorkloadIdentityResourceConfig_v2 omits each empty attribute.
+func testAccApplicationWorkloadIdentityResourceConfig_v2(appName, subject, audience, condition string) string {
 	identity := `
 resource "keycard_application_workload_identity" "test" {
-  zone_id        = keycard_zone.test.id
+  zone_id        = data.keycard_organization.test.zone_id
   application_id = keycard_application.test.id
   provider_id    = keycard_provider.test.id
 `
-	if subject != "" {
-		identity += fmt.Sprintf("  subject        = %q\n", subject)
+	for _, attr := range []struct{ name, value string }{
+		{"subject", subject},
+		{"allowed_audience", audience},
+		{"authentication_condition", condition},
+	} {
+		if attr.value != "" {
+			identity += fmt.Sprintf("  %s = %q\n", attr.name, attr.value)
+		}
 	}
 	identity += "}\n"
 
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
+	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
-  name       = "k8s-provider-%[2]s"
-  identifier = "https://k8s-provider-%[2]s.example.com"
-  zone_id    = keycard_zone.test.id
+  name       = "github-provider-%[1]s"
+  identifier = "https://github-provider-%[1]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 
   oauth2 = {
-    issuer = "https://kubernetes.default.svc.cluster.local"
+    issuer = "https://token.actions.githubusercontent.com"
   }
 }
 
 resource "keycard_application" "test" {
-  name       = %[2]q
-  identifier = "https://%[2]s.example.com"
-  zone_id    = keycard_zone.test.id
+  name       = %[1]q
+  identifier = "https://%[1]s.example.com"
+  zone_id    = data.keycard_organization.test.zone_id
 }
-`, zoneName, appName) + identity
+`, appName) + identity
 }
 
 func testAccApplicationWorkloadIdentityResourceConfig_github(appName, org, repo, branch string) string {

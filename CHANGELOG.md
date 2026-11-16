@@ -3,14 +3,21 @@
 FEATURES:
 
 * **Provider Signing Keys**: `keycard_provider` can now say where Keycard gets the provider's signing keys. `oauth2.jwks_uri` points at the issuer's JWKS endpoint for issuers without OIDC discovery, such as SPIFFE/SPIRE. `oauth2.jwks` holds a static JWK Set for issuers Keycard can't reach, such as a local Kubernetes cluster or an air-gapped IdP.
+* **Workload Identity Validation**: `keycard_application_workload_identity` now creates version 2 credentials, which validate the token's audience and an optional CEL condition over its claims. Workloads select a version 2 credential by sending its `client_id`.
+
+BREAKING CHANGES:
+
+* `keycard_application_workload_identity` - New credentials are version 2: workloads must send the credential's `client_id` with their token, and the token's sole `aud` must be `allowed_audience`, or the zone's issuer URL when unset. Credentials that `subject` or `authentication_condition` doesn't constrain are rejected. Existing credentials stay version 1 and keep working unchanged, but a change that replaces one (such as `provider_id`) recreates it as version 2.
 
 RESOURCES:
 
 * `keycard_provider` - Added `oauth2.jwks_uri` and `oauth2.jwks`. They can't both be set. `jwks` is a JSON string, such as `jsonencode({ keys = [...] })` or `file("jwks.json")`, and changes in whitespace or member order don't cause a diff. Removing either attribute, or the whole `oauth2` block, from the configuration clears it on the provider. A provider that already has a `jwks_uri` or `jwks` set outside Terraform will plan its removal; add it to the configuration to keep it.
+* `keycard_application_workload_identity` - Added `allowed_audience` and `authentication_condition`, and computed `version` and `client_id`. Setting `allowed_audience` or `authentication_condition` on a version 1 credential fails at plan; replace the resource to move it to version 2.
 
 DATA SOURCES:
 
 * `keycard_provider` - Added `oauth2.jwks_uri` and `oauth2.jwks`.
+* `keycard_application_workload_identity` - Added `allowed_audience`, `authentication_condition`, `version`, and `client_id`.
 
 ## 0.9.1
 

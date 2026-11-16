@@ -37,9 +37,13 @@ output "mcp_service_account_subject" {
 
 ### Read-Only
 
+- `allowed_audience` (String) The value the token's `aud` must contain as its sole audience. Null when the zone's issuer URL is required.
 - `application_id` (String) The application this credential belongs to.
+- `authentication_condition` (String) A CEL predicate over the token's `claims` that must evaluate to `true`.
+- `client_id` (String) The OAuth 2.0 `client_id` the workload sends alongside its token. Null for version 1 credentials.
 - `provider_id` (String) The provider that validates tokens for this credential.
 - `subject` (String) The subject claim (sub) that must match in the bearer token. Empty when any token from the provider is accepted. Format depends on the token issuer:
   - Kubernetes: `system:serviceaccount:<namespace>:<service-account-name>`
   - GitHub Actions: `repo:<org>/<repo>:ref:refs/heads/<branch>`
   - AWS EKS: `system:serviceaccount:<namespace>:<service-account-name>`
+- `version` (Number) The credential's behavior version.

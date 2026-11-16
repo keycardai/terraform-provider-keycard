@@ -387,6 +387,7 @@ func updateApplicationWorkloadIdentityModelFromCreateResponse(cred *client.Appli
 	data.ApplicationID = types.StringValue(tokenCred.ApplicationId)
 	data.ProviderID = types.StringValue(tokenCred.ProviderId)
 	data.Subject = nullableStringValue(tokenCred.Subject)
+	setApplicationWorkloadIdentityV2Fields(tokenCred, data)
 
 	return diags
 }
@@ -408,8 +409,26 @@ func updateApplicationWorkloadIdentityModelFromAPIResponse(cred *client.Applicat
 	data.ApplicationID = types.StringValue(tokenCred.ApplicationId)
 	data.ProviderID = types.StringValue(tokenCred.ProviderId)
 	data.Subject = nullableStringValue(tokenCred.Subject)
+	setApplicationWorkloadIdentityV2Fields(tokenCred, data)
 
 	return diags
+}
+
+// setApplicationWorkloadIdentityV2Fields maps the version and version 2 fields.
+// A missing version means version 1. client_id is null for version 1, whose
+// identifier is the subject rather than a client ID.
+func setApplicationWorkloadIdentityV2Fields(tokenCred client.ApplicationCredentialToken, data *ApplicationWorkloadIdentityModel) {
+	version := int64(1)
+	if tokenCred.Version != nil {
+		version = int64(*tokenCred.Version)
+	}
+	data.Version = types.Int64Value(version)
+	data.AllowedAudience = nullableStringValue(tokenCred.AllowedAudience)
+	data.AuthenticationCondition = nullableStringValue(tokenCred.AuthenticationCondition)
+	data.ClientID = types.StringNull()
+	if version != 1 {
+		data.ClientID = types.StringValue(tokenCred.Identifier)
+	}
 }
 
 // updateApplicationURLCredentialModelFromCreateResponse updates the model with data from the

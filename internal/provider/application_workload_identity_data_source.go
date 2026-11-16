@@ -57,6 +57,22 @@ func (d *ApplicationWorkloadIdentityDataSource) Schema(ctx context.Context, req 
 					"  - AWS EKS: `system:serviceaccount:<namespace>:<service-account-name>`\n\n",
 				Computed: true,
 			},
+			"allowed_audience": schema.StringAttribute{
+				MarkdownDescription: "The value the token's `aud` must contain as its sole audience. Null when the zone's issuer URL is required.",
+				Computed:            true,
+			},
+			"authentication_condition": schema.StringAttribute{
+				MarkdownDescription: "A CEL predicate over the token's `claims` that must evaluate to `true`.",
+				Computed:            true,
+			},
+			"version": schema.Int64Attribute{
+				MarkdownDescription: "The credential's behavior version.",
+				Computed:            true,
+			},
+			"client_id": schema.StringAttribute{
+				MarkdownDescription: "The OAuth 2.0 `client_id` the workload sends alongside its token. Null for version 1 credentials.",
+				Computed:            true,
+			},
 		},
 	}
 }
