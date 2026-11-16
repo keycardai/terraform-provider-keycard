@@ -74,7 +74,10 @@ func TestApplicationWorkloadIdentityResource_ModifyPlanCreateSetsVersion2(t *tes
 	if schemaResp.Diagnostics.HasError() {
 		t.Fatalf("schema: %s", schemaResp.Diagnostics)
 	}
-	objType := schemaResp.Schema.Type().TerraformType(ctx).(tftypes.Object)
+	objType, ok := schemaResp.Schema.Type().TerraformType(ctx).(tftypes.Object)
+	if !ok {
+		t.Fatal("schema type is not an object")
+	}
 
 	vals := map[string]tftypes.Value{}
 	for name, attrType := range objType.AttributeTypes {
