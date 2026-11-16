@@ -19,9 +19,10 @@ import (
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var (
-	_ resource.Resource                = &ApplicationWorkloadIdentityResource{}
-	_ resource.ResourceWithImportState = &ApplicationWorkloadIdentityResource{}
-	_ resource.ResourceWithModifyPlan  = &ApplicationWorkloadIdentityResource{}
+	_ resource.Resource                 = &ApplicationWorkloadIdentityResource{}
+	_ resource.ResourceWithImportState  = &ApplicationWorkloadIdentityResource{}
+	_ resource.ResourceWithModifyPlan   = &ApplicationWorkloadIdentityResource{}
+	_ resource.ResourceWithUpgradeState = &ApplicationWorkloadIdentityResource{}
 )
 
 func NewApplicationWorkloadIdentityResource() resource.Resource {
@@ -52,6 +53,7 @@ func (r *ApplicationWorkloadIdentityResource) Metadata(ctx context.Context, req 
 
 func (r *ApplicationWorkloadIdentityResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Version: 1,
 		MarkdownDescription: "Manages a workload identity credential for a Keycard application. " +
 			"This allows applications to authenticate using tokens from external identity providers " +
 			"(Kubernetes, GitHub Actions, AWS EKS, etc.) with optional subject claim validation.",
@@ -165,8 +167,7 @@ func (r *ApplicationWorkloadIdentityResource) ModifyPlan(ctx context.Context, re
 		return
 	}
 
-	// Create and replacement produce a version 2 credential. State from earlier
-	// provider releases has no version; those credentials are version 1.
+	// Create and replacement produce a version 2 credential.
 	v2 := req.State.Raw.IsNull()
 	if !v2 {
 		var state ApplicationWorkloadIdentityModel
@@ -208,6 +209,48 @@ func (r *ApplicationWorkloadIdentityResource) ModifyPlan(ctx context.Context, re
 					"`client_id`, then remove this resource.", attr.name),
 			)
 		}
+	}
+}
+
+func (r *ApplicationWorkloadIdentityResource) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader {
+	return map[int64]resource.StateUpgrader{
+		// Schema version 0 predates version 2 credentials, so every credential in it is version 1.
+		0: {
+			PriorSchema: &schema.Schema{
+				Attributes: map[string]schema.Attribute{
+					"id":             schema.StringAttribute{Computed: true},
+					"zone_id":        schema.StringAttribute{Required: true},
+					"application_id": schema.StringAttribute{Required: true},
+					"provider_id":    schema.StringAttribute{Required: true},
+					"subject":        schema.StringAttribute{Optional: true},
+				},
+			},
+			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+				var prior struct {
+					ID            types.String `tfsdk:"id"`
+					ZoneID        types.String `tfsdk:"zone_id"`
+					ApplicationID types.String `tfsdk:"application_id"`
+					ProviderID    types.String `tfsdk:"provider_id"`
+					Subject       types.String `tfsdk:"subject"`
+				}
+				resp.Diagnostics.Append(req.State.Get(ctx, &prior)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				resp.Diagnostics.Append(resp.State.Set(ctx, ApplicationWorkloadIdentityModel{
+					ID:                      prior.ID,
+					ZoneID:                  prior.ZoneID,
+					ApplicationID:           prior.ApplicationID,
+					ProviderID:              prior.ProviderID,
+					Subject:                 prior.Subject,
+					AllowedAudience:         types.StringNull(),
+					AuthenticationCondition: types.StringNull(),
+					Version:                 types.Int64Value(1),
+					ClientID:                types.StringNull(),
+				})...)
+			},
+		},
 	}
 }
 
