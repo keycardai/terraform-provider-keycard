@@ -166,7 +166,22 @@ func (r *ApplicationWorkloadIdentityResource) ModifyPlan(ctx context.Context, re
 		return
 	}
 
-	if req.State.Raw.IsNull() {
+	// Create and replacement produce a version 2 credential. State from earlier
+	// provider releases has no version; those credentials are version 1.
+	v2 := req.State.Raw.IsNull()
+	if !v2 {
+		var state ApplicationWorkloadIdentityModel
+		resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		replacing := !plan.ZoneID.Equal(state.ZoneID) ||
+			!plan.ApplicationID.Equal(state.ApplicationID) ||
+			!plan.ProviderID.Equal(state.ProviderID)
+		v2 = replacing || state.Version.ValueInt64() == 2
+	}
+
+	if v2 {
 		if plan.Subject.IsNull() && plan.AuthenticationCondition.IsNull() {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("subject"),
@@ -174,21 +189,6 @@ func (r *ApplicationWorkloadIdentityResource) ModifyPlan(ctx context.Context, re
 				"Set `subject` or `authentication_condition`. A credential that constrains neither would accept any token the provider issues.",
 			)
 		}
-		return
-	}
-
-	var state ApplicationWorkloadIdentityModel
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// A replacement creates a version 2 credential, so the version 1 limits don't apply.
-	replacing := !plan.ZoneID.Equal(state.ZoneID) ||
-		!plan.ApplicationID.Equal(state.ApplicationID) ||
-		!plan.ProviderID.Equal(state.ProviderID)
-	// State from earlier provider releases has no version; those credentials are version 1.
-	if replacing || state.Version.ValueInt64() == 2 {
 		return
 	}
 

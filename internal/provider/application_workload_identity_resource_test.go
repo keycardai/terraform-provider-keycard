@@ -163,6 +163,12 @@ func TestAccApplicationWorkloadIdentityResource_v2Fields(t *testing.T) {
 					resource.TestCheckResourceAttr("keycard_application_workload_identity.test", "authentication_condition", condition2),
 				),
 			},
+			// Removing the last constraint fails at plan
+			{
+				Config:      testAccApplicationWorkloadIdentityResourceConfig_v2(rName, "", "", ""),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`Missing Token Constraint`),
+			},
 			{
 				ResourceName:      "keycard_application_workload_identity.test",
 				ImportState:       true,
