@@ -174,6 +174,7 @@ func (r *ApplicationWorkloadIdentityResource) ModifyPlan(ctx context.Context, re
 		if resp.Diagnostics.HasError() {
 			return
 		}
+		// Forced replacements (-replace, taint) aren't visible here; they plan as version 1 first.
 		replacing := !plan.ZoneID.Equal(state.ZoneID) ||
 			!plan.ApplicationID.Equal(state.ApplicationID) ||
 			!plan.ProviderID.Equal(state.ProviderID)

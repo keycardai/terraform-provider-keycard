@@ -7,7 +7,7 @@ FEATURES:
 
 BREAKING CHANGES:
 
-* `keycard_application_workload_identity` - New credentials are version 2: workloads must send the credential's `client_id` with their token, and the token's sole `aud` must be `allowed_audience`, or the zone's issuer URL when unset. Credentials that `subject` or `authentication_condition` doesn't constrain are rejected. Existing credentials stay version 1 and keep working unchanged, but any replacement (such as changing `provider_id` or `terraform apply -replace`) recreates it as version 2.
+* `keycard_application_workload_identity` - New credentials are version 2: workloads must send the credential's `client_id` with their token, and the token's sole `aud` must be `allowed_audience`, or the zone's issuer URL when unset. Credentials that `subject` or `authentication_condition` doesn't constrain are rejected. Existing credentials stay version 1 and keep working unchanged, but changing `zone_id`, `application_id` or `provider_id` recreates it as version 2.
 
 RESOURCES:
 
