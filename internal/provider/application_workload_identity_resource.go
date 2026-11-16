@@ -116,8 +116,7 @@ func (r *ApplicationWorkloadIdentityResource) Schema(ctx context.Context, req re
 			},
 			"version": schema.Int64Attribute{
 				MarkdownDescription: "The credential's behavior version. New credentials are version 2. " +
-					"Version 1 credentials created by earlier provider releases are kept as-is; " +
-					"replace the resource to move to version 2.",
+					"Version 1 credentials created by earlier provider releases are kept as-is.",
 				Computed: true,
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.UseStateForUnknown(),
@@ -203,8 +202,9 @@ func (r *ApplicationWorkloadIdentityResource) ModifyPlan(ctx context.Context, re
 			resp.Diagnostics.AddAttributeError(
 				path.Root(attr.name),
 				"Unsupported On Version 1 Credential",
-				fmt.Sprintf("`%s` requires a version 2 credential. Replace this resource (`terraform apply -replace`) to create one; "+
-					"workloads must then send its `client_id`.", attr.name),
+				fmt.Sprintf("This credential is version 1, which doesn't support `%s`. To migrate, add a new "+
+					"`keycard_application_workload_identity` resource with this setting, update workloads to send its "+
+					"`client_id`, then remove this resource.", attr.name),
 			)
 		}
 	}

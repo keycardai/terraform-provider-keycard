@@ -59,7 +59,7 @@ output "deploy_client_id" {
 
 - `client_id` (String) The OAuth 2.0 `client_id` the workload sends alongside its token. Null for version 1 credentials.
 - `id` (String) Unique identifier of the workload identity credential.
-- `version` (Number) The credential's behavior version. New credentials are version 2. Version 1 credentials created by earlier provider releases are kept as-is; replace the resource to move to version 2.
+- `version` (Number) The credential's behavior version. New credentials are version 2. Version 1 credentials created by earlier provider releases are kept as-is.
 
 ## Import
 
