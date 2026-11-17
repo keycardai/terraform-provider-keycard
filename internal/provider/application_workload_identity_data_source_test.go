@@ -56,7 +56,6 @@ func TestAccApplicationWorkloadIdentityDataSource_basic(t *testing.T) {
 
 func TestAccApplicationWorkloadIdentityDataSource_noSubject(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
-	zoneName := acctest.RandomWithPrefix("tftest-zone")
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -64,7 +63,7 @@ func TestAccApplicationWorkloadIdentityDataSource_noSubject(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a workload identity without subject and fetch it
 			{
-				Config: testAccApplicationWorkloadIdentityDataSourceConfig_noSubject(zoneName, rName),
+				Config: testAccApplicationWorkloadIdentityDataSourceConfig_noSubject(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
 						"data.keycard_application_workload_identity.test", "id",
@@ -82,8 +81,14 @@ func TestAccApplicationWorkloadIdentityDataSource_noSubject(t *testing.T) {
 						"data.keycard_application_workload_identity.test", "provider_id",
 						"keycard_application_workload_identity.test", "provider_id",
 					),
-					// Verify subject is not set (empty)
 					resource.TestCheckNoResourceAttr("data.keycard_application_workload_identity.test", "subject"),
+					resource.TestCheckResourceAttr("data.keycard_application_workload_identity.test", "version", "2"),
+					resource.TestCheckResourceAttrPair(
+						"data.keycard_application_workload_identity.test", "client_id",
+						"keycard_application_workload_identity.test", "client_id",
+					),
+					resource.TestCheckResourceAttr("data.keycard_application_workload_identity.test", "allowed_audience", "https://example.com"),
+					resource.TestCheckResourceAttr("data.keycard_application_workload_identity.test", "authentication_condition", `claims.repository_owner == "acme-corp"`),
 				),
 			},
 		},
@@ -136,42 +141,13 @@ data "keycard_application_workload_identity" "test" {
 `, appName, namespace, serviceAccount)
 }
 
-// A workload identity created without a subject gets the server-assigned
-// credential identifier "*" (see api/openapi.yaml), which must be unique within
-// the zone and cannot be varied per test, so this one needs its own zone.
-func testAccApplicationWorkloadIdentityDataSourceConfig_noSubject(zoneName, appName string) string {
-	return fmt.Sprintf(`
-resource "keycard_zone" "test" {
-  name = %[1]q
-}
-
-resource "keycard_provider" "test" {
-  name       = "k8s-provider-%[2]s"
-  identifier = "https://k8s-provider-%[2]s.example.com"
-  zone_id    = keycard_zone.test.id
-
-  oauth2 = {
-    issuer = "https://kubernetes.default.svc.cluster.local"
-  }
-}
-
-resource "keycard_application" "test" {
-  name       = %[2]q
-  identifier = "https://%[2]s.example.com"
-  zone_id    = keycard_zone.test.id
-}
-
-resource "keycard_application_workload_identity" "test" {
-  zone_id        = keycard_zone.test.id
-  application_id = keycard_application.test.id
-  provider_id    = keycard_provider.test.id
-}
-
+func testAccApplicationWorkloadIdentityDataSourceConfig_noSubject(appName string) string {
+	return testAccApplicationWorkloadIdentityResourceConfig_v2(appName, "", "https://example.com", `claims.repository_owner == "acme-corp"`) + `
 data "keycard_application_workload_identity" "test" {
   zone_id = keycard_application_workload_identity.test.zone_id
   id      = keycard_application_workload_identity.test.id
 }
-`, zoneName, appName)
+`
 }
 
 func testAccApplicationWorkloadIdentityDataSourceConfig_notFound() string {

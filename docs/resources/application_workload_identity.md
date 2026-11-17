@@ -21,12 +21,19 @@ resource "keycard_application_workload_identity" "backend_service" {
   subject        = "system:serviceaccount:production:backend-service-sa"
 }
 
-# Workload identity without subject constraint
-# Accepts any authenticated token from the EKS cluster
-resource "keycard_application_workload_identity" "internal_tools_any" {
-  zone_id        = keycard_zone.production.id
-  application_id = keycard_application.backend_service.id
-  provider_id    = keycard_provider.eks.id
+# Workload identity for GitHub Actions, pinned to one organization
+resource "keycard_application_workload_identity" "deploy" {
+  zone_id                  = keycard_zone.production.id
+  application_id           = keycard_application.backend_service.id
+  provider_id              = keycard_provider.github.id
+  subject                  = "repo:acme-corp/api-server:*"
+  allowed_audience         = "https://github.com/acme-corp"
+  authentication_condition = "claims.repository_owner == \"acme-corp\""
+}
+
+# The workload sends this as client_id alongside its token
+output "deploy_client_id" {
+  value = keycard_application_workload_identity.deploy.client_id
 }
 ```
 
@@ -41,14 +48,18 @@ resource "keycard_application_workload_identity" "internal_tools_any" {
 
 ### Optional
 
-- `subject` (String) The subject claim (sub) that must match in the bearer token. When omitted, any token from the provider will be accepted. Format depends on the token issuer:
+- `allowed_audience` (String) The value the token's `aud` must contain as its sole audience. When omitted, the zone's issuer URL is required. Not supported on version 1 credentials.
+- `authentication_condition` (String) A CEL predicate over the token's `claims` that must evaluate to `true`, such as `claims.repository_owner == "acme-corp"`. Not supported on version 1 credentials.
+- `subject` (String) The subject claim (sub) that must match in the bearer token. A trailing `*` matches by prefix. New credentials must set `subject` or `authentication_condition`. Format depends on the token issuer:
   - Kubernetes: `system:serviceaccount:<namespace>:<service-account-name>`
   - GitHub Actions: `repo:<org>/<repo>:ref:refs/heads/<branch>`
   - AWS EKS: `system:serviceaccount:<namespace>:<service-account-name>`
 
 ### Read-Only
 
+- `client_id` (String) The OAuth 2.0 `client_id` the workload sends alongside its token. Null for version 1 credentials.
 - `id` (String) Unique identifier of the workload identity credential.
+- `version` (Number) The credential's behavior version. New credentials are version 2. Version 1 credentials created by earlier provider releases are kept as-is.
 
 ## Import
 

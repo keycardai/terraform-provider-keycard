@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -18,8 +19,10 @@ import (
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var (
-	_ resource.Resource                = &ApplicationWorkloadIdentityResource{}
-	_ resource.ResourceWithImportState = &ApplicationWorkloadIdentityResource{}
+	_ resource.Resource                 = &ApplicationWorkloadIdentityResource{}
+	_ resource.ResourceWithImportState  = &ApplicationWorkloadIdentityResource{}
+	_ resource.ResourceWithModifyPlan   = &ApplicationWorkloadIdentityResource{}
+	_ resource.ResourceWithUpgradeState = &ApplicationWorkloadIdentityResource{}
 )
 
 func NewApplicationWorkloadIdentityResource() resource.Resource {
@@ -33,11 +36,15 @@ type ApplicationWorkloadIdentityResource struct {
 
 // ApplicationWorkloadIdentityModel describes the application workload identity data model.
 type ApplicationWorkloadIdentityModel struct {
-	ID            types.String `tfsdk:"id"`
-	ZoneID        types.String `tfsdk:"zone_id"`
-	ApplicationID types.String `tfsdk:"application_id"`
-	ProviderID    types.String `tfsdk:"provider_id"`
-	Subject       types.String `tfsdk:"subject"`
+	ID                      types.String `tfsdk:"id"`
+	ZoneID                  types.String `tfsdk:"zone_id"`
+	ApplicationID           types.String `tfsdk:"application_id"`
+	ProviderID              types.String `tfsdk:"provider_id"`
+	Subject                 types.String `tfsdk:"subject"`
+	AllowedAudience         types.String `tfsdk:"allowed_audience"`
+	AuthenticationCondition types.String `tfsdk:"authentication_condition"`
+	Version                 types.Int64  `tfsdk:"version"`
+	ClientID                types.String `tfsdk:"client_id"`
 }
 
 func (r *ApplicationWorkloadIdentityResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -46,6 +53,7 @@ func (r *ApplicationWorkloadIdentityResource) Metadata(ctx context.Context, req 
 
 func (r *ApplicationWorkloadIdentityResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Version: 1,
 		MarkdownDescription: "Manages a workload identity credential for a Keycard application. " +
 			"This allows applications to authenticate using tokens from external identity providers " +
 			"(Kubernetes, GitHub Actions, AWS EKS, etc.) with optional subject claim validation.",
@@ -81,7 +89,8 @@ func (r *ApplicationWorkloadIdentityResource) Schema(ctx context.Context, req re
 			},
 			"subject": schema.StringAttribute{
 				MarkdownDescription: "The subject claim (sub) that must match in the bearer token. " +
-					"When omitted, any token from the provider will be accepted. " +
+					"A trailing `*` matches by prefix. " +
+					"New credentials must set `subject` or `authentication_condition`. " +
 					"Format depends on the token issuer:\n" +
 					"  - Kubernetes: `system:serviceaccount:<namespace>:<service-account-name>`\n" +
 					"  - GitHub Actions: `repo:<org>/<repo>:ref:refs/heads/<branch>`\n" +
@@ -89,6 +98,38 @@ func (r *ApplicationWorkloadIdentityResource) Schema(ctx context.Context, req re
 				Optional: true,
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
+				},
+			},
+			"allowed_audience": schema.StringAttribute{
+				MarkdownDescription: "The value the token's `aud` must contain as its sole audience. " +
+					"When omitted, the zone's issuer URL is required. Not supported on version 1 credentials.",
+				Optional: true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
+			},
+			"authentication_condition": schema.StringAttribute{
+				MarkdownDescription: "A CEL predicate over the token's `claims` that must evaluate to `true`, " +
+					"such as `claims.repository_owner == \"acme-corp\"`. Not supported on version 1 credentials.",
+				Optional: true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
+			},
+			"version": schema.Int64Attribute{
+				MarkdownDescription: "The credential's behavior version. New credentials are version 2. " +
+					"Version 1 credentials created by earlier provider releases are kept as-is.",
+				Computed: true,
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
+			},
+			"client_id": schema.StringAttribute{
+				MarkdownDescription: "The OAuth 2.0 `client_id` the workload sends alongside its token. " +
+					"Null for version 1 credentials.",
+				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 		},
@@ -115,6 +156,105 @@ func (r *ApplicationWorkloadIdentityResource) Configure(ctx context.Context, req
 	r.client = client
 }
 
+func (r *ApplicationWorkloadIdentityResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	if req.Plan.Raw.IsNull() {
+		return
+	}
+
+	var plan ApplicationWorkloadIdentityModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Create and replacement produce a version 2 credential.
+	v2 := req.State.Raw.IsNull()
+	if !v2 {
+		var state ApplicationWorkloadIdentityModel
+		resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		// Forced replacements (-replace, taint) aren't visible here; they plan as version 1 first.
+		replacing := !plan.ZoneID.Equal(state.ZoneID) ||
+			!plan.ApplicationID.Equal(state.ApplicationID) ||
+			!plan.ProviderID.Equal(state.ProviderID)
+		v2 = replacing || state.Version.ValueInt64() == 2
+	}
+
+	if v2 {
+		if plan.Subject.IsNull() && plan.AuthenticationCondition.IsNull() {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("subject"),
+				"Missing Token Constraint",
+				"Set `subject` or `authentication_condition`. A credential that constrains neither would accept any token the provider issues.",
+			)
+		}
+		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("version"), types.Int64Value(2))...)
+		return
+	}
+
+	for _, attr := range []struct {
+		name  string
+		value types.String
+	}{
+		{"allowed_audience", plan.AllowedAudience},
+		{"authentication_condition", plan.AuthenticationCondition},
+	} {
+		if !attr.value.IsNull() {
+			resp.Diagnostics.AddAttributeError(
+				path.Root(attr.name),
+				"Unsupported On Version 1 Credential",
+				fmt.Sprintf("This credential is version 1, which doesn't support `%s`. To migrate, add a new "+
+					"`keycard_application_workload_identity` resource with this setting, update workloads to send its "+
+					"`client_id`, then remove this resource.", attr.name),
+			)
+		}
+	}
+}
+
+func (r *ApplicationWorkloadIdentityResource) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader {
+	return map[int64]resource.StateUpgrader{
+		// Schema version 0 predates version 2 credentials, so every credential in it is version 1.
+		0: {
+			PriorSchema: &schema.Schema{
+				Attributes: map[string]schema.Attribute{
+					"id":             schema.StringAttribute{Computed: true},
+					"zone_id":        schema.StringAttribute{Required: true},
+					"application_id": schema.StringAttribute{Required: true},
+					"provider_id":    schema.StringAttribute{Required: true},
+					"subject":        schema.StringAttribute{Optional: true},
+				},
+			},
+			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+				var prior struct {
+					ID            types.String `tfsdk:"id"`
+					ZoneID        types.String `tfsdk:"zone_id"`
+					ApplicationID types.String `tfsdk:"application_id"`
+					ProviderID    types.String `tfsdk:"provider_id"`
+					Subject       types.String `tfsdk:"subject"`
+				}
+				resp.Diagnostics.Append(req.State.Get(ctx, &prior)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				resp.Diagnostics.Append(resp.State.Set(ctx, ApplicationWorkloadIdentityModel{
+					ID:                      prior.ID,
+					ZoneID:                  prior.ZoneID,
+					ApplicationID:           prior.ApplicationID,
+					ProviderID:              prior.ProviderID,
+					Subject:                 prior.Subject,
+					AllowedAudience:         types.StringNull(),
+					AuthenticationCondition: types.StringNull(),
+					Version:                 types.Int64Value(1),
+					ClientID:                types.StringNull(),
+				})...)
+			},
+		},
+	}
+}
+
 func (r *ApplicationWorkloadIdentityResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data ApplicationWorkloadIdentityModel
 
@@ -131,11 +271,15 @@ func (r *ApplicationWorkloadIdentityResource) Create(ctx context.Context, req re
 		subjectPtr = data.Subject.ValueStringPointer()
 	}
 
+	version := client.ApplicationCredentialCreateTokenVersionN2
 	tokenCreate := client.ApplicationCredentialCreateToken{
-		ApplicationId: data.ApplicationID.ValueString(),
-		Type:          client.ApplicationCredentialCreateTokenTypeToken,
-		ProviderId:    data.ProviderID.ValueString(),
-		Subject:       subjectPtr,
+		ApplicationId:           data.ApplicationID.ValueString(),
+		Type:                    client.ApplicationCredentialCreateTokenTypeToken,
+		ProviderId:              data.ProviderID.ValueString(),
+		Subject:                 subjectPtr,
+		Version:                 &version,
+		AllowedAudience:         data.AllowedAudience.ValueStringPointer(),
+		AuthenticationCondition: data.AuthenticationCondition.ValueStringPointer(),
 	}
 
 	createReq := client.ApplicationCredentialCreate{}
@@ -236,6 +380,11 @@ func (r *ApplicationWorkloadIdentityResource) Update(ctx context.Context, req re
 	tokenUpdate := client.TokenCredentialUpdate{
 		Type:    &tokenUpdateType,
 		Subject: stringValueNullable(data.Subject),
+	}
+	// Version 1 credentials don't support the version 2 fields.
+	if data.Version.ValueInt64() == 2 {
+		tokenUpdate.AllowedAudience = stringValueNullable(data.AllowedAudience)
+		tokenUpdate.AuthenticationCondition = stringValueNullable(data.AuthenticationCondition)
 	}
 
 	updateReq := client.ApplicationCredentialUpdate{}
