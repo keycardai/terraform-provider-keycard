@@ -8,10 +8,51 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
+	"github.com/keycardai/terraform-provider-keycard/internal/client"
 )
+
+func TestApplicationPublicKeyCredentialMappingRejectsWrongType(t *testing.T) {
+	for _, credentialType := range []string{"url", "password", ""} {
+		t.Run(credentialType, func(t *testing.T) {
+			body, err := json.Marshal(map[string]string{"id": "other", "type": credentialType})
+			if err != nil {
+				t.Fatal(err)
+			}
+			var createResponse client.ApplicationCredentialCreateResponse
+			var readResponse client.ApplicationCredential
+			if err := json.Unmarshal(body, &createResponse); err != nil {
+				t.Fatal(err)
+			}
+			if err := json.Unmarshal(body, &readResponse); err != nil {
+				t.Fatal(err)
+			}
+			for name, mapResponse := range map[string]func(*ApplicationPublicKeyCredentialModel) diag.Diagnostics{
+				"create": func(data *ApplicationPublicKeyCredentialModel) diag.Diagnostics {
+					return updateApplicationPublicKeyCredentialModelFromCreateResponse(&createResponse, data)
+				},
+				"read": func(data *ApplicationPublicKeyCredentialModel) diag.Diagnostics {
+					return updateApplicationPublicKeyCredentialModelFromAPIResponse(&readResponse, data)
+				},
+			} {
+				t.Run(name, func(t *testing.T) {
+					data := ApplicationPublicKeyCredentialModel{ID: types.StringValue("original")}
+					diags := mapResponse(&data)
+					if len(diags) != 1 || diags[0].Summary() != "API Error" || diags[0].Detail() != fmt.Sprintf("Expected public key credential, got type %q", credentialType) {
+						t.Fatalf("unexpected diagnostics: %v", diags)
+					}
+					if data.ID.ValueString() != "original" {
+						t.Fatal("wrong-type response changed the model")
+					}
+				})
+			}
+		})
+	}
+}
 
 func publicKeyCredentialState(t *testing.T, r *ApplicationPublicKeyCredentialResource, identifier any) tfsdk.State {
 	t.Helper()
@@ -27,6 +68,10 @@ func publicKeyCredentialState(t *testing.T, r *ApplicationPublicKeyCredentialRes
 func TestApplicationPublicKeyCredentialCreate(t *testing.T) {
 	for _, identifier := range []any{nil, tftypes.UnknownValue, "custom-client"} {
 		t.Run(fmt.Sprint(identifier), func(t *testing.T) {
+			wantID := "generated-client"
+			if identifier == "custom-client" {
+				wantID = "custom-client"
+			}
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 				if req.Method != http.MethodPost || req.URL.Path != "/zones/z1/application-credentials" {
 					t.Errorf("unexpected request: %s %s", req.Method, req.URL.Path)
@@ -38,9 +83,7 @@ func TestApplicationPublicKeyCredentialCreate(t *testing.T) {
 				if body["type"] != "public-key" || body["application_id"] != "a1" || body["jwks_uri"] != "https://example.com/jwks.json" {
 					t.Errorf("unexpected body: %v", body)
 				}
-				wantID := "generated-client"
 				if identifier == "custom-client" {
-					wantID = "custom-client"
 					if body["identifier"] != wantID {
 						t.Errorf("identifier = %v", body["identifier"])
 					}
@@ -63,10 +106,6 @@ func TestApplicationPublicKeyCredentialCreate(t *testing.T) {
 			var data ApplicationPublicKeyCredentialModel
 			if diags := resp.State.Get(context.Background(), &data); diags.HasError() {
 				t.Fatal(diags)
-			}
-			wantID := "generated-client"
-			if identifier == "custom-client" {
-				wantID = "custom-client"
 			}
 			if data.Identifier.ValueString() != wantID || data.ID.ValueString() != "c1" || data.JWKSURI.ValueString() != "https://example.com/jwks.json" {
 				t.Errorf("state = %+v", data)

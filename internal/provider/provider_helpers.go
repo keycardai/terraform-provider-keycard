@@ -439,6 +439,10 @@ func updateApplicationPublicKeyCredentialModelFromCreateResponse(cred *client.Ap
 		diags.AddError("API Error", fmt.Sprintf("Expected public key credential response, got error: %s", err))
 		return diags
 	}
+	if publicKeyCred.Type != client.ApplicationCredentialPublicKeyTypePublicKey {
+		diags.AddError("API Error", fmt.Sprintf("Expected public key credential, got type %q", publicKeyCred.Type))
+		return diags
+	}
 
 	data.ID = types.StringValue(publicKeyCred.Id)
 	data.ZoneID = types.StringValue(publicKeyCred.ZoneId)
@@ -455,6 +459,10 @@ func updateApplicationPublicKeyCredentialModelFromAPIResponse(cred *client.Appli
 	publicKeyCred, err := cred.AsApplicationCredentialPublicKey()
 	if err != nil {
 		diags.AddError("API Error", fmt.Sprintf("Expected public key credential type, got error: %s", err))
+		return diags
+	}
+	if publicKeyCred.Type != client.ApplicationCredentialPublicKeyTypePublicKey {
+		diags.AddError("API Error", fmt.Sprintf("Expected public key credential, got type %q", publicKeyCred.Type))
 		return diags
 	}
 

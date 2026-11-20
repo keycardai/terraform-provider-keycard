@@ -19,10 +19,10 @@ func TestAccApplicationPublicKeyCredentialResource_identifier(t *testing.T) {
 			{
 				Config: testAccApplicationPublicKeyCredentialResourceConfig_basic(rName, jwksURI) + fmt.Sprintf(`
 resource "keycard_application_public_key_credential" "custom" {
- zone_id = data.keycard_organization.test.zone_id
- application_id = keycard_application.test.id
- jwks_uri = %q
- identifier = %q
+  zone_id        = data.keycard_organization.test.zone_id
+  application_id = keycard_application.test.id
+  jwks_uri       = %q
+  identifier     = %q
 }
 `, jwksURI, rName),
 				Check: resource.TestCheckResourceAttr("keycard_application_public_key_credential.custom", "identifier", rName),
