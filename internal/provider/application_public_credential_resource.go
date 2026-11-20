@@ -73,12 +73,8 @@ func (r *ApplicationPublicCredentialResource) Schema(ctx context.Context, req re
 			},
 			"identifier": schema.StringAttribute{
 				MarkdownDescription: "The client identifier for this public credential, " +
-					"used as the OAuth 2.0 client_id in authorization requests. " +
-					"Changing this will replace the credential.",
+					"used as the OAuth 2.0 client_id in authorization requests.",
 				Required: true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 				},
@@ -208,12 +204,49 @@ func (r *ApplicationPublicCredentialResource) Read(ctx context.Context, req reso
 }
 
 func (r *ApplicationPublicCredentialResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	// This resource does not support updates - all attributes require replacement
-	// This method should never be called due to RequiresReplace plan modifiers
-	resp.Diagnostics.AddError(
-		"Update Not Supported",
-		"Application public credentials are immutable. Any changes require resource replacement.",
-	)
+	var data ApplicationPublicCredentialModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	updateType := client.Public
+	credentialUpdate := client.PublicCredentialUpdate{Type: &updateType, Identifier: data.Identifier.ValueStringPointer()}
+
+	updateReq := client.ApplicationCredentialUpdate{}
+	err := updateReq.FromPublicCredentialUpdate(credentialUpdate)
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to construct application public credential update request body, got error: %s", err))
+		return
+	}
+
+	updateResp, err := r.client.UpdateApplicationCredentialWithResponse(ctx, data.ZoneID.ValueString(), data.ID.ValueString(), updateReq)
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update application public credential, got error: %s", err))
+		return
+	}
+
+	if updateResp.StatusCode() != 200 {
+		resp.Diagnostics.AddError(
+			"API Error",
+			fmt.Sprintf("Unable to update application public credential, got status %d: %s", updateResp.StatusCode(), string(updateResp.Body)),
+		)
+		return
+	}
+
+	if updateResp.JSON200 == nil {
+		resp.Diagnostics.AddError("API Error", "Unable to update application public credential, no response body")
+		return
+	}
+
+	resp.Diagnostics.Append(updateApplicationPublicCredentialModelFromAPIResponse(updateResp.JSON200, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
 func (r *ApplicationPublicCredentialResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {

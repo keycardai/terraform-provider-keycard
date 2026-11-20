@@ -69,11 +69,8 @@ func (r *ApplicationURLCredentialResource) Schema(ctx context.Context, req resou
 				},
 			},
 			"url": schema.StringAttribute{
-				MarkdownDescription: "The URL credential value. Must be a valid URL. Changing this will replace the credential.",
+				MarkdownDescription: "The URL credential value. Must be a valid URL.",
 				Required:            true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 			},
 		},
 	}
@@ -200,12 +197,49 @@ func (r *ApplicationURLCredentialResource) Read(ctx context.Context, req resourc
 }
 
 func (r *ApplicationURLCredentialResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	// This resource does not support updates - all attributes require replacement
-	// This method should never be called due to RequiresReplace plan modifiers
-	resp.Diagnostics.AddError(
-		"Update Not Supported",
-		"Application URL credentials are immutable. Any changes require resource replacement.",
-	)
+	var data ApplicationURLCredentialModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	updateType := client.Url
+	credentialUpdate := client.UrlCredentialUpdate{Type: &updateType, Identifier: data.URL.ValueStringPointer()}
+
+	updateReq := client.ApplicationCredentialUpdate{}
+	err := updateReq.FromUrlCredentialUpdate(credentialUpdate)
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to construct application URL credential update request body, got error: %s", err))
+		return
+	}
+
+	updateResp, err := r.client.UpdateApplicationCredentialWithResponse(ctx, data.ZoneID.ValueString(), data.ID.ValueString(), updateReq)
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update application URL credential, got error: %s", err))
+		return
+	}
+
+	if updateResp.StatusCode() != 200 {
+		resp.Diagnostics.AddError(
+			"API Error",
+			fmt.Sprintf("Unable to update application URL credential, got status %d: %s", updateResp.StatusCode(), string(updateResp.Body)),
+		)
+		return
+	}
+
+	if updateResp.JSON200 == nil {
+		resp.Diagnostics.AddError("API Error", "Unable to update application URL credential, no response body")
+		return
+	}
+
+	resp.Diagnostics.Append(updateApplicationURLCredentialModelFromAPIResponse(updateResp.JSON200, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
 func (r *ApplicationURLCredentialResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
