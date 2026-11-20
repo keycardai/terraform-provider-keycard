@@ -431,6 +431,50 @@ func setApplicationWorkloadIdentityV2Fields(tokenCred client.ApplicationCredenti
 	}
 }
 
+func updateApplicationPublicKeyCredentialModelFromCreateResponse(cred *client.ApplicationCredentialCreateResponse, data *ApplicationPublicKeyCredentialModel) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	publicKeyCred, err := cred.AsApplicationCredentialPublicKey()
+	if err != nil {
+		diags.AddError("API Error", fmt.Sprintf("Expected public key credential response, got error: %s", err))
+		return diags
+	}
+	if publicKeyCred.Type != client.ApplicationCredentialPublicKeyTypePublicKey {
+		diags.AddError("API Error", fmt.Sprintf("Expected public key credential, got type %q", publicKeyCred.Type))
+		return diags
+	}
+
+	data.ID = types.StringValue(publicKeyCred.Id)
+	data.ZoneID = types.StringValue(publicKeyCred.ZoneId)
+	data.ApplicationID = types.StringValue(publicKeyCred.ApplicationId)
+	data.Identifier = types.StringValue(publicKeyCred.Identifier)
+	data.JWKSURI = types.StringValue(publicKeyCred.JwksUri)
+
+	return diags
+}
+
+func updateApplicationPublicKeyCredentialModelFromAPIResponse(cred *client.ApplicationCredential, data *ApplicationPublicKeyCredentialModel) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	publicKeyCred, err := cred.AsApplicationCredentialPublicKey()
+	if err != nil {
+		diags.AddError("API Error", fmt.Sprintf("Expected public key credential type, got error: %s", err))
+		return diags
+	}
+	if publicKeyCred.Type != client.ApplicationCredentialPublicKeyTypePublicKey {
+		diags.AddError("API Error", fmt.Sprintf("Expected public key credential, got type %q", publicKeyCred.Type))
+		return diags
+	}
+
+	data.ID = types.StringValue(publicKeyCred.Id)
+	data.ZoneID = types.StringValue(publicKeyCred.ZoneId)
+	data.ApplicationID = types.StringValue(publicKeyCred.ApplicationId)
+	data.Identifier = types.StringValue(publicKeyCred.Identifier)
+	data.JWKSURI = types.StringValue(publicKeyCred.JwksUri)
+
+	return diags
+}
+
 // updateApplicationURLCredentialModelFromCreateResponse updates the model with data from the
 // ApplicationCredentialCreateResponse. This function is called during Create.
 func updateApplicationURLCredentialModelFromCreateResponse(cred *client.ApplicationCredentialCreateResponse, data *ApplicationURLCredentialModel) diag.Diagnostics {

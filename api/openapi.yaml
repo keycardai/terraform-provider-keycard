@@ -4238,6 +4238,10 @@ components:
           type: string
           enum:
             - public-key
+        jwks_uri:
+          format: uri
+          description: JWKS URI to retrieve public keys from
+          type: string
       title: Public Key Credential Update
     UrlCredentialUpdate:
       description: Schema for updating a URL credential
