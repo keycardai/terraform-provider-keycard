@@ -13,15 +13,15 @@ import (
 func TestAccResourceResource_credentialLifetimeSeconds(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
-	withLifetime := func(value string) string {
-		return testAccResourceResourceConfig_withCredentialLifetime(providerName, rName, value)
-	}
+	initialConfig := testAccResourceResourceConfig_withCredentialLifetime(providerName, rName, "60")
+	updatedConfig := testAccResourceResourceConfig_withCredentialLifetime(providerName, rName, "86400")
+	unsetConfig := testAccResourceResourceConfig_withCredentialLifetime(providerName, rName, "")
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: withLifetime("60"),
+				Config: initialConfig,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("keycard_resource.test", "credential_lifetime_seconds", "60"),
 					resource.TestCheckResourceAttr("data.keycard_resource.test", "credential_lifetime_seconds", "60"),
@@ -34,15 +34,15 @@ func TestAccResourceResource_credentialLifetimeSeconds(t *testing.T) {
 				ImportStateVerify: true,
 			},
 			{
-				Config:   withLifetime("60"),
+				Config:   initialConfig,
 				PlanOnly: true,
 			},
 			{
-				Config: withLifetime("86400"),
+				Config: updatedConfig,
 				Check:  resource.TestCheckResourceAttr("keycard_resource.test", "credential_lifetime_seconds", "86400"),
 			},
 			{
-				Config: withLifetime(""),
+				Config: unsetConfig,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckNoResourceAttr("keycard_resource.test", "credential_lifetime_seconds"),
 					resource.TestCheckNoResourceAttr("data.keycard_resource.test", "credential_lifetime_seconds"),
@@ -55,7 +55,7 @@ func TestAccResourceResource_credentialLifetimeSeconds(t *testing.T) {
 				ImportStateVerify: true,
 			},
 			{
-				Config:   withLifetime(""),
+				Config:   unsetConfig,
 				PlanOnly: true,
 			},
 		},
