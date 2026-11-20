@@ -41,9 +41,9 @@ const (
 	zonePrefix = "tftest-"
 
 	// minZoneAge keeps the sweeper away from zones a running test still owns.
-	// The two-hour minimum is well above the acceptance job timeout, so any
-	// older zone belongs to a run that has already ended.
-	minZoneAge = 2 * time.Hour
+	// It is well above the acceptance job timeout, so any older zone belongs
+	// to a run that has already ended.
+	minZoneAge = time.Hour
 
 	// concurrency bounds parallel deletes. Each delete deregisters the zone
 	// from Vault and the router, so a large backlog is slow serially.
