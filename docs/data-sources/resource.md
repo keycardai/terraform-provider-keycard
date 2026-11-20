@@ -43,6 +43,7 @@ resource "keycard_application_dependency" "calendar_dependency" {
 ### Read-Only
 
 - `application_id` (String) The application that provides this resource. May be empty.
+- `credential_lifetime_seconds` (Number) Credential lifetime override in seconds. Null when the default from the provider or zone is used.
 - `credential_provider_id` (String) The provider that issues credentials for accessing this resource. May be empty.
 - `description` (String) Optional description of the resource's purpose. May be empty.
 - `metadata` (Attributes) Metadata associated with the resource. May be empty. (see [below for nested schema](#nestedatt--metadata))

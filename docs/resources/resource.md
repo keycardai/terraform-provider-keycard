@@ -16,10 +16,11 @@ Manages a Keycard resource. A resource is a system that exposes protected inform
 # Google Calendar API resource
 # Requires Google OAuth provider and specifies calendar scope
 resource "keycard_resource" "google_calendar" {
-  name                   = "Google Calendar"
-  identifier             = "https://www.googleapis.com/calendar/v3"
-  zone_id                = keycard_zone.production.id
-  credential_provider_id = keycard_provider.google.id
+  name                        = "Google Calendar"
+  identifier                  = "https://www.googleapis.com/calendar/v3"
+  zone_id                     = keycard_zone.production.id
+  credential_provider_id      = keycard_provider.google.id
+  credential_lifetime_seconds = 3600
 
   oauth2 = {
     scopes = ["https://www.googleapis.com/auth/calendar"]
@@ -92,6 +93,7 @@ resource "keycard_resource" "api_root" {
 ### Optional
 
 - `application_id` (String) The application that provides this resource.
+- `credential_lifetime_seconds` (Number) Credential lifetime override in seconds, from 60 to 86400. When unset, the default from the provider or zone is used.
 - `description` (String) Optional description of the resource's purpose.
 - `metadata` (Attributes) Metadata associated with the resource. (see [below for nested schema](#nestedatt--metadata))
 - `oauth2` (Attributes) OAuth2 configuration for the resource. (see [below for nested schema](#nestedatt--oauth2))
