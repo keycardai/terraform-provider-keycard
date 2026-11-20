@@ -34,7 +34,7 @@ resource "keycard_application_url_credential" "keycard_mcp_gateway_auth" {
 ### Required
 
 - `application_id` (String) The application this credential belongs to. Changing this will replace the credential.
-- `url` (String) The URL credential value. Must be a valid URL. Changing this will replace the credential.
+- `url` (String) The URL credential value. Must be a valid URL.
 - `zone_id` (String) The zone this credential belongs to. Changing this will replace the credential.
 
 ### Read-Only

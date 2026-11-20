@@ -13,6 +13,8 @@ BREAKING CHANGES:
 
 RESOURCES:
 
+* `keycard_application_url_credential` and `keycard_application_public_credential` - Update the URL or client identifier in place without replacing the credential.
+
 * `keycard_provider` - Added `oauth2.jwks_uri` and `oauth2.jwks`. They can't both be set. `jwks` is a JSON string, such as `jsonencode({ keys = [...] })` or `file("jwks.json")`, and changes in whitespace or member order don't cause a diff. Removing either attribute, or the whole `oauth2` block, from the configuration clears it on the provider. A provider that already has a `jwks_uri` or `jwks` set outside Terraform will plan its removal; add it to the configuration to keep it.
 * `keycard_application_workload_identity` - Added `allowed_audience` and `authentication_condition`, and computed `version` and `client_id`. Setting `allowed_audience` or `authentication_condition` on a version 1 credential fails at plan; migrate by adding a new resource, switching workloads to its `client_id`, then removing the old one.
 

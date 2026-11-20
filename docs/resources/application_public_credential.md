@@ -35,7 +35,7 @@ output "spa_client_id" {
 ### Required
 
 - `application_id` (String) The application this credential belongs to. Changing this will replace the credential.
-- `identifier` (String) The client identifier for this public credential, used as the OAuth 2.0 client_id in authorization requests. Changing this will replace the credential.
+- `identifier` (String) The client identifier for this public credential, used as the OAuth 2.0 client_id in authorization requests.
 - `zone_id` (String) The zone this credential belongs to. Changing this will replace the credential.
 
 ### Read-Only

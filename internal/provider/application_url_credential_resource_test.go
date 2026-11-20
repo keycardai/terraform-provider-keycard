@@ -57,6 +57,7 @@ func TestAccApplicationURLCredentialResource_basic(t *testing.T) {
 }
 
 func TestAccApplicationURLCredentialResource_urlChange(t *testing.T) {
+	var credentialID string
 	rName := acctest.RandomWithPrefix("tftest")
 	urlValue1 := fmt.Sprintf("https://%s-1.example.com", rName)
 	urlValue2 := fmt.Sprintf("https://%s-2.example.com", rName)
@@ -69,16 +70,17 @@ func TestAccApplicationURLCredentialResource_urlChange(t *testing.T) {
 			{
 				Config: testAccApplicationURLCredentialResourceConfig_basic(rName, urlValue1),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet("keycard_application_url_credential.test", "id"),
+					testAccCaptureResourceAttr("keycard_application_url_credential.test", "id", &credentialID),
 					resource.TestCheckResourceAttr("keycard_application_url_credential.test", "url", urlValue1),
 				),
 			},
-			// Change URL (should force replacement)
+			// Change URL in place
 			{
 				Config: testAccApplicationURLCredentialResourceConfig_basic(rName, urlValue2),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("keycard_application_url_credential.test", "id"),
 					resource.TestCheckResourceAttr("keycard_application_url_credential.test", "url", urlValue2),
+					resource.TestCheckResourceAttrPtr("keycard_application_url_credential.test", "id", &credentialID),
 				),
 			},
 		},

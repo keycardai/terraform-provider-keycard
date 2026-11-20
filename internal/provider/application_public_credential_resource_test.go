@@ -10,6 +10,35 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
+func TestAccApplicationPublicCredentialResource_identifierChange(t *testing.T) {
+	var credentialID string
+	rName := acctest.RandomWithPrefix("tftest")
+	urlValue1 := fmt.Sprintf("https://%s-1.example.com", rName)
+	urlValue2 := fmt.Sprintf("https://%s-2.example.com", rName)
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccApplicationPublicCredentialResourceConfig_basic(rName, urlValue1),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccCaptureResourceAttr("keycard_application_public_credential.test", "id", &credentialID),
+					resource.TestCheckResourceAttr("keycard_application_public_credential.test", "identifier", urlValue1),
+				),
+			},
+			{
+				Config: testAccApplicationPublicCredentialResourceConfig_basic(rName, urlValue2),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("keycard_application_public_credential.test", "id"),
+					resource.TestCheckResourceAttr("keycard_application_public_credential.test", "identifier", urlValue2),
+					resource.TestCheckResourceAttrPtr("keycard_application_public_credential.test", "id", &credentialID),
+				),
+			},
+		},
+	})
+}
+
 func TestAccApplicationPublicCredentialResource_basic(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	identifier := "client-" + rName
