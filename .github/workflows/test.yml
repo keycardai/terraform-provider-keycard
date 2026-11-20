@@ -98,13 +98,14 @@ jobs:
     name: Sweep leaked test zones
     needs: test
     if: ${{ always() && github.event.pull_request.head.repo.full_name == github.repository }}
+    continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 35
-    concurrency:
-      group: sweep
-      cancel-in-progress: false
     steps:
+      # Run reviewed code because this job deletes zones.
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version-file: 'go.mod'
