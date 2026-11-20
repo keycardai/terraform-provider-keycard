@@ -15,12 +15,13 @@ import (
 func TestResourceCredentialLifetimeSecondsRequests(t *testing.T) {
 	for _, operation := range []string{"create", "update"} {
 		for _, tc := range []struct {
-			name  string
-			value types.Int64
-			want  string
+			name       string
+			value      types.Int64
+			wantCreate string
+			wantUpdate string
 		}{
-			{name: "set", value: types.Int64Value(3600), want: "3600"},
-			{name: "unset", value: types.Int64Null(), want: "null"},
+			{name: "set", value: types.Int64Value(3600), wantCreate: "3600", wantUpdate: "3600"},
+			{name: "unset", value: types.Int64Null(), wantUpdate: "null"},
 			{name: "unknown", value: types.Int64Unknown()},
 		} {
 			t.Run(operation+"/"+tc.name, func(t *testing.T) {
@@ -75,9 +76,9 @@ func TestResourceCredentialLifetimeSecondsRequests(t *testing.T) {
 					}
 					state = resp.State
 				}
-				want := tc.want
-				if operation == "create" && tc.value.IsNull() {
-					want = ""
+				want := tc.wantCreate
+				if operation == "update" {
+					want = tc.wantUpdate
 				}
 				if got := string(body["credential_lifetime_seconds"]); got != want {
 					t.Errorf("request lifetime = %q, want %q", got, want)
