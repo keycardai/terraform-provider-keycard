@@ -3,12 +3,59 @@ package provider
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
+
+func TestAccResourceResource_credentialLifetimeSeconds(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tftest")
+	providerName := acctest.RandomWithPrefix("tftest-provider")
+	base := testAccResourceResourceConfig_basic(providerName, rName)
+	base += `
+data "keycard_resource" "test" {
+  id = keycard_resource.test.id
+  zone_id = keycard_resource.test.zone_id
+}
+`
+	withLifetime := func(value int) string {
+		return strings.Replace(base, "resource \"keycard_resource\" \"test\" {", fmt.Sprintf("resource \"keycard_resource\" \"test\" {\n  credential_lifetime_seconds = %d", value), 1)
+	}
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{Config: withLifetime(60), Check: resource.ComposeAggregateTestCheckFunc(
+				resource.TestCheckResourceAttr("keycard_resource.test", "credential_lifetime_seconds", "60"),
+				resource.TestCheckResourceAttr("data.keycard_resource.test", "credential_lifetime_seconds", "60"),
+			)},
+			{ResourceName: "keycard_resource.test", ImportState: true, ImportStateIdFunc: testAccResourceImportStateIdFunc(), ImportStateVerify: true},
+			{Config: withLifetime(60), PlanOnly: true},
+			{Config: withLifetime(86400), Check: resource.TestCheckResourceAttr("keycard_resource.test", "credential_lifetime_seconds", "86400")},
+			{Config: base, Check: resource.ComposeAggregateTestCheckFunc(
+				resource.TestCheckNoResourceAttr("keycard_resource.test", "credential_lifetime_seconds"),
+				resource.TestCheckNoResourceAttr("data.keycard_resource.test", "credential_lifetime_seconds"),
+			)},
+			{ResourceName: "keycard_resource.test", ImportState: true, ImportStateIdFunc: testAccResourceImportStateIdFunc(), ImportStateVerify: true},
+			{Config: base, PlanOnly: true},
+		},
+	})
+}
+
+func TestAccResourceResource_credentialLifetimeSecondsInvalid(t *testing.T) {
+	for _, value := range []int{59, 86401} {
+		t.Run(fmt.Sprint(value), func(t *testing.T) {
+			config := strings.Replace(testAccResourceResourceConfig_basic("tftest-provider", "tftest-resource"), "resource \"keycard_resource\" \"test\" {", fmt.Sprintf("resource \"keycard_resource\" \"test\" {\n  credential_lifetime_seconds = %d", value), 1)
+			resource.ParallelTest(t, resource.TestCase{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Steps:                    []resource.TestStep{{Config: config, PlanOnly: true, ExpectError: regexp.MustCompile(`Attribute credential_lifetime_seconds value must be between 60 and 86400`)}},
+			})
+		})
+	}
+}
 
 func TestAccResourceResource_basic(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
@@ -34,7 +81,7 @@ func TestAccResourceResource_basic(t *testing.T) {
 			{
 				ResourceName:      "keycard_resource.test",
 				ImportState:       true,
-				ImportStateIdFunc: testAccResourceImportStateIdFunc("keycard_resource.test"),
+				ImportStateIdFunc: testAccResourceImportStateIdFunc(),
 				ImportStateVerify: true,
 			},
 			// Update and Read testing
@@ -221,7 +268,7 @@ func TestAccResourceResource_complete(t *testing.T) {
 			{
 				ResourceName:      "keycard_resource.test",
 				ImportState:       true,
-				ImportStateIdFunc: testAccResourceImportStateIdFunc("keycard_resource.test"),
+				ImportStateIdFunc: testAccResourceImportStateIdFunc(),
 				ImportStateVerify: true,
 			},
 		},
@@ -340,7 +387,8 @@ func TestAccResourceResource_emptyApplicationIdInvalid(t *testing.T) {
 }
 
 // Helper function to generate import state ID in format zones/{zone-id}/resources/{resource-id}.
-func testAccResourceImportStateIdFunc(resourceName string) resource.ImportStateIdFunc {
+func testAccResourceImportStateIdFunc() resource.ImportStateIdFunc {
+	const resourceName = "keycard_resource.test"
 	return func(s *terraform.State) (string, error) {
 		rs, ok := s.RootModule().Resources[resourceName]
 		if !ok {
