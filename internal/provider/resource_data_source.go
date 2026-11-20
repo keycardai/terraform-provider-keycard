@@ -36,10 +36,6 @@ func (d *ResourceDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 		MarkdownDescription: "Reads a Keycard resource. A resource is a system that exposes protected information or functionality requiring authentication.",
 
 		Attributes: map[string]schema.Attribute{
-			"credential_lifetime_seconds": schema.Int64Attribute{
-				MarkdownDescription: "Credential lifetime override in seconds. Null when the default from the provider or zone is used.",
-				Computed:            true,
-			},
 			"id": schema.StringAttribute{
 				MarkdownDescription: "Unique identifier of the resource. Either `id` or `identifier` must be provided, but not both.",
 				Optional:            true,
@@ -64,6 +60,10 @@ func (d *ResourceDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 			},
 			"credential_provider_id": schema.StringAttribute{
 				MarkdownDescription: "The provider that issues credentials for accessing this resource. May be empty.",
+				Computed:            true,
+			},
+			"credential_lifetime_seconds": schema.Int64Attribute{
+				MarkdownDescription: "Credential lifetime override in seconds. Null when the default from the provider or zone is used.",
 				Computed:            true,
 			},
 			"application_id": schema.StringAttribute{

@@ -3670,15 +3670,6 @@ components:
       description: 'A Resource is a system that exposes protected information or functionality. It requires authentication of the requesting actor, which may be a user or application, before allowing access.'
       type: object
       properties:
-        credential_lifetime_seconds:
-          type: integer
-          nullable: true
-          minimum: 60
-          maximum: 86400
-          description: Credential lifetime override in seconds. When set, overrides the
-            default credential lifetime for this resource. When absent, the
-            default from the provider or zone is used.
-          x-audit: true
         id:
           description: Unique identifier of the resource
           type: string
@@ -3718,6 +3709,15 @@ components:
         credential_provider_id:
           description: ID of the credential provider for this resource
           type: string
+        credential_lifetime_seconds:
+          type: integer
+          nullable: true
+          minimum: 60
+          maximum: 86400
+          description: Credential lifetime override in seconds. When set, overrides the
+            default credential lifetime for this resource. When absent, the
+            default from the provider or zone is used.
+          x-audit: true
         credential_provider:
           description: 'Deprecated: Nested provider object. Use credential_provider_id to fetch provider separately. When this resource appears nested in another API response, this field will be undefined.'
           allOf:
@@ -3764,12 +3764,6 @@ components:
       description: Schema for creating a new resource
       type: object
       properties:
-        credential_lifetime_seconds:
-          minimum: 60
-          maximum: 86400
-          description: Credential lifetime override in seconds. When set, overrides the
-            default credential lifetime for this resource.
-          type: integer
         name:
           description: Human-readable name
           type: string
@@ -3793,6 +3787,12 @@ components:
         credential_provider_id:
           description: ID of the credential provider to associate with the resource
           type: string
+        credential_lifetime_seconds:
+          minimum: 60
+          maximum: 86400
+          description: Credential lifetime override in seconds. When set, overrides the
+            default credential lifetime for this resource.
+          type: integer
         application_id:
           description: ID of the application that provides this resource
           type: string
@@ -3813,13 +3813,6 @@ components:
         **Warning:** Changing the `identifier` field may break existing integrations and dependencies.
       type: object
       properties:
-        credential_lifetime_seconds:
-          nullable: true
-          minimum: 60
-          maximum: 86400
-          description: Credential lifetime override in seconds. Set to null to clear the
-            override and use the default.
-          type: integer
         name:
           description: Human-readable name
           type: string
@@ -3846,6 +3839,13 @@ components:
           description: ID of the credential provider to associate with the resource (set to null to unset)
           type: string
           nullable: true
+        credential_lifetime_seconds:
+          nullable: true
+          minimum: 60
+          maximum: 86400
+          description: Credential lifetime override in seconds. Set to null to clear the
+            override and use the default.
+          type: integer
         application_id:
           description: ID of the application that provides this resource (set to null to unset)
           type: string

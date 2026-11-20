@@ -3,7 +3,6 @@ package provider
 import (
 	"fmt"
 	"regexp"
-	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
@@ -14,33 +13,51 @@ import (
 func TestAccResourceResource_credentialLifetimeSeconds(t *testing.T) {
 	rName := acctest.RandomWithPrefix("tftest")
 	providerName := acctest.RandomWithPrefix("tftest-provider")
-	base := testAccResourceResourceConfig_basic(providerName, rName)
-	base += `
-data "keycard_resource" "test" {
-  id = keycard_resource.test.id
-  zone_id = keycard_resource.test.zone_id
-}
-`
-	withLifetime := func(value int) string {
-		return strings.Replace(base, "resource \"keycard_resource\" \"test\" {", fmt.Sprintf("resource \"keycard_resource\" \"test\" {\n  credential_lifetime_seconds = %d", value), 1)
+	withLifetime := func(value string) string {
+		return testAccResourceResourceConfig_withCredentialLifetime(providerName, rName, value)
 	}
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
-			{Config: withLifetime(60), Check: resource.ComposeAggregateTestCheckFunc(
-				resource.TestCheckResourceAttr("keycard_resource.test", "credential_lifetime_seconds", "60"),
-				resource.TestCheckResourceAttr("data.keycard_resource.test", "credential_lifetime_seconds", "60"),
-			)},
-			{ResourceName: "keycard_resource.test", ImportState: true, ImportStateIdFunc: testAccResourceImportStateIdFunc(), ImportStateVerify: true},
-			{Config: withLifetime(60), PlanOnly: true},
-			{Config: withLifetime(86400), Check: resource.TestCheckResourceAttr("keycard_resource.test", "credential_lifetime_seconds", "86400")},
-			{Config: base, Check: resource.ComposeAggregateTestCheckFunc(
-				resource.TestCheckNoResourceAttr("keycard_resource.test", "credential_lifetime_seconds"),
-				resource.TestCheckNoResourceAttr("data.keycard_resource.test", "credential_lifetime_seconds"),
-			)},
-			{ResourceName: "keycard_resource.test", ImportState: true, ImportStateIdFunc: testAccResourceImportStateIdFunc(), ImportStateVerify: true},
-			{Config: base, PlanOnly: true},
+			{
+				Config: withLifetime("60"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("keycard_resource.test", "credential_lifetime_seconds", "60"),
+					resource.TestCheckResourceAttr("data.keycard_resource.test", "credential_lifetime_seconds", "60"),
+				),
+			},
+			{
+				ResourceName:      "keycard_resource.test",
+				ImportState:       true,
+				ImportStateIdFunc: testAccResourceImportStateIdFunc(),
+				ImportStateVerify: true,
+			},
+			{
+				Config:   withLifetime("60"),
+				PlanOnly: true,
+			},
+			{
+				Config: withLifetime("86400"),
+				Check:  resource.TestCheckResourceAttr("keycard_resource.test", "credential_lifetime_seconds", "86400"),
+			},
+			{
+				Config: withLifetime(""),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckNoResourceAttr("keycard_resource.test", "credential_lifetime_seconds"),
+					resource.TestCheckNoResourceAttr("data.keycard_resource.test", "credential_lifetime_seconds"),
+				),
+			},
+			{
+				ResourceName:      "keycard_resource.test",
+				ImportState:       true,
+				ImportStateIdFunc: testAccResourceImportStateIdFunc(),
+				ImportStateVerify: true,
+			},
+			{
+				Config:   withLifetime(""),
+				PlanOnly: true,
+			},
 		},
 	})
 }
@@ -48,10 +65,16 @@ data "keycard_resource" "test" {
 func TestAccResourceResource_credentialLifetimeSecondsInvalid(t *testing.T) {
 	for _, value := range []int{59, 86401} {
 		t.Run(fmt.Sprint(value), func(t *testing.T) {
-			config := strings.Replace(testAccResourceResourceConfig_basic("tftest-provider", "tftest-resource"), "resource \"keycard_resource\" \"test\" {", fmt.Sprintf("resource \"keycard_resource\" \"test\" {\n  credential_lifetime_seconds = %d", value), 1)
+			config := testAccResourceResourceConfig_withCredentialLifetime("tftest-provider", "tftest-resource", fmt.Sprint(value))
 			resource.ParallelTest(t, resource.TestCase{
 				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-				Steps:                    []resource.TestStep{{Config: config, PlanOnly: true, ExpectError: regexp.MustCompile(`Attribute credential_lifetime_seconds value must be between 60 and 86400`)}},
+				Steps: []resource.TestStep{
+					{
+						Config:      config,
+						PlanOnly:    true,
+						ExpectError: regexp.MustCompile(`Attribute credential_lifetime_seconds value must be between 60 and 86400`),
+					},
+				},
 			})
 		})
 	}
@@ -633,4 +656,34 @@ resource "keycard_resource" "test" {
   credential_provider_id = keycard_provider.test.id
 }
 `, providerName, resourceName, zoneID)
+}
+
+func testAccResourceResourceConfig_withCredentialLifetime(providerName, resourceName, lifetime string) string {
+	lifetimeConfig := ""
+	if lifetime != "" {
+		lifetimeConfig = fmt.Sprintf("  credential_lifetime_seconds = %s", lifetime)
+	}
+	return testAccOrgZone + fmt.Sprintf(`
+resource "keycard_provider" "test" {
+  name    = %[1]q
+  zone_id = data.keycard_organization.test.zone_id
+
+  oauth2 = {
+    issuer = "https://%[1]s.example.com"
+  }
+}
+
+resource "keycard_resource" "test" {
+  name                        = %[2]q
+  identifier                  = "https://%[2]s.example.com"
+  zone_id                     = data.keycard_organization.test.zone_id
+  credential_provider_id      = keycard_provider.test.id
+%[3]s
+}
+
+data "keycard_resource" "test" {
+  id      = keycard_resource.test.id
+  zone_id = keycard_resource.test.zone_id
+}
+`, providerName, resourceName, lifetimeConfig)
 }
