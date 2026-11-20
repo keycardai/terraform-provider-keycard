@@ -10,11 +10,51 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
 )
+
+func TestApplicationPublicKeyCredentialIdentifierPlan(t *testing.T) {
+	r := &ApplicationPublicKeyCredentialResource{}
+	state := publicKeyCredentialState(t, r, "generated-client")
+	var schemaResp resource.SchemaResponse
+	r.Schema(context.Background(), resource.SchemaRequest{}, &schemaResp)
+	attribute, ok := schemaResp.Schema.Attributes["identifier"].(schema.StringAttribute)
+	if !ok {
+		t.Fatal("identifier must be a string attribute")
+	}
+	for _, tc := range []struct {
+		name    string
+		config  types.String
+		plan    types.String
+		want    types.String
+		replace bool
+	}{
+		{"generated identifier on JWKS update", types.StringNull(), types.StringUnknown(), types.StringValue("generated-client"), false},
+		{"configured identifier change", types.StringValue("new-client"), types.StringValue("new-client"), types.StringValue("new-client"), true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			req := planmodifier.StringRequest{State: state, Plan: tfsdk.Plan(state), ConfigValue: tc.config, PlanValue: tc.plan, StateValue: types.StringValue("generated-client")}
+			var replace bool
+			for _, modifier := range attribute.PlanModifiers {
+				resp := planmodifier.StringResponse{PlanValue: req.PlanValue}
+				modifier.PlanModifyString(context.Background(), req, &resp)
+				if resp.Diagnostics.HasError() {
+					t.Fatal(resp.Diagnostics)
+				}
+				req.PlanValue = resp.PlanValue
+				replace = replace || resp.RequiresReplace
+			}
+			if !req.PlanValue.Equal(tc.want) || replace != tc.replace {
+				t.Errorf("plan = %v, replace = %v", req.PlanValue, replace)
+			}
+		})
+	}
+}
 
 func TestApplicationPublicKeyCredentialMappingRejectsWrongType(t *testing.T) {
 	for _, credentialType := range []string{"url", "password", ""} {
