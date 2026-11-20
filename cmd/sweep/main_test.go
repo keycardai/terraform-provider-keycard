@@ -41,6 +41,16 @@ func TestSweepable(t *testing.T) {
 			want: false,
 		},
 		{
+			name: "test zone between one and two hours old",
+			zone: client.Zone{Name: "tftest-zone-123", CreatedAt: now.Add(-90 * time.Minute)},
+			want: false,
+		},
+		{
+			name: "test zone just below the minimum age",
+			zone: client.Zone{Name: "tftest-zone-123", CreatedAt: now.Add(-minZoneAge + time.Second)},
+			want: false,
+		},
+		{
 			name: "old zone without the test prefix",
 			zone: client.Zone{Name: "Default Zone", CreatedAt: now.Add(-30 * 24 * time.Hour)},
 			want: false,
