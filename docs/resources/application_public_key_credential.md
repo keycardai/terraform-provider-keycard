@@ -32,7 +32,7 @@ output "client_id" {
 ### Required
 
 - `application_id` (String) The application this credential belongs to. Changing this will replace the credential.
-- `jwks_uri` (String) The JWKS URL from which Keycard retrieves the application's public keys. Changing this will replace the credential.
+- `jwks_uri` (String) The JWKS URL from which Keycard retrieves the application's public keys.
 - `zone_id` (String) The zone this credential belongs to. Changing this will replace the credential.
 
 ### Optional

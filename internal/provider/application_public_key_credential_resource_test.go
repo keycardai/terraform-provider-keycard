@@ -75,7 +75,8 @@ func TestAccApplicationPublicKeyCredentialResource_basic(t *testing.T) {
 	})
 }
 
-func TestAccApplicationPublicKeyCredentialResource_urlChange(t *testing.T) {
+func TestAccApplicationPublicKeyCredentialResource_jwksURIChange(t *testing.T) {
+	var credentialID string
 	rName := acctest.RandomWithPrefix("tftest")
 	urlValue1 := fmt.Sprintf("https://%s-1.example.com", rName)
 	urlValue2 := fmt.Sprintf("https://%s-2.example.com", rName)
@@ -87,7 +88,7 @@ func TestAccApplicationPublicKeyCredentialResource_urlChange(t *testing.T) {
 			{
 				Config: testAccApplicationPublicKeyCredentialResourceConfig_basic(rName, urlValue1),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet("keycard_application_public_key_credential.test", "id"),
+					testAccCaptureResourceAttr("keycard_application_public_key_credential.test", "id", &credentialID),
 					resource.TestCheckResourceAttr("keycard_application_public_key_credential.test", "jwks_uri", urlValue1),
 				),
 			},
@@ -96,6 +97,7 @@ func TestAccApplicationPublicKeyCredentialResource_urlChange(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("keycard_application_public_key_credential.test", "id"),
 					resource.TestCheckResourceAttr("keycard_application_public_key_credential.test", "jwks_uri", urlValue2),
+					resource.TestCheckResourceAttrPtr("keycard_application_public_key_credential.test", "id", &credentialID),
 				),
 			},
 		},

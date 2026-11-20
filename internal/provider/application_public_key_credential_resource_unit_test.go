@@ -141,6 +141,51 @@ func TestApplicationPublicKeyCredentialRead(t *testing.T) {
 	}
 }
 
+func TestApplicationPublicKeyCredentialUpdate(t *testing.T) {
+	for _, status := range []int{200, 204, 400} {
+		t.Run(fmt.Sprint(status), func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				if req.Method != http.MethodPatch || req.URL.Path != "/zones/z1/application-credentials/c1" {
+					t.Errorf("unexpected request: %s %s", req.Method, req.URL.Path)
+				}
+				var body map[string]any
+				if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+					t.Error(err)
+				}
+				if len(body) != 2 || body["type"] != "public-key" || body["jwks_uri"] != "https://example.com/jwks.json" {
+					t.Errorf("unexpected body: %v", body)
+				}
+				if status == 200 {
+					w.Header().Set("Content-Type", "application/json")
+				}
+				w.WriteHeader(status)
+				if status == 200 {
+					if err := json.NewEncoder(w).Encode(map[string]any{"id": "c1", "zone_id": "z1", "application_id": "a1", "type": "public-key", "identifier": "client", "jwks_uri": "https://example.com/jwks.json"}); err != nil {
+						t.Error(err)
+					}
+				}
+			}))
+			defer srv.Close()
+			r := &ApplicationPublicKeyCredentialResource{client: testClientFor(t, srv)}
+			state := publicKeyCredentialState(t, r, "client")
+			resp := resource.UpdateResponse{State: state}
+			r.Update(context.Background(), resource.UpdateRequest{Plan: tfsdk.Plan(state), State: state}, &resp)
+			if resp.Diagnostics.HasError() != (status != 200) {
+				t.Fatalf("diagnostics = %v", resp.Diagnostics)
+			}
+			if status == 200 {
+				var data ApplicationPublicKeyCredentialModel
+				if diags := resp.State.Get(context.Background(), &data); diags.HasError() {
+					t.Fatal(diags)
+				}
+				if data.ID.ValueString() != "c1" || data.JWKSURI.ValueString() != "https://example.com/jwks.json" {
+					t.Errorf("state = %+v", data)
+				}
+			}
+		})
+	}
+}
+
 func TestApplicationPublicKeyCredentialResponses(t *testing.T) {
 	for _, operation := range []string{"create", "read", "delete"} {
 		for _, status := range []int{200, 204, 400, 404} {
