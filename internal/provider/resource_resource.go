@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -38,16 +39,17 @@ type ResourceResource struct {
 
 // ResourceModel describes the resource data model.
 type ResourceModel struct {
-	ID                   types.String `tfsdk:"id"`
-	ZoneID               types.String `tfsdk:"zone_id"`
-	Name                 types.String `tfsdk:"name"`
-	Description          types.String `tfsdk:"description"`
-	Identifier           types.String `tfsdk:"identifier"`
-	CredentialProviderID types.String `tfsdk:"credential_provider_id"`
-	ApplicationID        types.String `tfsdk:"application_id"`
-	Prefix               types.Bool   `tfsdk:"prefix"`
-	Metadata             types.Object `tfsdk:"metadata"`
-	OAuth2               types.Object `tfsdk:"oauth2"`
+	ID                        types.String `tfsdk:"id"`
+	ZoneID                    types.String `tfsdk:"zone_id"`
+	Name                      types.String `tfsdk:"name"`
+	Description               types.String `tfsdk:"description"`
+	Identifier                types.String `tfsdk:"identifier"`
+	CredentialProviderID      types.String `tfsdk:"credential_provider_id"`
+	CredentialLifetimeSeconds types.Int64  `tfsdk:"credential_lifetime_seconds"`
+	ApplicationID             types.String `tfsdk:"application_id"`
+	Prefix                    types.Bool   `tfsdk:"prefix"`
+	Metadata                  types.Object `tfsdk:"metadata"`
+	OAuth2                    types.Object `tfsdk:"oauth2"`
 }
 
 // ResourceMetadataModel describes the nested metadata block data model.
@@ -113,6 +115,11 @@ func (r *ResourceResource) Schema(ctx context.Context, req resource.SchemaReques
 			"credential_provider_id": schema.StringAttribute{
 				MarkdownDescription: "The provider that issues credentials for accessing this resource.",
 				Required:            true,
+			},
+			"credential_lifetime_seconds": schema.Int64Attribute{
+				MarkdownDescription: "Credential lifetime override in seconds, from 60 to 86400. When unset, the default from the provider or zone is used.",
+				Optional:            true,
+				Validators:          []validator.Int64{int64validator.Between(60, 86400)},
 			},
 			"application_id": schema.StringAttribute{
 				MarkdownDescription: "The application that provides this resource.",
@@ -191,6 +198,11 @@ func (r *ResourceResource) Create(ctx context.Context, req resource.CreateReques
 		Name:                 data.Name.ValueString(),
 		Identifier:           data.Identifier.ValueString(),
 		CredentialProviderId: &credProviderID,
+	}
+
+	if !data.CredentialLifetimeSeconds.IsNull() && !data.CredentialLifetimeSeconds.IsUnknown() {
+		lifetime := int(data.CredentialLifetimeSeconds.ValueInt64())
+		createReq.CredentialLifetimeSeconds = &lifetime
 	}
 
 	// Set description if provided
@@ -334,6 +346,13 @@ func (r *ResourceResource) Update(ctx context.Context, req resource.UpdateReques
 
 	// Build the update request
 	updateReq := client.ResourceUpdate{}
+	if !data.CredentialLifetimeSeconds.IsUnknown() {
+		if data.CredentialLifetimeSeconds.IsNull() {
+			updateReq.CredentialLifetimeSeconds = nullable.NewNullNullable[int]()
+		} else {
+			updateReq.CredentialLifetimeSeconds = nullable.NewNullableWithValue(int(data.CredentialLifetimeSeconds.ValueInt64()))
+		}
+	}
 
 	// Set name if changed
 	if !data.Name.IsNull() && !data.Name.IsUnknown() {
@@ -502,6 +521,7 @@ func updateResourceModelFromAPIResponse(ctx context.Context, apiResource *client
 	data.CredentialProviderID = types.StringPointerValue(apiResource.CredentialProviderId)
 	data.ApplicationID = types.StringPointerValue(apiResource.ApplicationId)
 	data.Prefix = types.BoolValue(apiResource.Prefix)
+	data.CredentialLifetimeSeconds = nullableInt64Value(apiResource.CredentialLifetimeSeconds)
 
 	// Set metadata
 	if apiResource.Metadata != nil && apiResource.Metadata.DocsUrl != nil {

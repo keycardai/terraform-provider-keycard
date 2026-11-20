@@ -1,10 +1,11 @@
 # Google Calendar API resource
 # Requires Google OAuth provider and specifies calendar scope
 resource "keycard_resource" "google_calendar" {
-  name                   = "Google Calendar"
-  identifier             = "https://www.googleapis.com/calendar/v3"
-  zone_id                = keycard_zone.production.id
-  credential_provider_id = keycard_provider.google.id
+  name                        = "Google Calendar"
+  identifier                  = "https://www.googleapis.com/calendar/v3"
+  zone_id                     = keycard_zone.production.id
+  credential_provider_id      = keycard_provider.google.id
+  credential_lifetime_seconds = 3600
 
   oauth2 = {
     scopes = ["https://www.googleapis.com/auth/calendar"]
