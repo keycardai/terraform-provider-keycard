@@ -39,13 +39,13 @@ type ResourceResource struct {
 
 // ResourceModel describes the resource data model.
 type ResourceModel struct {
-	CredentialLifetimeSeconds types.Int64  `tfsdk:"credential_lifetime_seconds"`
 	ID                        types.String `tfsdk:"id"`
 	ZoneID                    types.String `tfsdk:"zone_id"`
 	Name                      types.String `tfsdk:"name"`
 	Description               types.String `tfsdk:"description"`
 	Identifier                types.String `tfsdk:"identifier"`
 	CredentialProviderID      types.String `tfsdk:"credential_provider_id"`
+	CredentialLifetimeSeconds types.Int64  `tfsdk:"credential_lifetime_seconds"`
 	ApplicationID             types.String `tfsdk:"application_id"`
 	Prefix                    types.Bool   `tfsdk:"prefix"`
 	Metadata                  types.Object `tfsdk:"metadata"`
@@ -83,11 +83,6 @@ func (r *ResourceResource) Schema(ctx context.Context, req resource.SchemaReques
 		MarkdownDescription: "Manages a Keycard resource. A resource is a system that exposes protected information or functionality requiring authentication.",
 
 		Attributes: map[string]schema.Attribute{
-			"credential_lifetime_seconds": schema.Int64Attribute{
-				MarkdownDescription: "Credential lifetime override in seconds, from 60 to 86400. When unset, the default from the provider or zone is used.",
-				Optional:            true,
-				Validators:          []validator.Int64{int64validator.Between(60, 86400)},
-			},
 			"id": schema.StringAttribute{
 				MarkdownDescription: "Unique identifier of the resource.",
 				Computed:            true,
@@ -120,6 +115,11 @@ func (r *ResourceResource) Schema(ctx context.Context, req resource.SchemaReques
 			"credential_provider_id": schema.StringAttribute{
 				MarkdownDescription: "The provider that issues credentials for accessing this resource.",
 				Required:            true,
+			},
+			"credential_lifetime_seconds": schema.Int64Attribute{
+				MarkdownDescription: "Credential lifetime override in seconds, from 60 to 86400. When unset, the default from the provider or zone is used.",
+				Optional:            true,
+				Validators:          []validator.Int64{int64validator.Between(60, 86400)},
 			},
 			"application_id": schema.StringAttribute{
 				MarkdownDescription: "The application that provides this resource.",
