@@ -1,0 +1,27 @@
+terraform-provider-keycard
+Copyright 2026 Keycard Labs, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. Unless required by applicable
+law or agreed to in writing, software distributed under the License is
+distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+either express or implied. See the License for the specific language governing
+permissions and limitations under the License. The full text is in LICENSE.
+
+Trademark usage is governed separately; see TRADEMARKS.md.
+
+Upstream attribution
+====================
+
+This provider was derived from HashiCorp's
+terraform-provider-scaffolding-framework, Copyright (c) 2021 HashiCorp, Inc.,
+licensed under the Mozilla Public License 2.0. Files retained from that
+template remain subject to the MPL-2.0. The license text is at
+https://mozilla.org/MPL/2.0/.
+
+The provider also depends on Go modules published by HashiCorp under the
+MPL-2.0, among them terraform-plugin-framework, terraform-plugin-go,
+terraform-plugin-log, terraform-plugin-testing,
+terraform-plugin-framework-validators and go-retryablehttp. Those modules are
+used unmodified and unvendored, so their obligations attach to their own files
+rather than to this work.
