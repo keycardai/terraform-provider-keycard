@@ -271,6 +271,12 @@ paths:
           required: false
           schema:
             type: string
+        - name: after
+          in: query
+          description: Cursor for forward pagination
+          required: false
+          schema:
+            type: string
         - name: cursor
           in: query
           required: false
@@ -303,9 +309,12 @@ paths:
                       $ref: '#/components/schemas/Application'
                   page_info:
                     $ref: '#/components/schemas/PageInfo'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
                 required:
                   - items
                   - page_info
+                  - pagination
         default:
           description: Error response
           content:
@@ -1038,6 +1047,12 @@ paths:
               - external
               - keycard-vault
               - keycard-sts
+        - name: after
+          in: query
+          description: Cursor for forward pagination
+          required: false
+          schema:
+            type: string
         - name: cursor
           in: query
           required: false
@@ -1070,9 +1085,12 @@ paths:
                       $ref: '#/components/schemas/Provider'
                   page_info:
                     $ref: '#/components/schemas/PageInfo'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
                 required:
                   - items
                   - page_info
+                  - pagination
         default:
           description: Error response
           content:
@@ -1236,6 +1254,20 @@ paths:
           required: false
           schema:
             type: string
+        - name: after
+          in: query
+          description: Cursor for forward pagination
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+            minimum: 1
         - name: zoneId
           in: path
           description: Zone ID
@@ -1254,8 +1286,11 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Resource'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
                 required:
                   - items
+                  - pagination
         '400':
           description: Default Response
           content:

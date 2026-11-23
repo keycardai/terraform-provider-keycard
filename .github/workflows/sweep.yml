@@ -1,6 +1,7 @@
-# Deletes zones that acceptance tests left in the CI organization. A test that
-# is killed (go test timeout, cancelled job) or fails during destroy never
-# deletes its zone. See cmd/sweep.
+# Deletes what acceptance tests left in the CI organization: test zones, and
+# test objects in the organization zone. A test that is killed (go test
+# timeout, cancelled job) or fails during destroy never deletes them. See
+# cmd/sweep.
 #
 # Manual runs are dry runs unless dry_run is unticked, so the list can be
 # checked before anything is deleted.
@@ -11,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'List the zones that would be deleted, without deleting them'
+        description: 'List what would be deleted, without deleting it'
         type: boolean
         default: true
 
@@ -24,7 +25,7 @@ concurrency:
 
 jobs:
   sweep:
-    name: Sweep leaked test zones
+    name: Sweep leaked test objects
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:

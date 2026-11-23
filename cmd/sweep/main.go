@@ -1,15 +1,17 @@
-// Command sweep deletes zones that acceptance tests left behind in the
-// organization the KEYCARD_* credentials belong to.
+// Command sweep deletes what acceptance tests left behind in the
+// organization the KEYCARD_* credentials belong to: test zones, and test
+// resources, applications, providers and groups in the organization zone.
 //
-// A test leaves its zone behind when it never reaches its own destroy: a go
+// A test leaves objects behind when it never reaches its own destroy: a go
 // test timeout panics the whole binary, a cancelled CI job kills it, and a
-// failed child delete stops Terraform before it gets to the zone. Deleting a
-// zone deletes everything in it, so zones are the only thing swept.
+// failed child delete stops Terraform. A create that fails on the client
+// after the server created the object also leaves it behind, because the
+// object never reaches the Terraform state.
 //
 // Usage:
 //
-//	go run ./cmd/sweep -dry-run   # list the zones that would be deleted
-//	go run ./cmd/sweep            # delete them
+//	go run ./cmd/sweep -dry-run   # list what would be deleted
+//	go run ./cmd/sweep            # delete it
 //
 // It needs KEYCARD_CLIENT_ID, KEYCARD_CLIENT_SECRET and KEYCARD_ENDPOINT.
 package main
@@ -29,24 +31,25 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/oapi-codegen/nullable"
 	"golang.org/x/oauth2"
 
 	"github.com/keycardai/terraform-provider-keycard/internal/client"
 )
 
 const (
-	// zonePrefix matches the names acceptance tests give their zones.
+	// namePrefix matches the names acceptance tests give their objects.
 	// acctest.RandomWithPrefix("tftest...") always writes "<prefix>-<number>",
-	// so every test zone name starts with "tftest-".
-	zonePrefix = "tftest-"
+	// so every test object name starts with "tftest-".
+	namePrefix = "tftest-"
 
-	// minZoneAge keeps the sweeper away from zones a running test still owns.
-	// It is well above the acceptance job timeout, so any older zone belongs
-	// to a run that has already ended.
-	minZoneAge = time.Hour
+	// minAge keeps the sweeper away from objects a running test still owns.
+	// It is well above the acceptance job timeout, so any older object
+	// belongs to a run that has already ended.
+	minAge = time.Hour
 
-	// concurrency bounds parallel deletes. Each delete deregisters the zone
-	// from Vault and the router, so a large backlog is slow serially.
+	// concurrency bounds parallel deletes. Each zone delete deregisters the
+	// zone from Vault and the router, so a large backlog is slow serially.
 	concurrency = 5
 
 	// requestTimeout replaces the provider client's 5s timeout. A zone delete
@@ -57,7 +60,7 @@ const (
 	// error, a 429 or a 5xx.
 	attempts = 4
 
-	// pageSize is the largest page the zones API returns.
+	// pageSize is the largest page the list APIs return.
 	pageSize = 100
 
 	// maxPages stops a listing whose cursor never runs out.
@@ -84,7 +87,7 @@ func main() {
 func run(ctx context.Context, args []string, output io.Writer) error {
 	fs := flag.NewFlagSet("sweep", flag.ContinueOnError)
 	fs.SetOutput(output)
-	dryRun := fs.Bool("dry-run", false, "list the zones that would be deleted, without deleting them")
+	dryRun := fs.Bool("dry-run", false, "list what would be deleted, without deleting it")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -119,30 +122,235 @@ func newClient(ctx context.Context) (*client.ClientWithResponses, error) {
 	return c, nil
 }
 
-// sweep deletes the leftover test zones, or only lists them when dryRun is set.
+// target is one object the sweeper may delete.
+type target struct {
+	id        string
+	name      string
+	createdAt time.Time
+}
+
+// reply is the status and body of an API response.
+type reply struct {
+	status int
+	body   []byte
+}
+
+func (r reply) StatusCode() int { return r.status }
+
+// listPage is one page of a list call. ok is false when the API did not
+// return a list.
+type listPage struct {
+	reply
+	ok      bool
+	targets []target
+	next    nullable.Nullable[string]
+}
+
+// collection is one kind of object to sweep, in one place.
+type collection struct {
+	kind   string
+	list   func(ctx context.Context, after *string) (listPage, error)
+	delete func(ctx context.Context, id string) (reply, error)
+}
+
+// sweep deletes what acceptance tests left behind, or only lists it when
+// dryRun is set. Most tests create their objects in the organization zone
+// instead of a zone of their own, so the sweeper deletes test objects there
+// as well as test zones. Collections are swept in dependency order:
+// resources, which reference applications and providers, go first.
 func sweep(ctx context.Context, c *client.ClientWithResponses, dryRun bool) error {
-	zones, err := listZones(ctx, c)
+	orgZoneID, err := organizationZoneID(ctx, c)
+	if err != nil {
+		return err
+	}
+
+	var errs []error
+	for _, col := range collections(c, orgZoneID) {
+		if err := sweepCollection(ctx, col, dryRun); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errors.Join(errs...)
+}
+
+// collections returns what to sweep, in dependency order.
+func collections(c *client.ClientWithResponses, orgZoneID string) []collection {
+	limit := pageSize
+	return []collection{
+		{
+			kind: "resource",
+			list: func(ctx context.Context, after *string) (listPage, error) {
+				resp, err := c.ListResourcesWithResponse(ctx, orgZoneID, &client.ListResourcesParams{After: after, Limit: &limit})
+				if err != nil {
+					return listPage{}, err
+				}
+				page := listPage{reply: reply{resp.StatusCode(), resp.Body}}
+				if resp.JSON200 != nil {
+					page.ok = true
+					page.next = resp.JSON200.Pagination.AfterCursor
+					for _, r := range resp.JSON200.Items {
+						page.targets = append(page.targets, target{r.Id, r.Name, r.CreatedAt})
+					}
+				}
+				return page, nil
+			},
+			delete: func(ctx context.Context, id string) (reply, error) {
+				resp, err := c.DeleteResourceWithResponse(ctx, orgZoneID, id)
+				if err != nil {
+					return reply{}, err
+				}
+				return reply{resp.StatusCode(), resp.Body}, nil
+			},
+		},
+		{
+			kind: "application",
+			list: func(ctx context.Context, after *string) (listPage, error) {
+				resp, err := c.ListApplicationsWithResponse(ctx, orgZoneID, &client.ListApplicationsParams{After: after, Limit: &limit})
+				if err != nil {
+					return listPage{}, err
+				}
+				page := listPage{reply: reply{resp.StatusCode(), resp.Body}}
+				if resp.JSON200 != nil {
+					page.ok = true
+					page.next = resp.JSON200.Pagination.AfterCursor
+					for _, a := range resp.JSON200.Items {
+						page.targets = append(page.targets, target{a.Id, a.Name, a.CreatedAt})
+					}
+				}
+				return page, nil
+			},
+			delete: func(ctx context.Context, id string) (reply, error) {
+				resp, err := c.DeleteApplicationWithResponse(ctx, orgZoneID, id)
+				if err != nil {
+					return reply{}, err
+				}
+				return reply{resp.StatusCode(), resp.Body}, nil
+			},
+		},
+		{
+			kind: "provider",
+			list: func(ctx context.Context, after *string) (listPage, error) {
+				resp, err := c.ListProvidersWithResponse(ctx, orgZoneID, &client.ListProvidersParams{After: after, Limit: &limit})
+				if err != nil {
+					return listPage{}, err
+				}
+				page := listPage{reply: reply{resp.StatusCode(), resp.Body}}
+				if resp.JSON200 != nil {
+					page.ok = true
+					page.next = resp.JSON200.Pagination.AfterCursor
+					for _, p := range resp.JSON200.Items {
+						page.targets = append(page.targets, target{p.Id, p.Name, p.CreatedAt})
+					}
+				}
+				return page, nil
+			},
+			delete: func(ctx context.Context, id string) (reply, error) {
+				resp, err := c.DeleteProviderWithResponse(ctx, orgZoneID, id)
+				if err != nil {
+					return reply{}, err
+				}
+				return reply{resp.StatusCode(), resp.Body}, nil
+			},
+		},
+		{
+			kind: "group",
+			list: func(ctx context.Context, after *string) (listPage, error) {
+				resp, err := c.ListGroupsWithResponse(ctx, orgZoneID, &client.ListGroupsParams{After: after, Limit: &limit})
+				if err != nil {
+					return listPage{}, err
+				}
+				page := listPage{reply: reply{resp.StatusCode(), resp.Body}}
+				if resp.JSON200 != nil {
+					page.ok = true
+					page.next = resp.JSON200.Pagination.AfterCursor
+					for _, g := range resp.JSON200.Items {
+						page.targets = append(page.targets, target{g.Id, g.Name, g.CreatedAt})
+					}
+				}
+				return page, nil
+			},
+			delete: func(ctx context.Context, id string) (reply, error) {
+				resp, err := c.DeleteGroupWithResponse(ctx, orgZoneID, id)
+				if err != nil {
+					return reply{}, err
+				}
+				return reply{resp.StatusCode(), resp.Body}, nil
+			},
+		},
+		{
+			kind: "zone",
+			list: func(ctx context.Context, after *string) (listPage, error) {
+				resp, err := c.ListZonesWithResponse(ctx, &client.ListZonesParams{After: after, Limit: &limit})
+				if err != nil {
+					return listPage{}, err
+				}
+				page := listPage{reply: reply{resp.StatusCode(), resp.Body}}
+				if resp.JSON200 != nil {
+					page.ok = true
+					page.next = resp.JSON200.Pagination.AfterCursor
+					for _, z := range resp.JSON200.Items {
+						page.targets = append(page.targets, target{z.Id, z.Name, z.CreatedAt})
+					}
+				}
+				return page, nil
+			},
+			delete: func(ctx context.Context, id string) (reply, error) {
+				resp, err := c.DeleteZoneWithResponse(ctx, id)
+				if err != nil {
+					return reply{}, err
+				}
+				return reply{resp.StatusCode(), resp.Body}, nil
+			},
+		},
+	}
+}
+
+// organizationZoneID returns the built-in zone of the organization the
+// credentials belong to.
+func organizationZoneID(ctx context.Context, c *client.ClientWithResponses) (string, error) {
+	resp, err := withRetry(ctx, func() (*client.ListOrganizationsResponse, error) {
+		return c.ListOrganizationsWithResponse(ctx, &client.ListOrganizationsParams{})
+	})
+	if err != nil {
+		return "", fmt.Errorf("listing organizations: %w", err)
+	}
+	if resp.JSON200 == nil {
+		return "", fmt.Errorf("listing organizations, got status %d: %s", resp.StatusCode(), string(resp.Body))
+	}
+	if len(resp.JSON200.Items) != 1 {
+		return "", fmt.Errorf("listing organizations: got %d, want 1", len(resp.JSON200.Items))
+	}
+	zoneID := resp.JSON200.Items[0].ZoneId
+	if zoneID == nil || *zoneID == "" {
+		return "", errors.New("the organization has no built-in zone")
+	}
+	return *zoneID, nil
+}
+
+// sweepCollection deletes the leftover test objects of one collection.
+func sweepCollection(ctx context.Context, col collection, dryRun bool) error {
+	all, err := listAll(ctx, col)
 	if err != nil {
 		return err
 	}
 
 	now := time.Now()
-	var stale []client.Zone
-	for _, zone := range zones {
-		if sweepable(zone, now) {
-			stale = append(stale, zone)
+	var stale []target
+	for _, t := range all {
+		if sweepable(t, now) {
+			stale = append(stale, t)
 		}
 	}
 
 	if dryRun {
-		for _, zone := range stale {
-			log.Printf("Would delete zone %s (%s), created %s", zone.Id, zone.Name, zone.CreatedAt.Format(time.RFC3339))
+		for _, t := range stale {
+			log.Printf("Would delete %s %s (%s), created %s", col.kind, t.id, t.name, t.createdAt.Format(time.RFC3339))
 		}
-		log.Printf("Dry run: would delete %d of %d zones (name prefix %q, older than %s); nothing was deleted", len(stale), len(zones), zonePrefix, minZoneAge)
+		log.Printf("Dry run: would delete %d of %d %ss (name prefix %q, older than %s); nothing was deleted", len(stale), len(all), col.kind, namePrefix, minAge)
 		return nil
 	}
 
-	log.Printf("Deleting %d of %d zones (name prefix %q, older than %s)", len(stale), len(zones), zonePrefix, minZoneAge)
+	log.Printf("Deleting %d of %d %ss (name prefix %q, older than %s)", len(stale), len(all), col.kind, namePrefix, minAge)
 
 	var (
 		mu                   sync.Mutex
@@ -151,14 +359,14 @@ func sweep(ctx context.Context, c *client.ClientWithResponses, dryRun bool) erro
 		wg                   sync.WaitGroup
 		sem                  = make(chan struct{}, concurrency)
 	)
-	for _, zone := range stale {
+	for _, t := range stale {
 		wg.Add(1)
 		sem <- struct{}{}
 		go func() {
 			defer wg.Done()
 			defer func() { <-sem }()
 
-			gone, err := deleteZone(ctx, c, zone)
+			gone, err := deleteTarget(ctx, col, t)
 			mu.Lock()
 			defer mu.Unlock()
 			switch {
@@ -173,60 +381,59 @@ func sweep(ctx context.Context, c *client.ClientWithResponses, dryRun bool) erro
 	}
 	wg.Wait()
 
-	log.Printf("Deleted %d zones, %d already gone, %d failed", deleted, alreadyGone, len(errs))
+	log.Printf("Deleted %d %ss, %d already gone, %d failed", deleted, col.kind, alreadyGone, len(errs))
 	return errors.Join(errs...)
 }
 
-// listZones returns every zone in the organization. It lists everything
-// before anything is deleted, so deletes can't shift the cursor.
-func listZones(ctx context.Context, c *client.ClientWithResponses) ([]client.Zone, error) {
-	var zones []client.Zone
+// listAll returns every object in a collection. It lists everything before
+// anything is deleted, so deletes can't shift the cursor.
+func listAll(ctx context.Context, col collection) ([]target, error) {
+	var all []target
 	var after *string
-	limit := pageSize
 	for range maxPages {
-		resp, err := withRetry(ctx, func() (*client.ListZonesResponse, error) {
-			return c.ListZonesWithResponse(ctx, &client.ListZonesParams{After: after, Limit: &limit})
+		page, err := withRetry(ctx, func() (listPage, error) {
+			return col.list(ctx, after)
 		})
 		if err != nil {
-			return nil, fmt.Errorf("listing zones: %w", err)
+			return nil, fmt.Errorf("listing %ss: %w", col.kind, err)
 		}
-		if resp.JSON200 == nil {
-			return nil, fmt.Errorf("listing zones, got status %d: %s", resp.StatusCode(), string(resp.Body))
+		if !page.ok {
+			return nil, fmt.Errorf("listing %ss, got status %d: %s", col.kind, page.status, string(page.body))
 		}
-		zones = append(zones, resp.JSON200.Items...)
+		all = append(all, page.targets...)
 
-		cursor := resp.JSON200.Pagination.AfterCursor
+		cursor := page.next
 		if !cursor.IsSpecified() || cursor.IsNull() || cursor.MustGet() == "" {
-			return zones, nil
+			return all, nil
 		}
 		next := cursor.MustGet()
 		after = &next
 	}
-	return nil, fmt.Errorf("listing zones: still more pages after %d; stopping", maxPages)
+	return nil, fmt.Errorf("listing %ss: still more pages after %d; stopping", col.kind, maxPages)
 }
 
-// sweepable reports whether a zone was left behind by an acceptance test that
-// has finished.
-func sweepable(zone client.Zone, now time.Time) bool {
-	return strings.HasPrefix(zone.Name, zonePrefix) && now.Sub(zone.CreatedAt) >= minZoneAge
+// sweepable reports whether an object was left behind by an acceptance test
+// that has finished.
+func sweepable(t target, now time.Time) bool {
+	return strings.HasPrefix(t.name, namePrefix) && now.Sub(t.createdAt) >= minAge
 }
 
-// deleteZone deletes a zone. It reports alreadyGone when the zone no longer
-// existed, which is the outcome the sweeper wants either way.
-func deleteZone(ctx context.Context, c *client.ClientWithResponses, zone client.Zone) (alreadyGone bool, err error) {
-	resp, err := withRetry(ctx, func() (*client.DeleteZoneResponse, error) {
-		return c.DeleteZoneWithResponse(ctx, zone.Id)
+// deleteTarget deletes one object. It reports alreadyGone when the object no
+// longer existed, which is the outcome the sweeper wants either way.
+func deleteTarget(ctx context.Context, col collection, t target) (alreadyGone bool, err error) {
+	resp, err := withRetry(ctx, func() (reply, error) {
+		return col.delete(ctx, t.id)
 	})
 	if err != nil {
-		return false, fmt.Errorf("deleting zone %s (%s): %w", zone.Id, zone.Name, err)
+		return false, fmt.Errorf("deleting %s %s (%s): %w", col.kind, t.id, t.name, err)
 	}
-	switch resp.StatusCode() {
+	switch resp.status {
 	case http.StatusNoContent:
 		return false, nil
 	case http.StatusNotFound:
 		return true, nil
 	default:
-		return false, fmt.Errorf("deleting zone %s (%s), got status %d: %s", zone.Id, zone.Name, resp.StatusCode(), string(resp.Body))
+		return false, fmt.Errorf("deleting %s %s (%s), got status %d: %s", col.kind, t.id, t.name, resp.status, string(resp.body))
 	}
 }
 
