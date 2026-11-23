@@ -1,11 +1,10 @@
 # Google Calendar API resource
 # Requires Google OAuth provider and specifies calendar scope
 resource "keycard_resource" "google_calendar" {
-  name                        = "Google Calendar"
-  identifier                  = "https://www.googleapis.com/calendar/v3"
-  zone_id                     = keycard_zone.production.id
-  credential_provider_id      = keycard_provider.google.id
-  credential_lifetime_seconds = 3600
+  name                   = "Google Calendar"
+  identifier             = "https://www.googleapis.com/calendar/v3"
+  zone_id                = keycard_zone.production.id
+  credential_provider_id = keycard_provider.google.id
 
   oauth2 = {
     scopes = ["https://www.googleapis.com/auth/calendar"]
@@ -62,4 +61,14 @@ resource "keycard_resource" "api_root" {
   zone_id                = keycard_zone.production.id
   credential_provider_id = keycard_provider.okta_credentials.id
   prefix                 = true
+}
+
+# Anthropic API resource with a 1-hour credential lifetime
+# credential_lifetime_seconds applies only when the credential provider is the zone provider
+resource "keycard_resource" "anthropic" {
+  name                        = "Anthropic API"
+  identifier                  = "https://api.anthropic.com"
+  zone_id                     = keycard_zone.production.id
+  credential_provider_id      = var.zone_provider_id
+  credential_lifetime_seconds = 3600
 }
