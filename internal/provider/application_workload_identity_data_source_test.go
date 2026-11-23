@@ -112,8 +112,8 @@ func TestAccApplicationWorkloadIdentityDataSource_notFound(t *testing.T) {
 func testAccApplicationWorkloadIdentityDataSourceConfig_basic(appName, namespace, serviceAccount string) string {
 	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
-  name        = "k8s-provider-%[1]s"
-  identifier  = "https://k8s-provider-%[1]s.example.com"
+  name        = "%[1]s-k8s-provider"
+  identifier  = "https://%[1]s-k8s-provider.example.com"
 
   oauth2 = {
     issuer = "https://kubernetes.default.svc.cluster.local"

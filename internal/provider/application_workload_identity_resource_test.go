@@ -388,8 +388,8 @@ func TestAccApplicationWorkloadIdentityResource_emptySubjectInvalid(t *testing.T
 func testAccApplicationWorkloadIdentityResourceConfig_kubernetes(appName, namespace, serviceAccount string) string {
 	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
-  name        = "k8s-provider-%[1]s"
-  identifier  = "https://k8s-provider-%[1]s.example.com"
+  name        = "%[1]s-k8s-provider"
+  identifier  = "https://%[1]s-k8s-provider.example.com"
 
   oauth2 = {
     issuer = "https://kubernetes.default.svc.cluster.local"
@@ -433,8 +433,8 @@ resource "keycard_application_workload_identity" "test" {
 
 	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
-  name       = "github-provider-%[1]s"
-  identifier = "https://github-provider-%[1]s.example.com"
+  name       = "%[1]s-github-provider"
+  identifier = "https://%[1]s-github-provider.example.com"
   zone_id    = data.keycard_organization.test.zone_id
 
   oauth2 = {
@@ -453,8 +453,8 @@ resource "keycard_application" "test" {
 func testAccApplicationWorkloadIdentityResourceConfig_github(appName, org, repo, branch string) string {
 	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
-  name        = "github-provider-%[1]s"
-  identifier  = "https://github-provider-%[1]s.example.com"
+  name        = "%[1]s-github-provider"
+  identifier  = "https://%[1]s-github-provider.example.com"
 
   oauth2 = {
     issuer = "https://token.actions.githubusercontent.com"
@@ -480,8 +480,8 @@ resource "keycard_application_workload_identity" "test" {
 func testAccApplicationWorkloadIdentityResourceConfig_withSecondProvider(appName, namespace, serviceAccount string) string {
 	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
-  name        = "k8s-provider-%[1]s"
-  identifier  = "https://k8s-provider-%[1]s.example.com"
+  name        = "%[1]s-k8s-provider"
+  identifier  = "https://%[1]s-k8s-provider.example.com"
 
   oauth2 = {
     issuer = "https://kubernetes.default.svc.cluster.local"
@@ -490,8 +490,8 @@ resource "keycard_provider" "test" {
 }
 
 resource "keycard_provider" "test2" {
-  name        = "k8s-provider2-%[1]s"
-  identifier  = "https://k8s-provider2-%[1]s.example.com"
+  name        = "%[1]s-k8s-provider2"
+  identifier  = "https://%[1]s-k8s-provider2.example.com"
 
   oauth2 = {
     issuer = "https://kubernetes2.default.svc.cluster.local"
@@ -517,8 +517,8 @@ resource "keycard_application_workload_identity" "test" {
 func testAccApplicationWorkloadIdentityResourceConfig_multiple(appName, namespace1, serviceAccount1, namespace2, serviceAccount2 string) string {
 	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
-  name        = "k8s-provider-%[1]s"
-  identifier  = "https://k8s-provider-%[1]s.example.com"
+  name        = "%[1]s-k8s-provider"
+  identifier  = "https://%[1]s-k8s-provider.example.com"
 
   oauth2 = {
     issuer = "https://kubernetes.default.svc.cluster.local"
@@ -551,8 +551,8 @@ resource "keycard_application_workload_identity" "staging" {
 func testAccApplicationWorkloadIdentityResourceConfig_emptySubject(appName string) string {
 	return testAccOrgZone + fmt.Sprintf(`
 resource "keycard_provider" "test" {
-  name        = "k8s-provider-%[1]s"
-  identifier  = "https://k8s-provider-%[1]s.example.com"
+  name        = "%[1]s-k8s-provider"
+  identifier  = "https://%[1]s-k8s-provider.example.com"
 
   oauth2 = {
     issuer = "https://kubernetes.default.svc.cluster.local"
