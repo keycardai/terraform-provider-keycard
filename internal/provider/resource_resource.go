@@ -117,7 +117,7 @@ func (r *ResourceResource) Schema(ctx context.Context, req resource.SchemaReques
 				Required:            true,
 			},
 			"credential_lifetime_seconds": schema.Int64Attribute{
-				MarkdownDescription: "Credential lifetime override in seconds, from 60 to 86400. When unset, the default from the provider or zone is used.",
+				MarkdownDescription: "Credential lifetime override in seconds, from 60 to 86400. Applies only when `credential_provider_id` is the zone provider. When unset, the default from the provider or zone is used.",
 				Optional:            true,
 				Validators:          []validator.Int64{int64validator.Between(60, 86400)},
 			},

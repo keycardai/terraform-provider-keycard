@@ -93,7 +93,7 @@ resource "keycard_resource" "api_root" {
 ### Optional
 
 - `application_id` (String) The application that provides this resource.
-- `credential_lifetime_seconds` (Number) Credential lifetime override in seconds, from 60 to 86400. When unset, the default from the provider or zone is used.
+- `credential_lifetime_seconds` (Number) Credential lifetime override in seconds, from 60 to 86400. Applies only when `credential_provider_id` is the zone provider. When unset, the default from the provider or zone is used.
 - `description` (String) Optional description of the resource's purpose.
 - `metadata` (Attributes) Metadata associated with the resource. (see [below for nested schema](#nestedatt--metadata))
 - `oauth2` (Attributes) OAuth2 configuration for the resource. (see [below for nested schema](#nestedatt--oauth2))
