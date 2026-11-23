@@ -159,13 +159,15 @@ type collection struct {
 // as well as test zones. Collections are swept in dependency order:
 // resources, which reference applications and providers, go first.
 func sweep(ctx context.Context, c *client.ClientWithResponses, dryRun bool) error {
-	orgZoneID, err := organizationZoneID(ctx, c)
-	if err != nil {
-		return err
+	var errs []error
+	cols := []collection{zoneCollection(c)}
+	if orgZoneID, err := organizationZoneID(ctx, c); err != nil {
+		errs = append(errs, err)
+	} else {
+		cols = append(orgZoneCollections(c, orgZoneID), cols...)
 	}
 
-	var errs []error
-	for _, col := range collections(c, orgZoneID) {
+	for _, col := range cols {
 		if err := sweepCollection(ctx, col, dryRun); err != nil {
 			errs = append(errs, err)
 		}
@@ -173,8 +175,9 @@ func sweep(ctx context.Context, c *client.ClientWithResponses, dryRun bool) erro
 	return errors.Join(errs...)
 }
 
-// collections returns what to sweep, in dependency order.
-func collections(c *client.ClientWithResponses, orgZoneID string) []collection {
+// orgZoneCollections returns what to sweep in the organization zone, in
+// dependency order.
+func orgZoneCollections(c *client.ClientWithResponses, orgZoneID string) []collection {
 	limit := pageSize
 	return []collection{
 		{
@@ -277,30 +280,36 @@ func collections(c *client.ClientWithResponses, orgZoneID string) []collection {
 				return reply{resp.StatusCode(), resp.Body}, nil
 			},
 		},
-		{
-			kind: "zone",
-			list: func(ctx context.Context, after *string) (listPage, error) {
-				resp, err := c.ListZonesWithResponse(ctx, &client.ListZonesParams{After: after, Limit: &limit})
-				if err != nil {
-					return listPage{}, err
+	}
+}
+
+// zoneCollection sweeps test zones. It does not need the organization zone,
+// so it runs even when the organization lookup fails.
+func zoneCollection(c *client.ClientWithResponses) collection {
+	limit := pageSize
+	return collection{
+		kind: "zone",
+		list: func(ctx context.Context, after *string) (listPage, error) {
+			resp, err := c.ListZonesWithResponse(ctx, &client.ListZonesParams{After: after, Limit: &limit})
+			if err != nil {
+				return listPage{}, err
+			}
+			page := listPage{reply: reply{resp.StatusCode(), resp.Body}}
+			if resp.JSON200 != nil {
+				page.ok = true
+				page.next = resp.JSON200.Pagination.AfterCursor
+				for _, z := range resp.JSON200.Items {
+					page.targets = append(page.targets, target{z.Id, z.Name, z.CreatedAt})
 				}
-				page := listPage{reply: reply{resp.StatusCode(), resp.Body}}
-				if resp.JSON200 != nil {
-					page.ok = true
-					page.next = resp.JSON200.Pagination.AfterCursor
-					for _, z := range resp.JSON200.Items {
-						page.targets = append(page.targets, target{z.Id, z.Name, z.CreatedAt})
-					}
-				}
-				return page, nil
-			},
-			delete: func(ctx context.Context, id string) (reply, error) {
-				resp, err := c.DeleteZoneWithResponse(ctx, id)
-				if err != nil {
-					return reply{}, err
-				}
-				return reply{resp.StatusCode(), resp.Body}, nil
-			},
+			}
+			return page, nil
+		},
+		delete: func(ctx context.Context, id string) (reply, error) {
+			resp, err := c.DeleteZoneWithResponse(ctx, id)
+			if err != nil {
+				return reply{}, err
+			}
+			return reply{resp.StatusCode(), resp.Body}, nil
 		},
 	}
 }
