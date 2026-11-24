@@ -3744,6 +3744,15 @@ components:
         credential_provider_id:
           description: ID of the credential provider for this resource
           type: string
+        credential_lifetime_seconds:
+          type: integer
+          nullable: true
+          minimum: 60
+          maximum: 86400
+          description: Credential lifetime override in seconds. When set, overrides the
+            default credential lifetime for this resource. When absent, the
+            default from the provider or zone is used.
+          x-audit: true
         credential_provider:
           description: 'Deprecated: Nested provider object. Use credential_provider_id to fetch provider separately. When this resource appears nested in another API response, this field will be undefined.'
           allOf:
@@ -3813,6 +3822,12 @@ components:
         credential_provider_id:
           description: ID of the credential provider to associate with the resource
           type: string
+        credential_lifetime_seconds:
+          minimum: 60
+          maximum: 86400
+          description: Credential lifetime override in seconds. When set, overrides the
+            default credential lifetime for this resource.
+          type: integer
         application_id:
           description: ID of the application that provides this resource
           type: string
@@ -3859,6 +3874,13 @@ components:
           description: ID of the credential provider to associate with the resource (set to null to unset)
           type: string
           nullable: true
+        credential_lifetime_seconds:
+          nullable: true
+          minimum: 60
+          maximum: 86400
+          description: Credential lifetime override in seconds. Set to null to clear the
+            override and use the default.
+          type: integer
         application_id:
           description: ID of the application that provides this resource (set to null to unset)
           type: string

@@ -62,3 +62,13 @@ resource "keycard_resource" "api_root" {
   credential_provider_id = keycard_provider.okta_credentials.id
   prefix                 = true
 }
+
+# Anthropic API resource with a 1-hour credential lifetime
+# credential_lifetime_seconds applies only when the credential provider is the zone provider
+resource "keycard_resource" "anthropic" {
+  name                        = "Anthropic API"
+  identifier                  = "https://api.anthropic.com"
+  zone_id                     = keycard_zone.production.id
+  credential_provider_id      = var.zone_provider_id
+  credential_lifetime_seconds = 3600
+}

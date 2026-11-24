@@ -62,6 +62,10 @@ func (d *ResourceDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 				MarkdownDescription: "The provider that issues credentials for accessing this resource. May be empty.",
 				Computed:            true,
 			},
+			"credential_lifetime_seconds": schema.Int64Attribute{
+				MarkdownDescription: "Credential lifetime override in seconds. Null when the default from the provider or zone is used.",
+				Computed:            true,
+			},
 			"application_id": schema.StringAttribute{
 				MarkdownDescription: "The application that provides this resource. May be empty.",
 				Computed:            true,
